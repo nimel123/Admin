@@ -4,14 +4,7 @@
   "private": true,
   "author": "Creative Tim",
   "license": "See license in https://www.creative-tim.com/license",
-  "description": "React version of Material Dashboard 2 by Creative Tim",
-  "bugs": {
-    "url": "https://github.com/creativetimofficial/material-dashboard-react/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/creativetimofficial/material-dashboard-react.git"
-  },
+  "description": "React Admin Dashboard",
   "dependencies": {
     "@emotion/cache": "11.10.8",
     "@emotion/react": "11.10.8",
@@ -26,7 +19,7 @@
     "react-dom": "18.2.0",
     "react-github-btn": "1.4.0",
     "react-router-dom": "6.11.0",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "react-table": "7.8.0",
     "stylis": "4.1.4",
     "stylis-plugin-rtl": "2.1.1",
