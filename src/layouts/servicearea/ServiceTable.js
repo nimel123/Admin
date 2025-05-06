@@ -38,7 +38,7 @@ function Table() {
   return (
     <div style={{ padding: "30px", paddingLeft: "150px", maxWidth: "900px", margin: "0 auto", fontFamily: "Arial" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2>User Table</h2>
+        <h2>Avaliable Locations</h2>
         <button
           onClick={handleAdd}
           style={{
@@ -50,12 +50,12 @@ function Table() {
             cursor: "pointer",
           }}
         >
-          + Add User
+          + Add Location
         </button>
       </div>
 
       {loading ? (
-        <p>Loading data...</p>
+        <p>Loading Locations...</p>
       ) : (
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
           <thead>
