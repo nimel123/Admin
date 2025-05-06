@@ -57,7 +57,7 @@ function AddServiceArea() {
 
   const handleSave = async() => {
       try{
-          const result=await fetch('http://localhost:5000/addLocation',{
+          const result=await fetch('https://node-m8jb.onrender.com/addLocation',{
             method:"POST",
             body:JSON.stringify({
                 address:areaTitle

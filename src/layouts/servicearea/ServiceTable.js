@@ -9,7 +9,7 @@ function Table() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:5000/getlocations");
+        const res = await fetch("https://node-m8jb.onrender.com/getlocations");
         const json = await res.json();
         setData(json.result); // assuming json is an array of objects like [{ _id, address }]
         setLoading(false);
