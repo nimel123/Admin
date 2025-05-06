@@ -44,10 +44,11 @@ import Notifications from "layouts/notifications";
 import Profile from "layouts/profile";
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
+import Table from "layouts/servicearea/ServiceTable";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
-
+import ServiceArea from "layouts/servicearea/AddServiceArea";
 const routes = [
   {
     type: "collapse",
@@ -56,6 +57,14 @@ const routes = [
     icon: <Icon fontSize="small">dashboard</Icon>,
     route: "/dashboard",
     component: <Dashboard />,
+  },
+  {
+    type: "collapse",
+    name: "Service Area",
+    key: "servicearea",
+    icon: <Icon fontSize="small">dashboard</Icon>,
+    route: "/serviceArea",
+    component: <Table />,
   },
   {
     type: "collapse",

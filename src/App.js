@@ -9,6 +9,7 @@ import Sidenav from "examples/Sidenav";
 import Configurator from "examples/Configurator";
 import theme from "assets/theme";
 import themeRTL from "assets/theme/theme-rtl";
+import AddServiceArea from "layouts/servicearea/AddServiceArea";
 
 // Material Dashboard 2 React Dark Mode themes
 import themeDark from "assets/theme-dark";
@@ -128,6 +129,8 @@ export default function App() {
         <CssBaseline />
         {layout === "dashboard" && (
           <>
+
+          
             <Sidenav
               color={sidenavColor}
               brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
@@ -144,6 +147,7 @@ export default function App() {
         <Routes>
           {getRoutes(routes)}
           <Route path="*" element={<Navigate to="/dashboard" />} />
+         
         </Routes>
       </ThemeProvider>
     </CacheProvider>
@@ -168,7 +172,9 @@ export default function App() {
       <Routes>
         {getRoutes(routes)}
         <Route path="*" element={<Navigate to="/dashboard" />} />
+        <Route path="/addlocation" element={<AddServiceArea />} />
       </Routes>
     </ThemeProvider>
+    
   );
 }

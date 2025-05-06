@@ -5,6 +5,9 @@ import App from "App";
 
 // Material Dashboard 2 React Context Provider
 import { MaterialUIControllerProvider } from "context";
+import AddServiceArea from "layouts/servicearea/AddServiceArea";
+import 'leaflet/dist/leaflet.css';
+
 
 const container = document.getElementById("app");
 const root = createRoot(container);
