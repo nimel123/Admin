@@ -48,6 +48,10 @@ import Table from "layouts/servicearea/ServiceTable";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import CategoryIcon from "@mui/icons-material/Category";
+
+
 import ServiceArea from "layouts/servicearea/AddServiceArea";
 const routes = [
   {
@@ -60,11 +64,19 @@ const routes = [
   },
   {
     type: "collapse",
-    name: "Service Area",
+    name: "Zone Management",
     key: "servicearea",
-    icon: <Icon fontSize="small">dashboard</Icon>,
+    icon: <LocationOnIcon fontSize="small" />,
     route: "/serviceArea",
     component: <Table />,
+  },
+  {
+    type: "collapse",
+    name: "Categories",
+    key: "servicearea",
+    icon: <CategoryIcon fontSize="small" />,
+    route: "/dashboard",
+    component: <Dashboard />,
   },
   {
     type: "collapse",
