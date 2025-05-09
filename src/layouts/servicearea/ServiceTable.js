@@ -3,11 +3,18 @@ import { useNavigate } from "react-router-dom";
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-
+import './Table.css';
+import { useMaterialUIController } from "context";
+import MDBox from "components/MDBox";
 
 function Table() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5); 
+   const [controller] = useMaterialUIController();
+    const { miniSidenav } = controller;
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -54,143 +61,95 @@ function Table() {
     }
   };
 
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const indexOfLastEntry = currentPage * itemsPerPage;
+  const indexOfFirstEntry = indexOfLastEntry - itemsPerPage;
+  const currentEntries = data.slice(indexOfFirstEntry, indexOfLastEntry);
+
+  const handlePageClick = (pageNum) => {
+    setCurrentPage(pageNum);
+  };
+
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1); 
+  };
+
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h2 style={styles.title}>
-        <LocationOnIcon sx={{ fontSize: 30 }} />
-          Zone List</h2>
-        <button onClick={handleAdd} style={styles.addButton}>+ Add Location</button>
+    <MDBox ml={miniSidenav ? "80px" : "250px"} p={2}>
+    <div className="table-container">
+      <div className="table-header">
+        <h2 className="table-title">
+          <LocationOnIcon sx={{ fontSize: 30 }} /> Zone List
+        </h2>
+        <button onClick={handleAdd} className="add-button">+ Add Location</button>
+      </div>
+
+      {/* Entries Dropdown */}
+      <div className="entries-dropdown">
+        <label style={{fontSize:15,color:'green'}}>Show entries: </label>
+        <select value={itemsPerPage} onChange={handleItemsPerPageChange} style={{backgroundColor:'skyblue'}}>
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+        </select>
       </div>
 
       {loading ? (
-        <p style={styles.loadingText}>Loading locations...</p>
+        <p className="loading-text">Loading locations...</p>
       ) : (
-        <table style={styles.table}>
-          <thead>
-            <tr style={styles.tableHeader}>
-              <th style={styles.tableCell}>ID</th>
-              <th style={styles.tableCell}>Address</th>
-              <th style={styles.tableCell}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((user) => (
-              <tr key={user._id} style={styles.tableRow}>
-                <td style={styles.tableCell}>{user._id}</td>
-                <td style={styles.tableCell}>{user.address}</td>
-                <td style={styles.tableCell}>
-                  <button
-                    onClick={() => handleEdit(user._id)}
-                    style={styles.editBtn}
-                  >
-                  <EditIcon style={{ fontSize: "24px" }} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(user._id)}
-                    style={styles.deleteBtn}
-                  >
-                    <DeleteIcon style={styles.icon} />
-                  </button>
-                </td>
+        <>
+          <table className="data-table">
+            <thead>
+              <tr className="table-head-row">
+                <th className="table-cell">ID</th>
+                <th className="table-cell">Zone Name</th>
+                <th className="table-cell">Action</th>
               </tr>
+            </thead>
+            <tbody>
+              {currentEntries.map((user) => (
+                <tr key={user._id} className="table-row">
+                  <td className="table-cell">{user._id}</td>
+                  <td className="table-cell">{user.address}</td>
+                  <td className="table-cell">
+                    <button onClick={() => handleEdit(user._id)} className="edit-btn">
+                      <EditIcon style={{ fontSize: "24px" }} />
+                    </button>
+                    <button onClick={() => handleDelete(user._id)} className="delete-btn">
+                      <DeleteIcon />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Pagination Buttons */}
+          <div className="pagination-controls">
+            <button onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} disabled={currentPage === 1}>
+              Previous
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => handlePageClick(i + 1)}
+                className={currentPage === i + 1 ? "active-page" : ""}
+              >
+                {i + 1}
+              </button>
             ))}
-          </tbody>
-        </table>
+
+            <button onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>
+              Next
+            </button>
+          </div>
+        </>
       )}
     </div>
+    </MDBox>
   );
 }
-
-const styles = {
-  container: {
-    padding: "30px",
-    paddingLeft: "170px",
-    maxWidth: "1000px",
-    margin: "0 auto",
-    fontFamily: "Arial",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px",
-  },
-  title: {
-    fontSize: "28px",
-    fontWeight: "bold",
-    color: "#333",
-  },
-  addButton: {
-    padding: "12px 25px",
-    backgroundColor: "#007bff",
-    color: "white",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-    fontSize: "16px",
-    transition: "background-color 0.3s ease",
-  },
-  loadingText: {
-    fontSize: "18px",
-    fontWeight: "bold",
-    color: "#007bff",
-    marginTop: "20px",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    marginTop: "20px",
-  },
-  tableHeader: {
-    backgroundColor: "#f1f1f1",
-    color: "#333",
-    textAlign: "left",
-    fontWeight: "bold",
-    fontSize: "16px",
-  },
-  tableRow: {
-    transition: "background-color 0.3s ease",
-    cursor: "pointer",
-  },
-  tableCell: {
-    padding: "12px 15px",
-    border: "1px solid #ddd",
-    textAlign: "left",
-    fontSize: "14px",
-  },
-  editBtn: {
-    padding: "8px 16px",
-    backgroundColor: "#28a745",
-    color: "#fff",
-    border: "none",
-    borderRadius: "5px",
-    marginRight: "10px",
-    cursor: "pointer",
-    transition: "background-color 0.3s ease",
-  },
-  deleteBtn: {
-    padding: "8px 16px",
-    backgroundColor: "#dc3545",
-    color: "#fff",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-    transition: "background-color 0.3s ease",
-  },
- 
-  // Hover Effects
-  tableRowHover: {
-    backgroundColor: "#f5f9ff", // Light blue color on hover
-  },
-
-  editBtnHover: {
-    backgroundColor: "#218838", // Darker green when hovered
-  },
-
-  deleteBtnHover: {
-    backgroundColor: "#c82333", // Darker red when hovered
-  },
-};
 
 export default Table;

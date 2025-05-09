@@ -5,6 +5,8 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaf
 import L from 'leaflet'; 
 
 import 'leaflet/dist/leaflet.css';  
+import MDBox from "components/MDBox";
+import { useMaterialUIController } from "context";
 
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -17,6 +19,7 @@ L.Icon.Default.mergeOptions({
 
 function LocationMarker({ onLocationSelect }) {
   const [position, setPosition] = useState(null);
+   
 
   useMapEvents({
     click(e) {
@@ -47,6 +50,8 @@ LocationMarker.propTypes = {
 };
 
 function AddServiceArea() {
+  const [controller] = useMaterialUIController();
+    const { miniSidenav } = controller;
   const [range, setRange] = useState(3200); 
   const [areaTitle, setAreaTitle] = useState("");
   const position = [29.1492, 75.7217]; 
@@ -76,6 +81,7 @@ function AddServiceArea() {
   };
 
   return (
+     <MDBox ml={miniSidenav ? "80px" : "250px"} p={2}>
     <div style={{ padding: "30px", maxWidth: "650px", margin: "0 auto", fontFamily: "Arial" }}>
       <h2>Service Area Management</h2>
 
@@ -124,6 +130,7 @@ function AddServiceArea() {
         <h4 style={{color:'black'}}>Save Service Area</h4>
       </Button>
     </div>
+    </MDBox>
   );
 }
 

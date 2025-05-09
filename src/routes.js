@@ -45,14 +45,16 @@ import Profile from "layouts/profile";
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
 import Table from "layouts/servicearea/ServiceTable";
+import Demo from 'layouts/dashboard/Demo'
 
 // @mui icons
 import Icon from "@mui/material/Icon";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import CategoryIcon from "@mui/icons-material/Category";
+import Categories from "layouts/Categories/Categories";
 
 
-import ServiceArea from "layouts/servicearea/AddServiceArea";
+
 const routes = [
   {
     type: "collapse",
@@ -60,7 +62,7 @@ const routes = [
     key: "dashboard",
     icon: <Icon fontSize="small">dashboard</Icon>,
     route: "/dashboard",
-    component: <Dashboard />,
+    component: <Demo />,
   },
   {
     type: "collapse",
@@ -75,8 +77,8 @@ const routes = [
     name: "Categories",
     key: "servicearea",
     icon: <CategoryIcon fontSize="small" />,
-    route: "/dashboard",
-    component: <Dashboard />,
+    route: "/categories",
+    component: <Categories />,
   },
   {
     type: "collapse",

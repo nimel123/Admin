@@ -123,36 +123,9 @@ export default function App() {
     </MDBox>
   );
 
-  return direction === "rtl" ? (
-    <CacheProvider value={rtlCache}>
-      <ThemeProvider theme={darkMode ? themeDarkRTL : themeRTL}>
-        <CssBaseline />
-        {layout === "dashboard" && (
-          <>
-
-          
-            <Sidenav
-              color={sidenavColor}
-              brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
-              brandName="Material Dashboard 2"
-              routes={routes}
-              onMouseEnter={handleOnMouseEnter}
-              onMouseLeave={handleOnMouseLeave}
-            />
-            <Configurator />
-            {configsButton}
-          </>
-        )}
-        {layout === "vr" && <Configurator />}
-        <Routes>
-          {getRoutes(routes)}
-          <Route path="*" element={<Navigate to="/dashboard" />} />
-         
-        </Routes>
-      </ThemeProvider>
-    </CacheProvider>
-  ) : (
-    <ThemeProvider theme={darkMode ? themeDark : theme}>
+ return direction === "rtl" ? (
+  <CacheProvider value={rtlCache}>
+    <ThemeProvider theme={darkMode ? themeDarkRTL : themeRTL}>
       <CssBaseline />
       {layout === "dashboard" && (
         <>
@@ -166,15 +139,47 @@ export default function App() {
           />
           <Configurator />
           {configsButton}
+
+          {/* 👇 Dashboard layout content with Routes */}
+          <MDBox ml={miniSidenav ? "80px" : "250px"} p={2}>
+            <Routes>
+              {getRoutes(routes)}
+              <Route path="/addlocation" element={<AddServiceArea />} />
+              <Route path="*" element={<Navigate to="/dashboard" />} />
+            </Routes>
+          </MDBox>
         </>
       )}
       {layout === "vr" && <Configurator />}
-      <Routes>
-        {getRoutes(routes)}
-        <Route path="*" element={<Navigate to="/dashboard" />} />
-        <Route path="/addlocation" element={<AddServiceArea />} />
-      </Routes>
     </ThemeProvider>
-    
-  );
+  </CacheProvider>
+) : (
+  <ThemeProvider theme={darkMode ? themeDark : theme}>
+    <CssBaseline />
+    {layout === "dashboard" && (
+      <>
+        <Sidenav
+          color={sidenavColor}
+          brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
+          brandName="Material Dashboard 2"
+          routes={routes}
+          onMouseEnter={handleOnMouseEnter}
+          onMouseLeave={handleOnMouseLeave}
+        />
+        <Configurator />
+        {configsButton}
+
+        {/* 👇 Dashboard layout content with Routes */}
+       
+          <Routes>
+            {getRoutes(routes)}
+            <Route path="/addlocation" element={<AddServiceArea />} />
+            <Route path="*" element={<Navigate to="/dashboard" />} />
+          </Routes>
+       
+      </>
+    )}
+    {layout === "vr" && <Configurator />}
+  </ThemeProvider>
+);
 }
