@@ -29,6 +29,8 @@ import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "co
 // Images
 import brandWhite from "assets/images/logo-ct.png";
 import brandDark from "assets/images/logo-ct-dark.png";
+import AddCategories from "layouts/Categories/AddCategories";
+import Categories from "layouts/Categories/Categories";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -145,6 +147,8 @@ export default function App() {
             <Routes>
               {getRoutes(routes)}
               <Route path="/addlocation" element={<AddServiceArea />} />
+               <Route path="/addCategories" element={<AddCategories />} />
+                <Route path="/categories" element={<Categories />} />
               <Route path="*" element={<Navigate to="/dashboard" />} />
             </Routes>
           </MDBox>
@@ -173,6 +177,8 @@ export default function App() {
        
           <Routes>
             {getRoutes(routes)}
+              <Route path="/addCategories" element={<AddCategories />} />
+               <Route path="/categories" element={<Categories />} />
             <Route path="/addlocation" element={<AddServiceArea />} />
             <Route path="*" element={<Navigate to="/dashboard" />} />
           </Routes>

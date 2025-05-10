@@ -1,0 +1,91 @@
+.tabel-container {
+    padding-top: 50px;
+    padding-left: 20px;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.table-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.add-button {
+    padding: 12px 25px;
+    background-color: green;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background-color 0.3s ease;
+}
+
+.add-button:hover {
+    background-color: #0056b3;
+}
+
+.table-head {
+    background-color: lightgray;
+    color: black;
+    font-weight: bold;
+    font-size: 18px;
+    height: 50px;
+}
+
+.table-name {
+    max-width: 300px;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    text-align: left;
+    font-size: 14px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.table-items {
+    width: 150px;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    text-align: left;
+    font-size: 14px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.table-publish {
+    width: 150px;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    text-align: left;
+    font-size: 14px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.table-action {
+    width: 170px;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    text-align: left;
+    font-size: 14px;
+    white-space: normal;
+    word-break: break-word;
+}
