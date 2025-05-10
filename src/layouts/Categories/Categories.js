@@ -97,7 +97,7 @@ function Categories() {
                                 <td className="table-cell">
                                     <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
                                         <img
-                                            src={`http://localhost:5000${item.file}`}
+                                            src={`https://node-m8jb.onrender.com${item.file}`}
                                             alt="category"
                                             style={{ width: "50px", height: "50px" }}
                                         />
