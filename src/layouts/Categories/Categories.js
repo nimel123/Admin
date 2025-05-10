@@ -106,7 +106,7 @@ function Categories() {
                                 </td>
                                 <td className="table-cell">
                                     <img
-                                        src={`http://localhost:5000${item.file}`}
+                                        src={`https://node-m8jb.onrender.com${item.file}`}
                                         alt="category"
                                         style={{ width: "50px", height: "50px" }}
                                     />
