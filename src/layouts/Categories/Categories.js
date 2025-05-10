@@ -15,7 +15,7 @@ function Categories() {
 
     useEffect(() => {
         const getCategories = async () => {
-            const result = await fetch('http://localhost:5000/Getcategories');
+            const result = await fetch('https://node-m8jb.onrender.com/Getcategories');
             if (result.status === 200) {
                 const json = await result.json();
                 setCategories(json.result);
@@ -29,7 +29,7 @@ function Categories() {
         if (!confirmDelete) return;
 
         try {
-            const result = await fetch(`http://localhost:5000/delete/${id}`, {
+            const result = await fetch(`https://node-m8jb.onrender.com/delete/${id}`, {
                 method: "DELETE",
             });
 
@@ -46,7 +46,7 @@ function Categories() {
 
     const handlePublishToggle = async (id, currentValue) => {
         try {
-            const result = await fetch(`http://localhost:5000/togglepublish/${id}`, {
+            const result = await fetch(`https://node-m8jb.onrender.com/togglepublish/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ publish: !currentValue }),

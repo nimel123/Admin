@@ -22,7 +22,7 @@ function AddCategories() {
       formData.append("description", description);
       formData.append("file", file);
 
-      const result = await fetch("http://localhost:5000/addcategories", {
+      const result = await fetch("https://node-m8jb.onrender.com/addcategories", {
         method: "POST",
         body: formData,
       });
