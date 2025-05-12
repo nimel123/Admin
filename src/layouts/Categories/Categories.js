@@ -26,7 +26,7 @@ const Categories = () => {
 
   useEffect(() => {
     const getCategories = async () => {
-      const result = await fetch('http://localhost:5000/getCategories');
+      const result = await fetch('https://node-m8jb.onrender.com/getCategories');
       if (result.status === 200) {
         const json = await result.json();
         setCategories(json.result);
