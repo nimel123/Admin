@@ -24,7 +24,7 @@ function AddCategories() {
 
   useEffect(() => {
     const getcitydata = async () => {
-      const result = await fetch('http://localhost:5000/getcitydata');
+      const result = await fetch('https://node-m8jb.onrender.com/getcitydata');
       const json = await result.json();
       setDatacity(json);
     };
@@ -51,9 +51,9 @@ function AddCategories() {
       });
       formData.append("city", city);
       formData.append("zones", JSON.stringify(arrayZone));
-      
 
-      const result = await fetch("http://localhost:5000/addcategories", {
+
+      const result = await fetch("https://node-m8jb.onrender.com/addcategories", {
         method: "POST",
         body: formData,
       });
