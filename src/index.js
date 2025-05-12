@@ -7,7 +7,8 @@ import App from "App";
 import { MaterialUIControllerProvider } from "context";
 
 import 'leaflet/dist/leaflet.css';
-import CategoryForm from "layouts/Categories/AddCategories";
+import Categories from "NewTable";
+
 
 
 

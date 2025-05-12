@@ -19,14 +19,13 @@ import { useMaterialUIController } from "context";
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
-  const [count,setCount]=useState();
   const navigate=useNavigate();
     const [controller] = useMaterialUIController();
       const { miniSidenav } = controller;
 
   useEffect(() => {
     const getCategories = async () => {
-      const result = await fetch('http://localhost:5000/getCategories');
+      const result = await fetch('https://node-m8jb.onrender.com/Getcategories');
       if (result.status === 200) {
         const json = await result.json();
         setCategories(json.result);
@@ -48,7 +47,6 @@ const Categories = () => {
             if (result.status === 200) {
                 alert("Categories deleted successfully");
                 setCategories(categories.filter((item) => item._id !== id));
-                
             } else {
                 alert("Something went wrong");
             }
@@ -62,20 +60,19 @@ const Categories = () => {
     }
 
   return (
-     <MDBox ml={miniSidenav ? "80px" : "250px"} p={2}
-     sx={{marginTop:'40px'}}
-     >
-   
-      <Typography variant="h6" gutterBottom style={{marginLeft:30,fontSize:30}}>
+    <Box p={3} sx={{
+      marginLeft:'250px'
+    }}>
+      <Typography variant="h6" gutterBottom>
        Categories Lists
       </Typography>
 
         {/* Add Category Button */}
-        <MDBox
+        <Box
           sx={{
             position: 'absolute',
-            top: '60px',
-            right: '80px',
+            top: '35px',
+            right: '130px',
             zIndex: 1,
           }}
         >
@@ -83,54 +80,54 @@ const Categories = () => {
             variant="contained"
             color="primary"
             onClick={AddCate}
-            sx={{ fontSize: '14px', textTransform: 'none' ,borderRadius:5,color:'white !important'}}
+            sx={{ fontSize: '14px', textTransform: 'none' ,borderRadius:5}}
           >
             Add Categories
           </Button>
-        </MDBox>
+        </Box>
 
-      <MDBox
+      <Box
         position="relative"
         mt={4}
         display="flex"
         flexDirection="column"
         alignItems="center"
       >
-        <MDBox
+        <Box
           sx={{
             background: '#1A73E8',
-            color: 'white !important',
+            color: 'white',
             padding: '20px',
             borderRadius: '8px',
             fontWeight: 'bold',
             fontSize: '18px',
-            width: '90%',
+            width: '75%',
             maxWidth: '1000px',
             position: 'absolute',
             top: '-5',
             zIndex: 1,
-            height: '70px',
+            height: '35px',
             display: 'flex',
             alignItems: 'center',
           }}
         >
           Categories Table
-        </MDBox>
+        </Box>
 
         <TableContainer
           component={Paper}
           sx={{
             borderRadius: 2,
             mt: 5,
-            width: '95%',
+            width: '90%',
             maxWidth: '1000px',
             marginTop: 5,
-            border: '1px solid #ddd',
+            border: '1px solid #ddd', // Border for the entire table
           }}  
         >
           <Table>
-            <TableHead sx={{ backgroundColor: '#f8f9fa', height: 79 ,width:'168.5%'}}>
-              <TableRow style={{backgroundColor:'',width:'150%',justifyContent:'space-between'}}>
+            <TableHead sx={{ backgroundColor: '#f8f9fa', height: 90 }}>
+              <TableRow>
                 {['NAME', 'ITEMS', 'PUBLIC', 'ACTION'].map((heading) => (
                   <TableCell
                     key={heading}
@@ -139,10 +136,11 @@ const Categories = () => {
                       fontSize: '12px',
                       color: '#6c757d',
                       verticalAlign: 'bottom',
-                      width: heading === 'NAME' ? '47%' : heading === 'ITEMS' ? '10%' : heading === 'PUBLIC' ? '10%' : '10%',
+                      border: '1px solid #ddd', // Border for each column
+                      width: heading === 'NAME' ? '45%' : heading === 'ITEMS' ? '15%' : heading === 'PUBLIC' ? '10%' : '15%',
                     }}
                   >
-                    <h3 style={{marginTop:13,}}>{heading}</h3>
+                    {heading}
                   </TableCell>
                 ))}
               </TableRow>
@@ -151,8 +149,8 @@ const Categories = () => {
               {categories.map((item, index) => (
                 <TableRow key={index}>
                   {/* NAME */}
-                  <TableCell sx={{ width: '60%', border: '1px solid #ddd' }}>
-                    <MDBox display="flex" alignItems="center">
+                  <TableCell sx={{ width: '45%', border: '1px solid #ddd' }}>
+                    <Box display="flex" alignItems="center">
                       <Avatar
                         src={`https://node-m8jb.onrender.com${item.file}`}
                         sx={{ width: 36, height: 36, mr: 1.5 }}
@@ -160,22 +158,21 @@ const Categories = () => {
                       <Typography fontWeight={500} fontSize="14px">
                         {item.name}
                       </Typography>
-                    </MDBox>
+                    </Box>
                   </TableCell>
 
                   {/* ITEMS */}
-                  <TableCell sx={{ width: '10%', border: '1px solid #ddd' }}>
+                  <TableCell sx={{ width: '15%', border: '1px solid #ddd' }}>
                     <Typography fontWeight={500} fontSize="14px">
-                      {/* <Avatar
-                        // src={`https://node-m8jb.onrender.com${item.file}`}
-                        // sx={{ width: 36, height: 36, mr: 1.5 }}
-                      /> */}
-                      {item.subcat && Array.isArray(item.subcat) ? item.subcat.length : 0}
+                      <Avatar
+                        src={`https://node-m8jb.onrender.com${item.file}`}
+                        sx={{ width: 36, height: 36, mr: 1.5 }}
+                      />
                     </Typography>
                   </TableCell>
 
                   {/* PUBLIC */}
-                  <TableCell sx={{ width: '12%', border: '1px solid #ddd' }}>
+                  <TableCell sx={{ width: '10%', border: '1px solid #ddd' }}>
                     <Switch
                       checked={item.publish}
                       onChange={() => handlePublishToggle(item._id, item.publish)}
@@ -184,11 +181,11 @@ const Categories = () => {
                   </TableCell>
 
                   {/* ACTION */}
-                  <TableCell sx={{ width: '100%', border: '1px solid #ddd',display:'flex'}}>
-                    <Button size="big" sx={{ fontSize: '13px', textTransform: 'none',color:'green' }}>
+                  <TableCell sx={{ width: '15%', border: '1px solid #ddd' }}>
+                    <Button size="small" sx={{ fontSize: '13px', textTransform: 'none',color:'black' }}>
                       Edit
                     </Button>
-                    <Button size="small" sx={{ fontSize: '13px', textTransform: 'none',color:'red' }} onClick={() => handleDelete(item._id)}>
+                    <Button size="small" sx={{ fontSize: '13px', textTransform: 'none',color:'black' }} onClick={() => handleDelete(item._id)}>
                       Delete
                     </Button>
                   </TableCell>
@@ -197,8 +194,8 @@ const Categories = () => {
             </TableBody>
           </Table>
         </TableContainer>
-      </MDBox>
-    </MDBox>
+      </Box>
+    </Box>
   );
 };
 

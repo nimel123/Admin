@@ -67,7 +67,7 @@ export default function data() {
           </MDBox>
         ),
         employed: (
-          <MDTypography component="a" href="#" variant="caption" color="text" fontWeight="medium">
+          <MDTypography component="a" href="#" variant="caption" color="text" fontWeight="medium" >
             23/04/18
           </MDTypography>
         ),
