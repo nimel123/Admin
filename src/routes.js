@@ -67,7 +67,7 @@ const routes = [
   {
     type: "collapse",
     name: "Zone Management",
-    key: "servicearea",
+    key: "zone-management",
     icon: <LocationOnIcon fontSize="small" />,
     route: "/serviceArea",
     component: <Table />,

@@ -31,6 +31,7 @@ import brandWhite from "assets/images/logo-ct.png";
 import brandDark from "assets/images/logo-ct-dark.png";
 import AddCategories from "layouts/Categories/AddCategories";
 import Categories from "layouts/Categories/Categories";
+import GetSubCategories from "layouts/Categories/SubCategories";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -178,6 +179,7 @@ export default function App() {
           <Routes>
             {getRoutes(routes)}
               <Route path="/addCategories" element={<AddCategories />} />
+              <Route path="/getsubcate" element={<GetSubCategories/>} />
                <Route path="/categories" element={<Categories />} />
             <Route path="/addlocation" element={<AddServiceArea />} />
             <Route path="*" element={<Navigate to="/dashboard" />} />

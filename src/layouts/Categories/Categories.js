@@ -61,6 +61,10 @@ const Categories = () => {
         navigate('/addCategories')
     }
 
+    const handleSub=async(category)=>{
+       navigate('/getsubcate', { state: category });
+    }
+
   return (
      <MDBox ml={miniSidenav ? "80px" : "250px"} p={2}
      sx={{marginTop:'40px'}}
@@ -164,12 +168,8 @@ const Categories = () => {
                   </TableCell>
 
                   {/* ITEMS */}
-                  <TableCell sx={{ width: '10%', border: '1px solid #ddd' }}>
-                    <Typography fontWeight={500} fontSize="14px">
-                      {/* <Avatar
-                        // src={`https://node-m8jb.onrender.com${item.file}`}
-                        // sx={{ width: 36, height: 36, mr: 1.5 }}
-                      /> */}
+                  <TableCell sx={{ width: '10%', border: '1px solid #ddd' }} onClick={()=>handleSub(item)}>
+                    <Typography fontWeight={500} fontSize="14px" style={{cursor:'pointer'}}>
                       {item.subcat && Array.isArray(item.subcat) ? item.subcat.length : 0}
                     </Typography>
                   </TableCell>
