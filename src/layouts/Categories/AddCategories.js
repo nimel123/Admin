@@ -98,7 +98,7 @@ function AddCategories() {
   const handleZone = () => {
     if (zone && !arrayZone.includes(zone)) {
       setArrayZone([...arrayZone, zone]);
-      setZone(""); // optional: reset dropdown
+      setZone(""); 
     } else {
       alert("Zone already added or invalid.");
     }
@@ -129,7 +129,7 @@ function AddCategories() {
 
         <div className="form-group">
           <label>Select City</label>
-          <select value={city} onChange={(e) => setCity(e.target.value)} style={{ width: '100%', height: '30px' }}>
+          <select value={city} onChange={(e) => setCity(e.target.value)} style={{ width: '100%',  }}>
             <option value="">-- Select City --</option>
             {datacity.map((item, index) => (
               <option key={index} value={item.city}>
@@ -182,7 +182,7 @@ function AddCategories() {
 
         <div className="form-group">
           <label>Manage Categories</label>
-          <select value={selectedValue} onChange={handleChange} style={{ width: '130px', height: '30px' }}>
+          <select value={selectedValue} onChange={handleChange} style={{ width: '130px', }}>
             <option value="">-- Select --</option>
             <option value="Categories">Categories</option>
             <option value="Sub-Categories">Sub-Categories</option>

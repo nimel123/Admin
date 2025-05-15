@@ -1,0 +1,31 @@
+* {
+  font-family: 'Urbanist,Urbanist';
+}
+
+.city-container {
+  width: auto;
+  box-sizing: border-box;
+  padding: 16px;
+  margin-left: 40px;
+  margin-right: 40px;
+
+}
+
+.add-city-box {
+  width: 100%;
+  /* Make it full width */
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  font-family: 'Arial', sans-serif;
+}
+
+.table-header {
+
+  border: '1px solid #ddd';
+    padding:12px 12px 12px 20px;
+    text-align: 'left',
+}

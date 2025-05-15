@@ -11,19 +11,19 @@ import theme from "assets/theme";
 import themeRTL from "assets/theme/theme-rtl";
 import AddServiceArea from "layouts/servicearea/AddServiceArea";
 
-// Material Dashboard 2 React Dark Mode themes
+
 import themeDark from "assets/theme-dark";
 import themeDarkRTL from "assets/theme-dark/theme-rtl";
 
-// RTL plugins
+
 import rtlPlugin from "stylis-plugin-rtl";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 
-// Material Dashboard 2 React routes
+
 import routes from "routes";
 
-// Material Dashboard 2 React contexts
+
 import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "context";
 
 // Images
@@ -32,6 +32,9 @@ import brandDark from "assets/images/logo-ct-dark.png";
 import AddCategories from "layouts/Categories/AddCategories";
 import Categories from "layouts/Categories/Categories";
 import GetSubCategories from "layouts/Categories/SubCategories";
+import EditSub from "layouts/Categories/EditSubCate";
+import City from "layouts/City Management/City";
+import CityTable from "layouts/City Management/CityTable";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -126,9 +129,41 @@ export default function App() {
     </MDBox>
   );
 
- return direction === "rtl" ? (
-  <CacheProvider value={rtlCache}>
-    <ThemeProvider theme={darkMode ? themeDarkRTL : themeRTL}>
+  return direction === "rtl" ? (
+    <CacheProvider value={rtlCache}>
+      <ThemeProvider theme={darkMode ? themeDarkRTL : themeRTL}>
+        <CssBaseline />
+        {layout === "dashboard" && (
+          <>
+            <Sidenav
+              color={sidenavColor}
+              brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
+              brandName="Material Dashboard 2"
+              routes={routes}
+              onMouseEnter={handleOnMouseEnter}
+              onMouseLeave={handleOnMouseLeave}
+            />
+            <Configurator />
+            {configsButton}
+
+            {/* 👇 Dashboard layout content with Routes */}
+            <MDBox ml={miniSidenav ? "80px" : "250px"} p={2}>
+              <Routes>
+                {getRoutes(routes)}
+                <Route path="/addlocation" element={<AddServiceArea />} />
+                <Route path="/addCategories" element={<AddCategories />} />
+                <Route path="/categories" element={<Categories />} />
+                <Route path="/edit-sub" element={<EditSub />} />
+                <Route path="*" element={<Navigate to="/dashboard" />} />
+              </Routes>
+            </MDBox>
+          </>
+        )}
+        {layout === "vr" && <Configurator />}
+      </ThemeProvider>
+    </CacheProvider>
+  ) : (
+    <ThemeProvider theme={darkMode ? themeDark : theme}>
       <CssBaseline />
       {layout === "dashboard" && (
         <>
@@ -144,50 +179,22 @@ export default function App() {
           {configsButton}
 
           {/* 👇 Dashboard layout content with Routes */}
-          <MDBox ml={miniSidenav ? "80px" : "250px"} p={2}>
-            <Routes>
-              {getRoutes(routes)}
-              <Route path="/addlocation" element={<AddServiceArea />} />
-               <Route path="/addCategories" element={<AddCategories />} />
-                <Route path="/categories" element={<Categories />} />
-              <Route path="*" element={<Navigate to="/dashboard" />} />
-            </Routes>
-          </MDBox>
+
+          <Routes>
+            {getRoutes(routes)}
+            <Route path="/addCategories" element={<AddCategories />} />
+            <Route path="/getsubcate" element={<GetSubCategories />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/addlocation" element={<AddServiceArea />} />
+            <Route path="/edit-sub" element={<EditSub />} />
+            <Route path="/city" element={<City />} />
+            <Route path="/citytable" element={<CityTable />} />
+            <Route path="*" element={<Navigate to="/dashboard" />} />
+          </Routes>
+
         </>
       )}
       {layout === "vr" && <Configurator />}
     </ThemeProvider>
-  </CacheProvider>
-) : (
-  <ThemeProvider theme={darkMode ? themeDark : theme}>
-    <CssBaseline />
-    {layout === "dashboard" && (
-      <>
-        <Sidenav
-          color={sidenavColor}
-          brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
-          brandName="Material Dashboard 2"
-          routes={routes}
-          onMouseEnter={handleOnMouseEnter}
-          onMouseLeave={handleOnMouseLeave}
-        />
-        <Configurator />
-        {configsButton}
-
-        {/* 👇 Dashboard layout content with Routes */}
-       
-          <Routes>
-            {getRoutes(routes)}
-              <Route path="/addCategories" element={<AddCategories />} />
-              <Route path="/getsubcate" element={<GetSubCategories/>} />
-               <Route path="/categories" element={<Categories />} />
-            <Route path="/addlocation" element={<AddServiceArea />} />
-            <Route path="*" element={<Navigate to="/dashboard" />} />
-          </Routes>
-       
-      </>
-    )}
-    {layout === "vr" && <Configurator />}
-  </ThemeProvider>
-);
+  );
 }

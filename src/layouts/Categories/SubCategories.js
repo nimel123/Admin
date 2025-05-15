@@ -12,6 +12,7 @@ import {
     Select,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
 
 function GetSubCategories() {
     const location = useLocation();
@@ -25,6 +26,7 @@ function GetSubCategories() {
     const [selectedZone, setSelectedZone] = useState("All");
     const [entriesToShow, setEntriesToShow] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
+    const navigate=useNavigate();
 
     useEffect(() => {
         const updated = category?.subcat?.map((sub) => ({
@@ -205,7 +207,7 @@ function GetSubCategories() {
                                 </>
                             ) : (
                                 <>
-                                    <Box sx={{ p: 1, borderRight: "1px solid #ccc" }}>
+                                    <Box sx={{ p: 1, borderRight: "1px solid #ccc" ,cursor:"pointer"}} onClick={()=>navigate('/edit-sub',{ state: category })} >
                                         <Box sx={{ display: "flex", alignItems: "center" }}>
                                             <img
                                                 src={`https://node-m8jb.onrender.com${sub.file}`}

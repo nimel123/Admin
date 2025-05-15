@@ -52,6 +52,8 @@ import Icon from "@mui/material/Icon";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import CategoryIcon from "@mui/icons-material/Category";
 import Categories from "layouts/Categories/Categories";
+import City from "layouts/City Management/City";
+import CityTable from "layouts/City Management/CityTable";
 
 
 
@@ -63,6 +65,14 @@ const routes = [
     icon: <Icon fontSize="small">dashboard</Icon>,
     route: "/dashboard",
     component: <Demo />,
+  },
+  {
+    type: "collapse",
+    name: "City Management",
+    key: "city-management",
+    icon: <Icon fontSize="small">City Management</Icon>,
+    route: "/citytable",
+    component: <CityTable />,
   },
   {
     type: "collapse",
