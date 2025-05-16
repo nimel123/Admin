@@ -5,22 +5,11 @@ import '../servicearea/Table.css';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import MDBox from "components/MDBox";
-import { useMaterialUIController } from "context"; // ← required to read miniSidenav
+import { useMaterialUIController, setMiniSidenav } from "context";
 import {
-  FaMoneyBillWave,
-  FaStore,
-  FaShoppingCart,
-  FaBoxOpen,
-  FaPercentage,
-  FaUserFriends,
-  FaTruck,
-  FaCheck,
-  FaShippingFast,
-  FaClipboardCheck,
-  FaTimes,
-  FaExclamationCircle,
-  FaClock,
-  FaClipboardList,
+  FaMoneyBillWave, FaStore, FaShoppingCart, FaBoxOpen, FaPercentage,
+  FaUserFriends, FaTruck, FaCheck, FaShippingFast, FaClipboardCheck,
+  FaTimes, FaExclamationCircle, FaClock, FaClipboardList,
 } from "react-icons/fa";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -46,8 +35,23 @@ const orderStatus = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [controller] = useMaterialUIController();
+  const [controller, dispatch] = useMaterialUIController();
   const { miniSidenav } = controller;
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setMiniSidenav(dispatch, false); // Always keep it expanded
+      } else {
+        setMiniSidenav(dispatch, false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Initial run
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, [dispatch]);
 
   function handleEdit() {
     alert("This is not editable at this moment");
@@ -58,7 +62,7 @@ export default function Dashboard() {
   }
 
   return (
-    <MDBox ml={miniSidenav ? "80px" : "250px"} p={2}>
+    <MDBox ml="250px" p={2}>
       <div className="dashboard-container">
         <div className="card-grid">
           {data.map((item, index) => (
@@ -70,12 +74,8 @@ export default function Dashboard() {
               <div className="card-header">
                 <div className="icon">{item.icon}</div>
                 <div>
-                  <div className="card-title">
-                    <text style={{color:'black'}}>{item.title}</text>
-                    </div>
-                  <div className="card-value">
-                  <text style={{color:'black'}}>{item.value}</text>
-                  </div>
+                  <div className="card-title"><text style={{ color: 'black' }}>{item.title}</text></div>
+                  <div className="card-value"><text style={{ color: 'black' }}>{item.value}</text></div>
                 </div>
               </div>
             </div>
@@ -96,24 +96,15 @@ export default function Dashboard() {
         </div>
 
         {/* Pie Charts */}
-        <div
-          className="charts-container"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginTop: "30px",
-          }}
-        >
+        <div className="charts-container" style={{ display: "flex", justifyContent: "space-between", marginTop: "30px" }}>
           <div className="chart-item" style={{ width: "30%" }}>
-            <h4 style={{ textAlign: "center" }}>
-              Total Earnings and Commission
-            </h4>
+            <h4 style={{ textAlign: "center" }}>Total Earnings and Commission</h4>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
                   data={[
-                    { name: "Earnings", value: 440, color: "green" },
-                    { name: "Commission", value: 100, color: "red" },
+                    { name: "Earnings", value: 440 },
+                    { name: "Commission", value: 100 },
                   ]}
                   dataKey="value"
                   outerRadius="80%"
@@ -121,7 +112,7 @@ export default function Dashboard() {
                   <Cell fill="lightblue" />
                   <Cell fill="purple" />
                 </Pie>
-                <Tooltip  />
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>

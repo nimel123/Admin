@@ -54,6 +54,7 @@ import CategoryIcon from "@mui/icons-material/Category";
 import Categories from "layouts/Categories/Categories";
 import City from "layouts/City Management/City";
 import CityTable from "layouts/City Management/CityTable";
+import UserData from "layouts/Users/Users";
 
 
 
@@ -90,6 +91,15 @@ const routes = [
     route: "/categories",
     component: <Categories />,
   },
+   {
+    type: "collapse",
+    name: "UserData",
+    key: "userdata",
+    icon: <CategoryIcon fontSize="small" />,
+    route: "/user-data",
+    component: <UserData />,
+  },
+
   {
     type: "collapse",
     name: "Tables",

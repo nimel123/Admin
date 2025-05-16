@@ -8,12 +8,11 @@ import Cities from "./Indiancities";
 import haryanaCities from "./Indiancities";
 import "leaflet/dist/leaflet.css";
 import { useNavigate } from "react-router-dom";
-
 import {
     MapContainer,
     TileLayer,
     Marker,
-    Popup, // ✅ FIXED HERE
+    Popup,
     useMap,
     useMapEvents,
 } from "react-leaflet";
@@ -29,7 +28,6 @@ L.Icon.Default.mergeOptions({
         "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Recenter map on location change
 function RecenterMap({ latlng }) {
     const map = useMap();
     useEffect(() => {
@@ -43,7 +41,6 @@ RecenterMap.propTypes = {
     latlng: PropTypes.arrayOf(PropTypes.number).isRequired,
 };
 
-// Handle map clicks for reverse geocoding
 function ClickHandler({ onClickLocation }) {
     useMapEvents({
         click(e) {
@@ -69,7 +66,7 @@ ClickHandler.propTypes = {
 function City() {
     const [controller] = useMaterialUIController();
     const { miniSidenav } = controller;
-    const navigate=useNavigate();
+    const navigate = useNavigate();
 
     const [selectedState, setSelectedState] = useState("");
     const [selectedCity, setSelectedCity] = useState("");
@@ -111,9 +108,7 @@ function City() {
 
         if (city && selectedState) {
             const address = `${city}, ${selectedState}, India`;
-            fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
-            )
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
                 .then((res) => res.json())
                 .then((data) => {
                     if (data && data.length > 0) {
@@ -128,92 +123,18 @@ function City() {
         }
     };
 
-    const cityList =
-        selectedState === "Haryana" ? haryanaCities : selectedState ? Cities[selectedState] || [] : [];
-
-    useEffect(() => {
-        if (selectedCity && selectedState) {
-            const address = `${selectedCity}, ${selectedState}, India`;
-            fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
-            )
-                .then((res) => res.json())
-                .then((data) => {
-                    if (data && data.length > 0) {
-                        setCityCoordinates([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
-                    } else {
-                        setCityCoordinates(null);
-                    }
-                })
-                .catch(() => setCityCoordinates(null));
-        }
-    }, [selectedCity, selectedState]);
-
-    useEffect(() => {
-        if (searchTerm.length < 3) {
-            setSuggestions([]);
-            return;
-        }
-
-        const controller = new AbortController();
-        const signal = controller.signal;
-
-        const timer = setTimeout(() => {
-            fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(
-                    searchTerm + ", India"
-                )}&limit=5`,
-                { signal }
-            )
-                .then((res) => res.json())
-                .then((data) => {
-                    if (data) {
-                        setSuggestions(data);
-                        setShowSuggestions(true);
-                    }
-                })
-                .catch((err) => {
-                    if (err.name !== "AbortError") {
-                        console.error("Search API error:", err);
-                    }
-                });
-        }, 300);
-
-        return () => {
-            clearTimeout(timer);
-            controller.abort();
-        };
-    }, [searchTerm]);
-
-    const handleSuggestionClick = (item) => {
-        const address = item.address || {};
-        const city =
-            address.city ||
-            address.town ||
-            address.village ||
-            address.hamlet ||
-            item.display_name.split(",")[0] ||
-            "";
-        const state = address.state || "";
-
-        setSelectedCity(city);
-        setSelectedState(state);
-        setCityCoordinates([parseFloat(item.lat), parseFloat(item.lon)]);
-        setSearchTerm(item.display_name);
-        setSuggestions([]);
-        setShowSuggestions(false);
-    };
-
-    const handleAddZone = () => {
-        if (!searchTerm || !cityCoordinates) return;
+    const handleAddCityZone = () => {
+        if (!selectedCity || !selectedState || !cityCoordinates) return;
 
         const exists = zones.some(
-            (zone) => zone.lat === cityCoordinates[0] && zone.lon === cityCoordinates[1]
+            (zone) =>
+                zone.lat === cityCoordinates[0] &&
+                zone.lon === cityCoordinates[1]
         );
         if (exists) return;
 
         const newZone = {
-            name: searchTerm,
+            name: `${selectedCity}, ${selectedState}`,
             lat: cityCoordinates[0],
             lon: cityCoordinates[1],
         };
@@ -229,88 +150,81 @@ function City() {
         setShowSuggestions(false);
     };
 
+    const cityList =
+        selectedState === "Haryana" ? haryanaCities : selectedState ? Cities[selectedState] || [] : [];
+
+    useEffect(() => {
+        if (selectedCity && selectedState) {
+            const address = `${selectedCity}, ${selectedState}, India`;
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data && data.length > 0) {
+                        setCityCoordinates([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+                    } else {
+                        setCityCoordinates(null);
+                    }
+                })
+                .catch(() => setCityCoordinates(null));
+        }
+    }, [selectedCity, selectedState]);
+
     return (
         <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "40px" }}>
             <div className="city-container">
                 <h1>City Management</h1>
                 <div className="add-city-box">
                     <h2>Add City</h2>
-                    <div className="form-row" style={{ display: "flex", gap: "20px" }}>
-                        <div className="form-group" style={{ flex: 1 }}>
-                            <label>Select State</label>
-                            <select value={selectedState} onChange={handleStateChange}>
-                                <option value="">-- Select State --</option>
-                                {States.map((state, index) => (
-                                    <option key={index} value={state}>
-                                        {state}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {selectedState && (
-                            <div className="form-group" style={{ flex: 1 }}>
-                                <label>Select City</label>
-                                <select value={selectedCity} onChange={handleCityChange}>
-                                    <option value="">-- Select City --</option>
-                                    {cityList.map((city, index) => (
-                                        <option key={index} value={city}>
-                                            {city}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
+                    {/* Select State */}
+                    <div className="form-group" style={{ flex: 1 }}>
+                        <label>Select State</label>
+                        <select value={selectedState} onChange={handleStateChange}>
+                            <option value="">-- Select State --</option>
+                            {States.map((state, index) => (
+                                <option key={index} value={state}>
+                                    {state}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
-                    {selectedCity && (
-                        <div className="search-container" ref={searchRef} style={{ marginTop: "20px", position: "relative", maxWidth: "400px", display: "flex", gap: "8px", alignItems: "flex-end" }}>
-                            <div style={{ flex: 1, position: "relative" }}>
-                                <label>Search Location</label>
-                                <input
-                                    type="text"
-                                    placeholder="Type location name..."
-                                    value={searchTerm}
-                                    onChange={(e) => {
-                                        setSearchTerm(e.target.value);
-                                        setShowSuggestions(true);
-                                    }}
-                                    onFocus={() => {
-                                        if (suggestions.length > 0) setShowSuggestions(true);
-                                    }}
-                                    style={{ width: "100%", padding: "8px", fontSize: "16px" }}
-                                />
-                                {showSuggestions && suggestions.length > 0 && (
-                                    <ul style={{ listStyleType: "none", margin: 0, padding: "0", border: "1px solid #ccc", borderTop: "none", maxHeight: "200px", overflowY: "auto", background: "white", position: "absolute", width: "100%", zIndex: 1000 }}>
-                                        {suggestions.map((item, index) => (
-                                            <li key={index} onClick={() => handleSuggestionClick(item)} style={{ padding: "8px", cursor: "pointer", borderBottom: "1px solid #eee" }} onMouseDown={(e) => e.preventDefault()}>
-                                                {item.display_name}
-                                            </li>
+                    {/* Select City and Add Button on same row, below State */}
+                    {selectedState && (
+                        <>
+                            <div style={{ display:'flex',flexDirection:'row'}}>
+                                <div className="form-group" style={{ flex: 1 }}>
+                                    <label>Select City</label>
+                                    <select value={selectedCity} onChange={handleCityChange} style={{width:'92%'}}>
+                                        <option value="">-- Select City --</option>
+                                        {cityList.map((city, index) => (
+                                            <option key={index} value={city}>
+                                                {city}
+                                            </option>
                                         ))}
-                                    </ul>
-                                )}
+                                    </select>
+                                </div>
+                    
+                                <button
+                                    onClick={handleAddCityZone}
+                                    style={{
+                                        height: "36px",
+                                        padding: "0 12px",
+                                        backgroundColor: "#1976d2",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "5px",
+                                        cursor: "pointer",
+                                        marginTop:38,
+                                        marginRight:26
+                                    }}
+                                >
+                                    + Add City
+                                </button>
                             </div>
-
-
-
-                            <button
-                                onClick={handleAddZone}
-                                disabled={!cityCoordinates || !searchTerm}
-                                style={{
-                                    padding: "10px 15px",
-                                    cursor: cityCoordinates && searchTerm ? "pointer" : "not-allowed",
-                                    backgroundColor: cityCoordinates && searchTerm ? "#1976d2" : "#ccc",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    fontWeight: "bold",
-                                }}
-                                title={cityCoordinates && searchTerm ? "Add this location as a zone" : "Select a valid location first"}
-                            >
-                                Add Zone
-                            </button>
-                        </div>
+                        </>
                     )}
+
+                    {/* Zones */}
                     {zones.length > 0 && (
                         <div style={{ marginTop: "20px" }}>
                             <h3 style={{ fontSize: "16px", marginBottom: "10px" }}>Saved Zones</h3>
@@ -337,7 +251,7 @@ function City() {
                                         }}
                                         title={zone.name}
                                     >
-                                        <strong>{zone.name.split(",")[0]}</strong> {/* Display ke liye comma se pehla part */}
+                                        <strong>{zone.name.split(",")[0]}</strong>
                                         <span style={{ color: "red", fontWeight: "bold" }}>×</span>
                                     </div>
                                 ))}
@@ -345,14 +259,13 @@ function City() {
                         </div>
                     )}
 
-                   
+                    {/* Map */}
                     {cityCoordinates && (
                         <MapContainer
                             center={cityCoordinates}
                             zoom={12}
                             style={{ height: "400px", width: "100%", marginTop: "20px" }}
                         >
-                            {/* Hybrid (satellite + labels) */}
                             <TileLayer
                                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                                 attribution='Tiles &copy; <a href="https://www.esri.com/">Esri</a>'
@@ -361,7 +274,6 @@ function City() {
                                 url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
                                 attribution="Labels &copy; Esri"
                             />
-
                             <Marker position={cityCoordinates}>
                                 <Popup>{selectedCity}, {selectedState}</Popup>
                             </Marker>
@@ -369,14 +281,11 @@ function City() {
                             <ClickHandler onClickLocation={handleMapClick} />
                         </MapContainer>
                     )}
-
                 </div>
 
-                <div className="button-group" >
-                    <button className="save-btn">
-                        Save
-                    </button>
-                    <button className="back-btn" onClick={()=>navigate(-1)}>Back</button>
+                <div className="button-group" style={{ marginTop: "20px" }}>
+                    <button className="save-btn">Save</button>
+                    <button className="back-btn" onClick={() => navigate(-1)}>Back</button>
                 </div>
             </div>
         </MDBox>

@@ -35,6 +35,7 @@ import GetSubCategories from "layouts/Categories/SubCategories";
 import EditSub from "layouts/Categories/EditSubCate";
 import City from "layouts/City Management/City";
 import CityTable from "layouts/City Management/CityTable";
+import UserData from "layouts/Users/Users";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -189,6 +190,7 @@ export default function App() {
             <Route path="/edit-sub" element={<EditSub />} />
             <Route path="/city" element={<City />} />
             <Route path="/citytable" element={<CityTable />} />
+              <Route path="/user-data" element={<UserData />} />
             <Route path="*" element={<Navigate to="/dashboard" />} />
           </Routes>
 
