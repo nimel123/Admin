@@ -1,205 +1,340 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Typography,
-  Avatar,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Button,
-} from '@mui/material';
-import Switch from '@mui/material/Switch'; 
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@mui/material";
 
-const Categories = () => {
-  const [categories, setCategories] = useState([]);
-  const [count,setCount]=useState();
-  const navigate=useNavigate();
-    const [controller] = useMaterialUIController();
-      const { miniSidenav } = controller;
+
+const headerCell = {
+  padding: "14px 12px",
+  border: "1px solid #ddd",
+  fontSize: 18,
+  fontWeight: "bold",
+  backgroundColor: "#007bff",
+  color: "white",
+};
+
+const bodyCell = {
+  padding: "12px",
+  border: "1px solid #eee",
+  fontSize: 17,
+  backgroundColor: "#fff",
+  paddingLeft:'30px'
+};
+
+function Categories() {
+  const [controller] = useMaterialUIController();
+  const { miniSidenav } = controller;
+  const navigate = useNavigate();
+
+  const [locations, setLocations] = useState([]);
+  const [entriesToShow, setEntriesToShow] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCity, setSelectedCity] = useState("All Cities"); // <-- new state for city filter
 
   useEffect(() => {
-    const getCategories = async () => {
-      const result = await fetch('https://node-m8jb.onrender.com/getCategories');
-      if (result.status === 200) {
-        const json = await result.json();
-        setCategories(json.result);
+    const fetchLocations = async () => {
+      try {
+        const res = await fetch("https://node-m8jb.onrender.com/getlocations");
+        const data = await res.json();
+        setLocations(data.result || []);
+      } catch (err) {
+        console.error("Error fetching locations:", err);
       }
     };
-    getCategories();
+
+    fetchLocations();
   }, []);
 
+  // Get distinct cities for dropdown
+  const distinctCities = ["All Cities", ...new Set(locations.map((loc) => loc.city))];
 
- const handleDelete = async (id) => {
-        const confirmDelete = window.confirm("Are you sure you want to delete this location?");
-        if (!confirmDelete) return;
+  // Filter locations by search term AND selected city
+  const filteredLocations = locations.filter((item) => {
+    const search = searchTerm.toLowerCase();
+    const formattedRange =
+      item.range >= 1000 ? (item.range / 1000).toFixed(1) + " km" : item.range + " m";
 
-        try {
-            const result = await fetch(`https://node-m8jb.onrender.com/delete/${id}`, {
-                method: "DELETE",
-            });
+    // Check city filter: if 'All Cities' selected, ignore city filtering
+    const cityMatch = selectedCity === "All Cities" || item.city === selectedCity;
 
-            if (result.status === 200) {
-                alert("Categories deleted successfully");
-                setCategories(categories.filter((item) => item._id !== id));
-                
-            } else {
-                alert("Something went wrong");
-            }
-        } catch (err) {
-            console.error("Delete error:", err);
+    // Check if search term matches any field
+    const searchMatch =
+      item.city.toLowerCase().includes(search) ||
+      item.address.toLowerCase().includes(search) ||
+      formattedRange.toLowerCase().includes(search);
+
+    return cityMatch && searchMatch;
+  });
+
+  const totalPages = Math.ceil(filteredLocations.length / entriesToShow);
+  const startIndex = (currentPage - 1) * entriesToShow;
+  const currentLocations = filteredLocations.slice(startIndex, startIndex + entriesToShow);
+
+  const handleEntriesChange = (e) => {
+    setEntriesToShow(Number(e.target.value));
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleCityChange = (e) => {
+    setSelectedCity(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const goToPreviousPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
+  const goToNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
+
+
+  const handledeleteZone=async(id)=>{
+    try{
+       const confirmDelete = window.confirm("Are you sure you want to delete this zone?");
+         if(confirmDelete){
+            const result=await fetch(`https://node-m8jb.onrender.com/deletezone/${id}`,{
+          method:'DELETE'
+        });
+        if(result.status===200){
+          setLocations((prev) => prev.filter((loc) => loc._id !== id));
+           alert('Success')
         }
-    };
-
-    const AddCate=()=>{
-        navigate('/addCategories')
+         }
+         else{
+          return;
+         }
+       
     }
-
-    const handleSub=async(category)=>{
-       navigate('/getsubcate', { state: category });
+    catch(err){
+      console.log(err);
+      
     }
+  }
 
   return (
-     <MDBox ml={miniSidenav ? "80px" : "250px"} p={2}
-     sx={{marginTop:'40px'}}
-     >
-   
-      <Typography variant="h6" gutterBottom style={{marginLeft:30,fontSize:30}}>
-       Categories Lists
-      </Typography>
-
-        {/* Add Category Button */}
-        <MDBox
-          sx={{
-            position: 'absolute',
-            top: '60px',
-            right: '80px',
-            zIndex: 1,
+    <MDBox
+      p={2}
+      style={{
+        marginLeft: miniSidenav ? "80px" : "250px",
+        transition: "margin-left 0.3s ease",
+      }}
+    >
+      <div className="city-container">
+        <div
+          className="add-city-box"
+          style={{
+            width: "100%",
+            borderRadius: 15,
+            padding: 20,
+            overflowX: "auto",
           }}
         >
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={AddCate}
-            sx={{ fontSize: '14px', textTransform: 'none' ,borderRadius:5,color:'white !important'}}
+          {/* Header */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 20,
+              flexWrap: "wrap",
+            }}
           >
-            Add Categories
-          </Button>
-        </MDBox>
+            <div>
+              <span style={{ fontWeight: "bold", fontSize: 26 }}>Categories Lists</span>
+              <br />
+              <span style={{ fontSize: 17 }}>View and manage all Categories</span>
+            </div>
+            <div>
+              <Button
+                style={{
+                  backgroundColor: "green",
+                  height: 45,
+                  width: 160,
+                  fontSize: 12,
+                  color: "white",
+                  letterSpacing: "1px",
+                }}
+                onClick={() => navigate("/addCategories")}
+              >
+                + ADD CATEGORY
+              </Button>
+            </div>
+          </div>
 
-      <MDBox
-        position="relative"
-        mt={4}
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-      >
-        <MDBox
-          sx={{
-            background: '#1A73E8',
-            color: 'white !important',
-            padding: '20px',
-            borderRadius: '8px',
-            fontWeight: 'bold',
-            fontSize: '18px',
-            width: '90%',
-            maxWidth: '1000px',
-            position: 'absolute',
-            top: '-5',
-            zIndex: 1,
-            height: '70px',
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          Categories Table
-        </MDBox>
+          {/* Controls */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: 10,
+              flexWrap: "wrap",
+            }}
+          >
 
-        <TableContainer
-          component={Paper}
-          sx={{
-            borderRadius: 2,
-            mt: 5,
-            width: '95%',
-            maxWidth: '1000px',
-            marginTop: 5,
-            border: '1px solid #ddd',
-          }}  
-        >
-          <Table>
-            <TableHead sx={{ backgroundColor: '#f8f9fa', height: 79 ,width:'168.5%'}}>
-              <TableRow style={{backgroundColor:'',width:'150%',justifyContent:'space-between'}}>
-                {['NAME', 'ITEMS', 'PUBLIC', 'ACTION'].map((heading) => (
-                  <TableCell
-                    key={heading}
-                    sx={{
-                      fontWeight: 'bold',
-                      fontSize: '12px',
-                      color: '#6c757d',
-                      verticalAlign: 'bottom',
-                      width: heading === 'NAME' ? '47%' : heading === 'ITEMS' ? '10%' : heading === 'PUBLIC' ? '10%' : '10%',
-                    }}
-                  >
-                    <h3 style={{marginTop:13,}}>{heading}</h3>
-                  </TableCell>
+
+            {/* Entries dropdown */}
+            <div style={{ marginBottom: 10 }}>
+              <span style={{ fontSize: 16 }}>Show Entries</span>&nbsp;
+              <select value={entriesToShow} onChange={handleEntriesChange}>
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+              {/* Left side dropdown for city */}
+              <div style={{ marginBottom: 10,marginRight:'40px',marginTop:'' }}>
+                <label style={{ fontSize: 16, }}>Filter by City:</label>
+                <select value={selectedCity} onChange={handleCityChange} style={{ fontSize: 16,  borderRadius: "6px" }}>
+                  {distinctCities.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Search input */}
+              <div style={{ marginBottom: 8, marginTop: "15px", display: "flex", flexDirection: "column" }}>
+                <label  style={{ fontSize: 16,marginTop:'-8px',marginLeft:'5px',marginBottom:'5px'}}>Search</label>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  placeholder="Search..."
+                  style={{
+                    padding: "5px",
+                    borderRadius: "20px",
+                    height: "45px",
+                    marginTop:'-5px',
+                    width: "200px",
+                    border: "1px solid #ccc",
+                    fontSize: 17,
+                    paddingLeft: "15px",
+                  }}
+                />
+              </div>
+
+            </div>
+          </div>
+
+          {/* Table and pagination remain unchanged */}
+          <div style={{ overflowX: "auto" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "separate",
+                borderSpacing: 0,
+                overflow: "hidden",
+                boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+              }}
+            >
+              <thead>
+                <tr>
+                  <th style={{...headerCell,width:'10%'}}>Sr. No</th>
+                  <th style={headerCell}>Category Name</th>
+                  <th style={{...headerCell,width:'15%'}}>Sub Categories</th>
+                  <th style={headerCell}>Items</th>
+                  <th style={headerCell}>Public</th>
+                  <th style={{ ...headerCell, width: "20%", textAlign: "center" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentLocations.map((item, index) => (
+                  <tr key={item._id}>
+                    <td style={{...bodyCell,textAlign:'center'}}>{startIndex + index + 1}</td>
+                    <td style={{...bodyCell,textAlign:'center'}}>
+                      <div style={{display:'flex',gap:'30px',alignItems:'center'}}>
+                        <img src="" style={{width:'50px',height:'50px',borderRadius:"100%"}}/>
+                        <span >Food</span>
+                      </div>
+                    </td>
+                    <td style={{...bodyCell,textAlign:'center',cursor:'pointer'}} onClick={()=>navigate('/getsubcate')}>{'10'}</td>
+                    <td style={{...bodyCell,textAlign:'center'}}>{'100'}</td>
+                     <td style={{...bodyCell,textAlign:'center'}}>{'100'}</td>
+                    <td style={{...bodyCell,textAlign:'center'}}>
+                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                        <button
+                          style={{
+                            backgroundColor: "#007BFF",
+                            color: "white",
+                            border: "none",
+                            padding: "8px 16px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            marginRight: "10px",
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          style={{
+                            backgroundColor: "#dc3545",
+                            color: "white",
+                            border: "none",
+                            padding: "8px 16px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                          }} onClick={()=>handledeleteZone(item._id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
                 ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {categories.map((item, index) => (
-                <TableRow key={index}>
-                  {/* NAME */}
-                  <TableCell sx={{ width: '60%', border: '1px solid #ddd' }}>
-                    <MDBox display="flex" alignItems="center">
-                      <Avatar
-                        src={`https://node-m8jb.onrender.com${item.file}`}
-                        sx={{ width: 36, height: 36, mr: 1.5 }}
-                      />
-                      <Typography fontWeight={500} fontSize="14px">
-                        {item.name}
-                      </Typography>
-                    </MDBox>
-                  </TableCell>
+              </tbody>
+            </table>
+          </div>
 
-                  {/* ITEMS */}
-                  <TableCell sx={{ width: '10%', border: '1px solid #ddd' }} onClick={()=>handleSub(item)}>
-                    <Typography fontWeight={500} fontSize="14px" style={{cursor:'pointer'}}>
-                      {item.subcat && Array.isArray(item.subcat) ? item.subcat.length : 0}
-                    </Typography>
-                  </TableCell>
-
-                  {/* PUBLIC */}
-                  <TableCell sx={{ width: '12%', border: '1px solid #ddd' }}>
-                    <Switch
-                      checked={item.publish}
-                      onChange={() => handlePublishToggle(item._id, item.publish)}
-                      color="primary"
-                    />
-                  </TableCell>
-
-                  {/* ACTION */}
-                  <TableCell sx={{ width: '100%', border: '1px solid #ddd',display:'flex'}}>
-                    <Button size="big" sx={{ fontSize: '13px', textTransform: 'none',color:'green' }}>
-                      Edit
-                    </Button>
-                    <Button size="small" sx={{ fontSize: '13px', textTransform: 'none',color:'red' }} onClick={() => handleDelete(item._id)}>
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </MDBox>
+          <div
+            style={{
+              marginTop: 20,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <span>
+              Showing {startIndex + 1}-
+              {Math.min(startIndex + entriesToShow, filteredLocations.length)} of{" "}
+              {filteredLocations.length} locations
+            </span>
+            <div>
+              <button
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                style={{
+                  padding: "8px 16px",
+                  marginRight: 10,
+                  borderRadius: 10,
+                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                }}
+              >
+                Previous
+              </button>
+              <button
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 10,
+                  cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </MDBox>
   );
-};
+}
 
 export default Categories;

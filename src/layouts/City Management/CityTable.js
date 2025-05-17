@@ -1,32 +1,41 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
-
-const initialCities = [
-    { id: 1, name: "New York", zones: ["Manhattan", "Brooklyn", "Queens"], active: true },
-    { id: 2, name: "Los Angeles", zones: ["Hollywood", "Beverly Hills"], active: false },
-    { id: 3, name: "Chicago", zones: ["North Side", "South Side"], active: true },
-    { id: 4, name: "Houston", zones: ["Downtown", "Midtown", "Uptown"], active: false },
-    { id: 5, name: "Phoenix", zones: ["Encanto", "Alhambra"], active: true },
-    { id: 6, name: "Philadelphia", zones: ["Center City", "Old City"], active: true },
-    { id: 7, name: "San Antonio", zones: ["Downtown", "Alamo Heights"], active: false },
-    { id: 8, name: "San Diego", zones: ["La Jolla", "Gaslamp Quarter"], active: true },
-    { id: 9, name: "Dallas", zones: ["Deep Ellum", "Bishop Arts"], active: true },
-    { id: 10, name: "San Jose", zones: ["Downtown", "Willow Glen"], active: false },
-];
+import { Button } from "@mui/material";
 
 export default function CityTable() {
     const [controller] = useMaterialUIController();
     const { miniSidenav } = controller;
     const navigate = useNavigate();
 
-    const [cities, setCities] = useState(initialCities);
+    const [cities, setCities] = useState([]);
     const [entriesToShow, setEntriesToShow] = useState(5);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Filter cities by search
+    // When we get API data, add default active status (true) to each city object, and add id for keys (use _id)
+    useEffect(() => {
+        const getCity = async () => {
+            try {
+                const result = await fetch("https://node-m8jb.onrender.com/getcitydata");
+                const data = await result.json();
+                // Add active property and id (from _id)
+                const citiesWithStatus = data.result.map((city) => ({
+                    id: city._id,
+                    name: city.city,
+                    state: city.state,
+                    active: true, // default active status
+                }));
+                setCities(citiesWithStatus);
+            } catch (err) {
+                console.log(err);
+            }
+        };
+        getCity();
+    }, []);
+
+    // Filter by city name
     const filteredCities = cities.filter((city) =>
         city.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -56,36 +65,49 @@ export default function CityTable() {
         if (currentPage < totalPages) setCurrentPage(currentPage + 1);
     };
 
-    // Toggle status handler - optional if you want to toggle by clicking text or button
+    // Toggle status (Active/Deactive)
     const toggleStatus = (id) => {
         setCities((prev) =>
-            prev.map((city) => (city.id === id ? { ...city, active: !city.active } : city))
+            prev.map((city) =>
+                city.id === id ? { ...city, active: !city.active } : city
+            )
         );
     };
 
     // Edit city
     const handleEdit = (city) => {
         alert(`Edit city: ${city.name}`);
-        // You can navigate or open modal here
     };
 
     // Delete city
-    const handleDelete = (city) => {
-        if (window.confirm(`Are you sure you want to delete ${city.name}?`)) {
-            setCities((prev) => prev.filter((c) => c.id !== city.id));
+    const handleDelete = async (id) => {
+        try {
+            const result = await fetch(`https://node-m8jb.onrender.com/deleteCity/${id}`, {
+                method: 'DELETE'
+            });
+            if (result.status === 200) {
+                if (window.confirm(`Are you sure you want to delete `)) {
+                    setCities((prev) => prev.filter((loc) => loc.id !== id));
+                    alert('Success')
+                }
+            }
+            else {
+                return;
+            }
         }
-    };
+        catch (err) {
+            console.log(err);
+
+        }
+    }
 
     return (
-        <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "40px" }}>
+        <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "30px" }}>
             <div
                 style={{
-                    maxWidth: "1000px",
-                    margin: "auto",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
-                    borderRadius: "10px",
-                    padding: "25px",
-                    backgroundColor: "white",
+                    width: "100%",
+                    paddingRight: "20px",
+                    paddingLeft: "20px",
                 }}
             >
                 {/* Header */}
@@ -98,25 +120,26 @@ export default function CityTable() {
                     }}
                 >
                     <div>
-                        <h2 style={{ margin: 0, fontSize: "30px", fontWeight: "bold" }}>City Lists</h2>
-                        <p style={{ margin: 0, fontSize: "18px", color: "#555" }}>View and manage all cities</p>
+                        <h2 style={{ margin: 0, fontSize: "30px", fontWeight: "bold" }}>
+                            City Lists
+                        </h2>
+                        <p style={{ margin: 0, fontSize: "18px", color: "#555" }}>
+                            View and manage all cities
+                        </p>
                     </div>
-                    <button
-                        onClick={() => navigate("/city")}
+                    <Button
                         style={{
                             backgroundColor: "green",
+                            height: 45,
+                            width: 150,
+                            fontSize: 12,
                             color: "white",
-                            fontSize: "20px",
-                            borderRadius: "25px",
-                            padding: "12px 25px",
-                            border: "none",
-                            cursor: "pointer",
-                            boxShadow: "0 6px 12px rgba(0,128,0,0.5)",
                             letterSpacing: "1px",
                         }}
+                        onClick={() => navigate("/city")}
                     >
-                        + Create City
-                    </button>
+                        + Add City
+                    </Button>
                 </div>
 
                 {/* Controls */}
@@ -129,7 +152,7 @@ export default function CityTable() {
                     }}
                 >
                     <div>
-                        <label style={{ fontSize: 17 }}>Show&nbsp;</label>
+                        <label style={{ fontSize: 17 }}>Show Entries&nbsp;</label>
                         <select
                             value={entriesToShow}
                             onChange={handleEntriesChange}
@@ -146,7 +169,6 @@ export default function CityTable() {
                                 </option>
                             ))}
                         </select>
-                        <label style={{ fontSize: 17 }}>&nbsp;entries</label>
                     </div>
                     <div>
                         <label style={{ fontSize: 17, marginRight: 8 }}>Search:</label>
@@ -171,9 +193,7 @@ export default function CityTable() {
                 {/* Table */}
                 <div
                     style={{
-                        overflowX: "auto",
                         borderRadius: "10px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                     }}
                 >
                     <table
@@ -183,7 +203,6 @@ export default function CityTable() {
                             fontFamily: '"Urbanist", sans-serif',
                             fontSize: "17px",
                             border: "1px solid #007BFF",
-                            borderRadius: "10px",
                             overflow: "hidden",
                         }}
                     >
@@ -193,23 +212,32 @@ export default function CityTable() {
                                     style={{
                                         border: "1px solid #0056b3",
                                         padding: "14px 24px",
+                                        textAlign: "center",
+                                        width: '10%'
+                                    }}
+                                >
+                                    Sr No
+                                </th>
+                                <th
+                                    style={{
+                                        border: "1px solid #0056b3",
+                                        padding: "14px 24px",
                                         textAlign: "left",
-                                        width: "25%",
+
                                     }}
                                 >
                                     City
                                 </th>
-                                {/* <th
-                  style={{
-                    border: "1px solid #0056b3",
-                    padding: "14px 24px",
-                    textAlign: "left",
-                    width: "40%",
-                  }}
-                >
-                  Zones (Total:{" "}
-                  {currentCities.reduce((acc, city) => acc + city.zones.length, 0)})
-                </th> */}
+                                <th
+                                    style={{
+                                        border: "1px solid #0056b3",
+                                        padding: "14px 24px",
+                                        textAlign: "left",
+                                        width: "30%",
+                                    }}
+                                >
+                                    State
+                                </th>
                                 <th
                                     style={{
                                         border: "1px solid #0056b3",
@@ -234,8 +262,17 @@ export default function CityTable() {
                         </thead>
                         <tbody>
                             {currentCities.length > 0 ? (
-                                currentCities.map((city) => (
+                                currentCities.map((city, index) => (
                                     <tr key={city.id} style={{ borderBottom: "1px solid #ddd" }}>
+                                        <td
+                                            style={{
+                                                border: "1px solid #ddd",
+                                                padding: "14px 24px",
+                                                textAlign: "center",
+                                            }}
+                                        >
+                                            {startIndex + index + 1}
+                                        </td>
                                         <td
                                             style={{
                                                 border: "1px solid #ddd",
@@ -244,16 +281,14 @@ export default function CityTable() {
                                         >
                                             {city.name}
                                         </td>
-                                        {/* <td
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "14px 24px",
-                      }}
-                    >
-                      {city.zones.join(", ")}
-                      <br />
-                      <small style={{ color: "#666" }}>Total Zones: {city.zones.length}</small>
-                    </td> */}
+                                        <td
+                                            style={{
+                                                border: "1px solid #ddd",
+                                                padding: "14px 24px",
+                                            }}
+                                        >
+                                            {city.state}
+                                        </td>
                                         <td
                                             style={{
                                                 border: "1px solid #ddd",
@@ -264,7 +299,7 @@ export default function CityTable() {
                                                 color: city.active ? "green" : "red",
                                                 cursor: "pointer",
                                             }}
-                                            onClick={() => toggleStatus(city.id)} // Optional: toggle on click text
+                                            onClick={() => toggleStatus(city.id)} // Toggle status on click
                                         >
                                             {city.active ? "Active" : "Deactive"}
                                         </td>
@@ -291,7 +326,7 @@ export default function CityTable() {
                                                 Edit
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(city)}
+                                                onClick={() => handleDelete(city.id)}
                                                 style={{
                                                     backgroundColor: "#dc3545",
                                                     color: "white",
@@ -308,7 +343,7 @@ export default function CityTable() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="4" style={{ textAlign: "center", padding: "20px" }}>
+                                    <td colSpan="5" style={{ textAlign: "center", padding: "20px" }}>
                                         No cities found.
                                     </td>
                                 </tr>

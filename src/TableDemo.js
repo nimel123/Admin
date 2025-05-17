@@ -20,7 +20,7 @@ const bodyCell = {
   backgroundColor: "#fff",
 };
 
-function Table() {
+function TableDemo() {
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
   const navigate = useNavigate();
@@ -93,7 +93,7 @@ function Table() {
     try{
        const confirmDelete = window.confirm("Are you sure you want to delete this zone?");
          if(confirmDelete){
-            const result=await fetch(`https://node-m8jb.onrender.com/deletezone/${id}`,{
+            const result=await fetch(`http://localhost:5000/deletezone/${id}`,{
           method:'DELETE'
         });
         if(result.status===200){
@@ -332,4 +332,4 @@ function Table() {
   );
 }
 
-export default Table;
+export default TableDemo;

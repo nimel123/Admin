@@ -1,265 +1,324 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import {
-    Typography,
-    Switch,
-    Box,
-    useMediaQuery,
-    TextField,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-} from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import MDBox from "components/MDBox";
+import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@mui/material";
+
+
+const headerCell = {
+  padding: "14px 12px",
+  border: "1px solid #ddd",
+  fontSize: 18,
+  fontWeight: "bold",
+  backgroundColor: "#007bff",
+  color: "white",
+};
+
+const bodyCell = {
+  padding: "12px",
+  border: "1px solid #eee",
+  fontSize: 17,
+  backgroundColor: "#fff",
+  paddingLeft:'30px'
+};
 
 function GetSubCategories() {
-    const location = useLocation();
-    const category = location.state;
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [controller] = useMaterialUIController();
+  const { miniSidenav } = controller;
+  const navigate = useNavigate();
 
-    const parsedZones = JSON.parse(category?.zones || "[]");
-    const [data, setData] = useState([]);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedZone, setSelectedZone] = useState("All");
-    const [entriesToShow, setEntriesToShow] = useState(10);
-    const [currentPage, setCurrentPage] = useState(1);
-    const navigate=useNavigate();
+  const [locations, setLocations] = useState([]);
+  const [entriesToShow, setEntriesToShow] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCity, setSelectedCity] = useState("All Cities"); // <-- new state for city filter
 
-    useEffect(() => {
-        const updated = category?.subcat?.map((sub) => ({
-            ...sub,
-            store: parsedZones[0] || "NA",
-            category: category.name,
-            isPublished: true,
-        })) || [];
-        setData(updated);
-    }, [category]);
-
-    const handleToggle = (id) => {
-        const updatedData = data.map((item, index) =>
-            index === id ? { ...item, isPublished: !item.isPublished } : item
-        );
-        setData(updatedData);
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const res = await fetch("https://node-m8jb.onrender.com/getlocations");
+        const data = await res.json();
+        setLocations(data.result || []);
+      } catch (err) {
+        console.error("Error fetching locations:", err);
+      }
     };
 
-    const filtered = data
-        .filter((item) => selectedZone === "All" || item.store === selectedZone)
-        .filter((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    fetchLocations();
+  }, []);
 
-    const totalPages = Math.ceil(filtered.length / entriesToShow);
-    const startIndex = (currentPage - 1) * entriesToShow;
-    const filteredData = filtered.slice(startIndex, startIndex + entriesToShow);
+ 
+  const distinctCities = ["All Cities", ...new Set(locations.map((loc) => loc.city))];
 
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, selectedZone, entriesToShow]);
+  const filteredLocations = locations.filter((item) => {
+    const search = searchTerm.toLowerCase();
+    const formattedRange =
+      item.range >= 1000 ? (item.range / 1000).toFixed(1) + " km" : item.range + " m";
 
-    return (
-        <Box sx={{ ml: { xs: "0", md: "250px" }, p: 2, marginTop: "50px" }}>
-            <div style={{ marginLeft: '30px', marginRight: '30px' }}>
-                <Typography variant="h4" gutterBottom>
-                    Sub Categories
-                </Typography>
+    // Check city filter: if 'All Cities' selected, ignore city filtering
+    const cityMatch = selectedCity === "All Cities" || item.city === selectedCity;
 
-                {/* Filter Bar */}
-                <Box
-                    sx={{
-                        display: "flex",
-                        flexDirection: { xs: "column", sm: "row" },
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: 2,
-                        mb: 2,
-                        flexWrap: "wrap",
-                    }}
-                >
-                    {/* Show Dropdown - Left */}
-                    <FormControl sx={{ minWidth: 70, marginLeft: 5 }}>
-                        <InputLabel>Show</InputLabel>
-                        <Select
-                            value={entriesToShow}
-                            label="Show"
-                            onChange={(e) => setEntriesToShow(Number(e.target.value))}
-                            style={{ height: 44.5 }}
-                        >
-                            {[5, 10, 15].map((num) => (
-                                <MenuItem key={num} value={num}>{num}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+    // Check if search term matches any field
+    const searchMatch =
+      item.city.toLowerCase().includes(search) ||
+      item.address.toLowerCase().includes(search) ||
+      formattedRange.toLowerCase().includes(search);
 
-                    {/* Zone and Search - Right */}
-                    <Box
-                        sx={{
-                            display: "flex",
-                            flexDirection: { xs: "column", sm: "row" },
-                            gap: 2,
-                        }}
-                    >
-                        <FormControl sx={{ minWidth: 200 }}>
-                            <InputLabel>Zone</InputLabel>
-                            <Select
-                                value={selectedZone}
-                                label="Zone"
-                                onChange={(e) => setSelectedZone(e.target.value)}
-                                style={{ height: 44.5 }}
-                            >
-                                <MenuItem value="All">All</MenuItem>
-                                {parsedZones.map((zone) => (
-                                    <MenuItem key={zone} value={zone}>{zone}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+    return cityMatch && searchMatch;
+  });
 
-                        <TextField
-                            label="Search"
-                            variant="outlined"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            sx={{ minWidth: 200 }}
-                        />
-                    </Box>
-                </Box>
-                <Box
-                    sx={{
-                        background: '#1A73E8',
-                        color: 'white !important',
-                        padding: '20px',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        fontSize: '18px',
-                        width: '90%', // slightly smaller than table
-                        maxWidth: '950px',
-                        position: 'relative',
-                        zIndex: 2,
-                        height: '60px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mx: 'auto', // center horizontally
-                        mt: 2,
-                    }}
-                >
-                    SubCategories Lists
-                </Box>
+  const totalPages = Math.ceil(filteredLocations.length / entriesToShow);
+  const startIndex = (currentPage - 1) * entriesToShow;
+  const currentLocations = filteredLocations.slice(startIndex, startIndex + entriesToShow);
 
-                <Box sx={{
-                    border: "1px solid #1976d2",
-                    borderRadius: "8px",
-                    overflow: "hidden",
-                    mt: "-25px",
-                    position: "relative",
-                }}>
-                    {/* Table Header */}
-                    {!isMobile && (
-                        <Box
-                            sx={{
-                                display: "grid",
-                                gridTemplateColumns: "40% 10% 15% 20% 15%",
-                                backgroundColor: "#e3f2fd",
-                                fontWeight: "bold",
-                                borderTop: "1px solid #1976d2",
-                                borderBottom: "1px solid #1976d2",
-                                fontSize: 17,
-                                height: 70,
-                                alignItems: 'flex-end',
+  const handleEntriesChange = (e) => {
+    setEntriesToShow(Number(e.target.value));
+    setCurrentPage(1);
+  };
 
-                                zIndex: 0,
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
 
-                            }}
-                        >
-                            <Box sx={{ p: 1, borderRight: "1px solid #1976d2" }}>Name</Box>
-                            <Box sx={{ p: 1, borderRight: "1px solid #1976d2" }}>Price</Box>
-                            <Box sx={{ p: 1, borderRight: "1px solid #1976d2" }}>Store</Box>
-                            <Box sx={{ p: 1, borderRight: "1px solid #1976d2" }}>Category</Box>
-                            <Box sx={{ p: 1 }}>Published</Box>
-                        </Box>
-                    )}
+  const handleCityChange = (e) => {
+    setSelectedCity(e.target.value);
+    setCurrentPage(1);
+  };
 
-                    {/* Table Rows */}
-                    {filteredData.map((sub, index) => (
-                        <Box
-                            key={index}
-                            sx={{
-                                display: "grid",
-                                gridTemplateColumns: "40% 10% 15% 20% 15%",
-                                fontSize: 15,
-                                borderBottom: "1px solid #ccc",
-                                backgroundColor: "#fff",
-                            }}
-                        >
-                            {isMobile ? (
-                                <>
-                                    <Box sx={{ p: 1 }}><strong>Name:</strong> {sub.name}</Box>
-                                    <Box sx={{ p: 1 }}><strong>Price:</strong> ₹{sub.price}</Box>
-                                    <Box sx={{ p: 1 }}><strong>Store:</strong> {sub.store}</Box>
-                                    <Box sx={{ p: 1 }}><strong>Category:</strong> {sub.category}</Box>
-                                    <Box sx={{ p: 1, display: "flex", alignItems: "center" }}>
-                                        <strong>Published:</strong>
-                                        <Switch
-                                            checked={sub.isPublished}
-                                            onChange={() => handleToggle(index)}
-                                        />
-                                    </Box>
-                                </>
-                            ) : (
-                                <>
-                                    <Box sx={{ p: 1, borderRight: "1px solid #ccc" ,cursor:"pointer"}} onClick={()=>navigate('/edit-sub',{ state: category })} >
-                                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                                            <img
-                                                src={`https://node-m8jb.onrender.com${sub.file}`}
-                                                alt={sub.name}
-                                                style={{
-                                                    width: 50,
-                                                    height: 50,
-                                                    marginRight: 10,
-                                                    borderRadius: 4,
-                                                }}
-                                            />
-                                            <span>{sub.name}</span>
-                                        </Box>
-                                    </Box>
-                                    <Box sx={{ p: 1, display: "flex", alignItems: "center", borderRight: "1px solid #ccc" }}>₹{sub.price}</Box>
-                                    <Box sx={{ p: 1, display: "flex", alignItems: "center", borderRight: "1px solid #ccc" }}>{sub.store}</Box>
-                                    <Box sx={{ p: 1, display: "flex", alignItems: "center", borderRight: "1px solid #ccc" }}>{sub.category}</Box>
-                                    <Box sx={{ p: 1 }}>
-                                        <Switch
-                                            checked={sub.isPublished}
-                                            onChange={() => handleToggle(index)}
-                                        />
-                                    </Box>
-                                </>
-                            )}
-                        </Box>
-                    ))}
-                </Box>
+  const goToPreviousPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
+  const goToNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <Box sx={{ mt: 3, display: "flex", justifyContent: "center", gap: 2 }}>
-                        <button
-                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                            style={{ padding: "6px 12px", backgroundColor: "#1976d2", color: "#fff", border: "none", borderRadius: "4px" }}
-                        >
-                            Previous
-                        </button>
-                        <Typography variant="body1">Page {currentPage} of {totalPages}</Typography>
-                        <button
-                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                            style={{ padding: "6px 12px", backgroundColor: "#1976d2", color: "#fff", border: "none", borderRadius: "4px" }}
-                        >
-                            Next
-                        </button>
-                    </Box>
-                )}
+
+  const handledeleteZone=async(id)=>{
+    try{
+       const confirmDelete = window.confirm("Are you sure you want to delete this zone?");
+         if(confirmDelete){
+            const result=await fetch(`https://node-m8jb.onrender.com/deletezone/${id}`,{
+          method:'DELETE'
+        });
+        if(result.status===200){
+          setLocations((prev) => prev.filter((loc) => loc._id !== id));
+           alert('Success')
+        }
+         }
+         else{
+          return;
+         }
+       
+    }
+    catch(err){
+      console.log(err);
+      
+    }
+  }
+
+  return (
+    <MDBox
+      p={2}
+      style={{
+        marginLeft: miniSidenav ? "80px" : "250px",
+        transition: "margin-left 0.3s ease",
+      }}
+    >
+      <div className="city-container">
+        <div
+          className="add-city-box"
+          style={{
+            width: "100%",
+            borderRadius: 15,
+            padding: 20,
+            overflowX: "auto",
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 20,
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <span style={{ fontWeight: "bold", fontSize: 26 }}>Sub-Categories Lists</span>
+              <br />
+              <span style={{ fontSize: 17 }}>View and manage all Sub-Categories</span>
             </div>
-        </Box>
-    );
+
+          </div>
+
+          {/* Controls */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: 10,
+              flexWrap: "wrap",
+            }}
+          >
+
+
+            {/* Entries dropdown */}
+            <div style={{ marginBottom: 10 }}>
+              <span style={{ fontSize: 16 }}>Show Entries</span>&nbsp;
+              <select value={entriesToShow} onChange={handleEntriesChange}>
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+              {/* Left side dropdown for city */}
+              <div style={{ marginBottom: 10,marginRight:'40px',marginTop:'' }}>
+                <label style={{ fontSize: 16, }}>Filter by City:</label>
+                <select value={selectedCity} onChange={handleCityChange} style={{ fontSize: 16,  borderRadius: "6px" }}>
+                  {distinctCities.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Search input */}
+              <div style={{ marginBottom: 8, marginTop: "15px", display: "flex", flexDirection: "column" }}>
+                <label  style={{ fontSize: 16,marginTop:'-8px',marginLeft:'5px',marginBottom:'5px'}}>Search</label>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  placeholder="Search..."
+                  style={{
+                    padding: "5px",
+                    borderRadius: "20px",
+                    height: "45px",
+                    marginTop:'-5px',
+                    width: "200px",
+                    border: "1px solid #ccc",
+                    fontSize: 17,
+                    paddingLeft: "15px",
+                  }}
+                />
+              </div>
+
+            </div>
+          </div>
+
+          {/* Table and pagination remain unchanged */}
+          <div style={{ overflowX: "auto" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "separate",
+                borderSpacing: 0,
+                overflow: "hidden",
+              }}
+            >
+              <thead>
+                <tr>
+                  <th style={{...headerCell,width:'10%'}}>Sr. No</th>
+                  <th style={headerCell}>Sub-Category Name</th>
+                  <th style={{...headerCell,width:'20%'}}>Sub Sub-Categories</th>
+                  <th style={headerCell}>Items</th>
+                  <th style={headerCell}>Public</th>
+                  <th style={{ ...headerCell, width: "20%", textAlign: "center" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentLocations.map((item, index) => (
+                  <tr key={item._id}>
+                    <td style={{...bodyCell,textAlign:'center'}}>{startIndex + index + 1}</td>
+                    <td style={{...bodyCell,textAlign:'center'}}>
+                      <div style={{display:'flex',gap:'30px',alignItems:'center'}}>
+                        <img src="" style={{width:'50px',height:'50px',borderRadius:"100%"}}/>
+                        <span >Food</span>
+                      </div>
+                    </td>
+                    <td style={{...bodyCell,textAlign:'center'}}>{'10'}</td>
+                    <td style={{...bodyCell,textAlign:'center'}}>{'100'}</td>
+                     <td style={{...bodyCell,textAlign:'center'}}>{'100'}</td>
+                    <td style={{...bodyCell,textAlign:'center'}}>
+                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                        <button
+                          style={{
+                            backgroundColor: "#007BFF",
+                            color: "white",
+                            border: "none",
+                            padding: "8px 16px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            marginRight: "10px",
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          style={{
+                            backgroundColor: "#dc3545",
+                            color: "white",
+                            border: "none",
+                            padding: "8px 16px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                          }} onClick={()=>handledeleteZone(item._id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            style={{
+              marginTop: 20,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <span>
+              Showing {startIndex + 1}-
+              {Math.min(startIndex + entriesToShow, filteredLocations.length)} of{" "}
+              {filteredLocations.length} locations
+            </span>
+            <div>
+              <button
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                style={{
+                  padding: "8px 16px",
+                  marginRight: 10,
+                  borderRadius: 10,
+                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                }}
+              >
+                Previous
+              </button>
+              <button
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 10,
+                  cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </MDBox>
+  );
 }
 
 export default GetSubCategories;

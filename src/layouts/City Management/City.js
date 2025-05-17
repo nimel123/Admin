@@ -3,9 +3,6 @@ import PropTypes from "prop-types";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 import "./City.css";
-import States from "./IndianState";
-import Cities from "./Indiancities";
-import haryanaCities from "./Indiancities";
 import "leaflet/dist/leaflet.css";
 import { useNavigate } from "react-router-dom";
 import {
@@ -18,6 +15,7 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 
+// Leaflet icon fix
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl:
@@ -37,6 +35,7 @@ function RecenterMap({ latlng }) {
     }, [latlng, map]);
     return null;
 }
+
 RecenterMap.propTypes = {
     latlng: PropTypes.arrayOf(PropTypes.number).isRequired,
 };
@@ -45,20 +44,37 @@ function ClickHandler({ onClickLocation }) {
     useMapEvents({
         click(e) {
             const { lat, lng } = e.latlng;
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+            fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+            )
                 .then((res) => res.json())
                 .then((data) => {
                     const address = data.address || {};
-                    const city = address.city || address.town || address.village || address.hamlet || "";
-                    const state = address.state || "";
-                    const displayName = data.display_name || "";
-                    onClickLocation({ latlng: [lat, lng], city, state, displayName });
+                    const city =
+                        address.city ||
+                        address.town ||
+                        address.village ||
+                        address.hamlet ||
+                        address.locality ||
+                        address.municipality ||
+                        address.state_district ||
+                        "Unknown City";
+                    const state = address.state || "Unknown State";
+                    const fullAddress = data.display_name || "";
+
+                    onClickLocation({
+                        latlng: [lat, lng],
+                        city,
+                        state,
+                        fullAddress,
+                    });
                 })
                 .catch((err) => console.error("Reverse geocoding failed:", err));
         },
     });
     return null;
 }
+
 ClickHandler.propTypes = {
     onClickLocation: PropTypes.func.isRequired,
 };
@@ -68,20 +84,18 @@ function City() {
     const { miniSidenav } = controller;
     const navigate = useNavigate();
 
-    const [selectedState, setSelectedState] = useState("");
-    const [selectedCity, setSelectedCity] = useState("");
     const [cityCoordinates, setCityCoordinates] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [suggestions, setSuggestions] = useState([]);
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [zones, setZones] = useState([]);
-
+    const [selectedCity, setSelectedCity] = useState("");
+    const [selectedState, setSelectedState] = useState("");
+    const [fullAddress, setFullAddress] = useState("");
     const searchRef = useRef(null);
 
     useEffect(() => {
         function handleClickOutside(event) {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
-                setShowSuggestions(false);
+                setSuggestions([]);
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
@@ -90,181 +104,124 @@ function City() {
         };
     }, []);
 
-    const handleStateChange = (e) => {
-        setSelectedState(e.target.value);
-        setSelectedCity("");
-        setCityCoordinates(null);
-        setSearchTerm("");
-        setSuggestions([]);
-        setShowSuggestions(false);
-    };
+    const handleSearchChange = async (e) => {
+        const value = e.target.value;
+        setSearchTerm(value);
 
-    const handleCityChange = (e) => {
-        const city = e.target.value;
-        setSelectedCity(city);
-        setSearchTerm(city);
-        setSuggestions([]);
-        setShowSuggestions(false);
-
-        if (city && selectedState) {
-            const address = `${city}, ${selectedState}, India`;
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
-                .then((res) => res.json())
-                .then((data) => {
-                    if (data && data.length > 0) {
-                        setCityCoordinates([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
-                    } else {
-                        setCityCoordinates(null);
-                    }
-                })
-                .catch(() => setCityCoordinates(null));
-        } else {
-            setCityCoordinates(null);
+        if (value.length < 3) {
+            setSuggestions([]);
+            return;
         }
-    };
 
-    const handleAddCityZone = () => {
-        if (!selectedCity || !selectedState || !cityCoordinates) return;
-
-        const exists = zones.some(
-            (zone) =>
-                zone.lat === cityCoordinates[0] &&
-                zone.lon === cityCoordinates[1]
+        const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+                value
+            )}&addressdetails=1`
         );
-        if (exists) return;
-
-        const newZone = {
-            name: `${selectedCity}, ${selectedState}`,
-            lat: cityCoordinates[0],
-            lon: cityCoordinates[1],
-        };
-        setZones((prevZones) => [...prevZones, newZone]);
+        const data = await res.json();
+        setSuggestions(data);
     };
 
-    const handleMapClick = ({ latlng, city, state, displayName }) => {
+    const handleSelectSuggestion = (item) => {
+        const { lat, lon, address, display_name } = item;
+        const city =
+            address.city ||
+            address.town ||
+            address.village ||
+            address.hamlet ||
+            address.state_district ||
+            "Unknown City";
+        const state = address.state || "Unknown State";
+
+        setSelectedCity(city);
+        setSelectedState(state);
+        setFullAddress(display_name);
+        setSearchTerm(display_name);
+        setCityCoordinates([parseFloat(lat), parseFloat(lon)]);
+        setSuggestions([]);
+    };
+
+    const handleMapClick = ({ latlng, city, state, fullAddress }) => {
         setCityCoordinates(latlng);
         setSelectedCity(city);
         setSelectedState(state);
-        setSearchTerm(displayName);
+        setFullAddress(fullAddress);
+        setSearchTerm(fullAddress);
         setSuggestions([]);
-        setShowSuggestions(false);
     };
 
-    const cityList =
-        selectedState === "Haryana" ? haryanaCities : selectedState ? Cities[selectedState] || [] : [];
+    // New: Save handler to show data
+    const handleSave = async () => {
+        try {
+            if (!cityCoordinates) {
+                alert("Please select a city/location first!");
+                return;
+            }
+            const dataToSave = {
+                city: selectedCity,
+                state: selectedState,
+                fullAddress,
+                latitude: cityCoordinates[0],
+                longitude: cityCoordinates[1],
+            };
 
-    useEffect(() => {
-        if (selectedCity && selectedState) {
-            const address = `${selectedCity}, ${selectedState}, India`;
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
-                .then((res) => res.json())
-                .then((data) => {
-                    if (data && data.length > 0) {
-                        setCityCoordinates([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
-                    } else {
-                        setCityCoordinates(null);
-                    }
-                })
-                .catch(() => setCityCoordinates(null));
+            console.log(dataToSave);
+
+            const result = await fetch('https://node-m8jb.onrender.com/addcitydata', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dataToSave)
+            });
+
+            if (result.status === 200) {
+                navigate(-1)
+                alert('Success')
+            }
         }
-    }, [selectedCity, selectedState]);
+        catch (err) {
+
+        }
+
+
+    };
 
     return (
         <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "40px" }}>
             <div className="city-container">
-                <h1>City Management</h1>
+                <h2 style={{ textAlign: 'center', color: 'green', fontWeight: '500', marginTop: '-30px' }}>ADD CITY</h2>
                 <div className="add-city-box">
-                    <h2>Add City</h2>
-                    {/* Select State */}
-                    <div className="form-group" style={{ flex: 1 }}>
-                        <label>Select State</label>
-                        <select value={selectedState} onChange={handleStateChange}>
-                            <option value="">-- Select State --</option>
-                            {States.map((state, index) => (
-                                <option key={index} value={state}>
-                                    {state}
-                                </option>
-                            ))}
-                        </select>
+                    <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-around" }}>
+                        <div>
+                            <h3 style={{ textAlign: "center", marginLeft: '70px' }}>City</h3>
+                        </div>
+                        <div style={{ width: '33%', position: "relative", marginRight: '30px' }} ref={searchRef}>
+                            <input
+                                type="text"
+                                placeholder="Search City"
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                className="search-input"
+                            />
+                            {suggestions.length > 0 && (
+                                <ul className="suggestion-list">
+                                    {suggestions.map((item, index) => (
+                                        <li key={index} onClick={() => handleSelectSuggestion(item)}>
+                                            {item.display_name}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Select City and Add Button on same row, below State */}
-                    {selectedState && (
-                        <>
-                            <div style={{ display:'flex',flexDirection:'row'}}>
-                                <div className="form-group" style={{ flex: 1 }}>
-                                    <label>Select City</label>
-                                    <select value={selectedCity} onChange={handleCityChange} style={{width:'92%'}}>
-                                        <option value="">-- Select City --</option>
-                                        {cityList.map((city, index) => (
-                                            <option key={index} value={city}>
-                                                {city}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                    
-                                <button
-                                    onClick={handleAddCityZone}
-                                    style={{
-                                        height: "36px",
-                                        padding: "0 12px",
-                                        backgroundColor: "#1976d2",
-                                        color: "white",
-                                        border: "none",
-                                        borderRadius: "5px",
-                                        cursor: "pointer",
-                                        marginTop:38,
-                                        marginRight:26
-                                    }}
-                                >
-                                    + Add City
-                                </button>
-                            </div>
-                        </>
-                    )}
-
-                    {/* Zones */}
-                    {zones.length > 0 && (
-                        <div style={{ marginTop: "20px" }}>
-                            <h3 style={{ fontSize: "16px", marginBottom: "10px" }}>Saved Zones</h3>
-                            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                                {zones.map((zone, idx) => (
-                                    <div
-                                        key={idx}
-                                        onClick={() => {
-                                            setZones((prevZones) => prevZones.filter((_, i) => i !== idx));
-                                        }}
-                                        style={{
-                                            cursor: "pointer",
-                                            fontSize: "10px",
-                                            padding: "3px 6px",
-                                            border: "1px solid #888",
-                                            borderRadius: "5px",
-                                            backgroundColor: "#e0e0e0",
-                                            userSelect: "none",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "4px",
-                                            whiteSpace: "nowrap",
-                                            boxShadow: "1px 1px 3px rgba(0,0,0,0.1)",
-                                        }}
-                                        title={zone.name}
-                                    >
-                                        <strong>{zone.name.split(",")[0]}</strong>
-                                        <span style={{ color: "red", fontWeight: "bold" }}>×</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Map */}
-                    {cityCoordinates && (
+                    {/* Map Section */}
+                    <div style={{ width: '70%', height: '400px', marginTop: '50px', display: 'flex', marginLeft: '180px' }}>
                         <MapContainer
-                            center={cityCoordinates}
-                            zoom={12}
-                            style={{ height: "400px", width: "100%", marginTop: "20px" }}
+                            center={cityCoordinates || [20.5937, 78.9629]}
+                            zoom={cityCoordinates ? 12 : 4}
+                            style={{ height: "100%", width: "100%" }}
                         >
                             <TileLayer
                                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -274,18 +231,29 @@ function City() {
                                 url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
                                 attribution="Labels &copy; Esri"
                             />
-                            <Marker position={cityCoordinates}>
-                                <Popup>{selectedCity}, {selectedState}</Popup>
-                            </Marker>
-                            <RecenterMap latlng={cityCoordinates} />
+                            {cityCoordinates && (
+                                <>
+                                    <Marker position={cityCoordinates}>
+                                        <Popup>
+                                            <strong>{selectedCity}</strong><br />
+                                            {selectedState}<br />
+                                            <small>{fullAddress}</small>
+                                        </Popup>
+                                    </Marker>
+                                    <RecenterMap latlng={cityCoordinates} />
+                                </>
+                            )}
                             <ClickHandler onClickLocation={handleMapClick} />
                         </MapContainer>
-                    )}
-                </div>
+                    </div>
 
-                <div className="button-group" style={{ marginTop: "20px" }}>
-                    <button className="save-btn">Save</button>
-                    <button className="back-btn" onClick={() => navigate(-1)}>Back</button>
+                    {/* Buttons */}
+                    <div className="button-group" style={{ marginTop: "20px" }}>
+                        <button className="save-btn" onClick={handleSave}>Save</button>
+                        <button className="back-btn" onClick={() => navigate(-1)}>
+                            Back
+                        </button>
+                    </div>
                 </div>
             </div>
         </MDBox>

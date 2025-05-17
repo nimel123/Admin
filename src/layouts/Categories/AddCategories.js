@@ -1,249 +1,211 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import "./Addcategories.css";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
-import "./Addcategories.css";
 import { useNavigate } from "react-router-dom";
-import Zone from '../Zones/HisarZone';
 
-function AddCategories() {
-  const [name, setName] = useState("");
+const AddCategories = () => {
+  const [categoryName, setCategoryName] = useState("");
   const [description, setDescription] = useState("");
-  const [file, setFile] = useState(null);
-  const [subcategories, setSubcategories] = useState([]);
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [type, setType] = useState("");
+  const [mainCategory, setMainCategory] = useState("");
+  const [subCategory, setSubCategory] = useState("");
+  const navigate=useNavigate();
+
   const [controller] = useMaterialUIController();
-  const [selectedValue, setSelectedValue] = useState('');
   const { miniSidenav } = controller;
-  const navigate = useNavigate();
-  const [subcategoryName, setSubcategoryName] = useState('');
-  const [price, setPrice] = useState('');
-  const [imageFile, setImageFile] = useState(null);
-  const [city, setCity] = useState('');
-  const [zone, setZone] = useState('');
-  const [arrayZone, setArrayZone] = useState([]);
-  const [datacity, setDatacity] = useState([]);
 
-  useEffect(() => {
-    const getcitydata = async () => {
-      const result = await fetch('https://node-m8jb.onrender.com/getcitydata');
-      const json = await result.json();
-      setDatacity(json);
-    };
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    setImage(file);
 
-    getcitydata();
-  }, []);
-
-  const ManageData = async () => {
-    if (!name || !description || !file || subcategories.length === 0) {
-      return alert('Please Check All Fields');
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("description", description);
-      formData.append("file", file);
-
-      const subcatData = subcategories.map(({ name, price }) => ({ name, price }));
-      formData.append("subcat", JSON.stringify(subcatData));
-
-      subcategories.forEach((sub) => {
-        formData.append("subImages", sub.file);
-      });
-      formData.append("city", city);
-      formData.append("zones", JSON.stringify(arrayZone));
-
-
-      const result = await fetch("https://node-m8jb.onrender.com/addcategories", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (result.status === 200) {
-        alert("Category Created Successfully");
-        navigate('/categories');
-      } else {
-        alert("Failed to Create Category");
-      }
-    } catch (err) {
-      console.error("Error saving category:", err);
-      alert("Something went wrong");
-    }
-  };
-
-  function Home() {
-    return navigate('/categories');
-  }
-
-  const handleChange = (event) => {
-    setSelectedValue(event.target.value);
-  };
-
-  const handleAddSubcategory = () => {
-    if (!subcategoryName || !price || !imageFile) {
-      return alert("Please fill all subcategory fields.");
-    }
-
-    const newSub = {
-      name: subcategoryName,
-      price: price,
-      file: imageFile,
-    };
-
-    setSubcategories([...subcategories, newSub]);
-    setSubcategoryName('');
-    setPrice('');
-    setImageFile(null);
-  };
-
-  const handleZone = () => {
-    if (zone && !arrayZone.includes(zone)) {
-      setArrayZone([...arrayZone, zone]);
-      setZone(""); 
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
     } else {
-      alert("Zone already added or invalid.");
+      setImagePreview(null);
     }
+  };
+
+  const handleSubmit = () => {
+    if (
+      !categoryName ||
+      !description ||
+      !image ||
+      !type ||
+      (type === "Sub Category" && !mainCategory) ||
+      (type === "Sub Sub-Category" && !subCategory)
+    ) {
+      alert("Please fill all fields!");
+      return;
+    }
+
+    const formData = {
+      categoryName,
+      description,
+      image,
+      type,
+      mainCategory: type === "Sub Category" ? mainCategory : null,
+      subCategory: type === "Sub Sub-Category" ? subCategory : null,
+    };
+
+    console.log("Submitted Data:", formData);
+
+    // Reset form
+    setCategoryName("");
+    setDescription("");
+    setImage(null);
+    setImagePreview(null);
+    setType("");
+    setMainCategory("");
+    setSubCategory("");
   };
 
   return (
-    <MDBox ml={miniSidenav ? "80px" : "250px"} p={2}>
-      <h1 style={{ textAlign: "center", marginTop: "20px", fontFamily: "Urbanist" }}>
-        Categories Management
-      </h1>
-      <div className="category-container">
-        <h2 className="category-title">CREATE CATEGORY</h2>
+    <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "20px" }}>
+      <div style={{
+        width: "85%",
+        margin: "0 auto",
+        borderRadius: "10px",
+        padding: "10px",
+        border:'1px solid gray',
+         boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)"
+      }}>
 
-        <div className="form-group">
-          <label>Name</label>
-          <input type="text" placeholder="Insert Name" onChange={(e) => setName(e.target.value)} />
+        <h2 style={{ textAlign: "center", marginBottom: "30px",fontWeight:'bold',color:'green' }}>ADD NEW CATEGORY</h2>
+
+        {/* Category Name */}
+        <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "20px" }}>
+          <div><label style={{fontWeight:'500'}}>Category Name</label></div>
+          <div style={{ width: "59.5%" }}>
+            <input
+              type="text"
+              placeholder="Enter Category Name"
+              value={categoryName}
+              onChange={(e) => setCategoryName(e.target.value)}
+              style={{border:'1px solid black',backgroundColor:'white'}}
+            />
+          </div>
         </div>
 
-        <div className="form-group">
-          <label>Description</label>
-          <textarea placeholder="Insert Description" onChange={(e) => setDescription(e.target.value)} />
-        </div>
-
-        <div className="form-group">
-          <label>Image</label>
-          <input type="file" accept=".svg" onChange={(e) => setFile(e.target.files[0])} />
-        </div>
-
-        <div className="form-group">
-          <label>Select City</label>
-          <select value={city} onChange={(e) => setCity(e.target.value)} style={{ width: '100%',  }}>
-            <option value="">-- Select City --</option>
-            {datacity.map((item, index) => (
-              <option key={index} value={item.city}>
-                {item.city}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {city && (
-          <div className="form-group">
-            <label>Select Zone</label>
-            {city === "Hisar" ? (
-              <select
-                value={zone}
-                onChange={(e) => setZone(e.target.value)}
-                style={{ width: "100%", height: "30px" }}
-              >
-                <option value="">-- Select Zone --</option>
-                {Zone.map((zoneItem, index) => (
-                  <option key={index} value={zoneItem}>
-                    {zoneItem}
-                  </option>
-                ))}
-              </select>
+        {/* Category Image */}
+        <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", marginBottom: "20px" }}>
+          <div><label style={{fontWeight:'500'}}>Category Image</label></div>
+          <div style={{ width: "36%" }}>
+            <input type="file" accept="image/*" onChange={handleImageChange} 
+            style={{border:'1px solid black',backgroundColor:'white'}}
+            />
+          </div>
+          <div style={{ marginTop: "20px" }}>
+            {imagePreview ? (
+              <img
+                src={imagePreview}
+                alt="Preview"
+                style={{ width: "100px", height: "100px", objectFit: "cover" }}
+              />
             ) : (
-              <p style={{ color: "red", fontSize: "14px" }}>
-                No zone available in this city
-              </p>
-            )}
-          </div>
-        )}
-
-        {zone && (
-          <button onClick={handleZone} style={{ marginTop: '10px' }}>
-            Add
-          </button>
-        )}
-
-        {arrayZone.length > 0 && (
-          <div className="form-group" style={{ marginTop: '10px' }}>
-            <label>Zone List</label>
-            <select>
-              {arrayZone.map((z, index) => (
-                <option key={index}>{z}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div className="form-group">
-          <label>Manage Categories</label>
-          <select value={selectedValue} onChange={handleChange} style={{ width: '130px', }}>
-            <option value="">-- Select --</option>
-            <option value="Categories">Categories</option>
-            <option value="Sub-Categories">Sub-Categories</option>
-          </select>
-        </div>
-
-        {selectedValue === 'Sub-Categories' && (
-          <>
-            <div className="form-group">
-              <label>Subcategory Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Ice Cream"
-                value={subcategoryName}
-                onChange={(e) => setSubcategoryName(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Price</label>
-              <input
-                type="number"
-                placeholder="e.g. 10"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Image</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setImageFile(e.target.files[0])}
-              />
-            </div>
-
-            <button onClick={handleAddSubcategory}>Add</button>
-
-            {subcategories.length > 0 && (
-              <div className="form-group" style={{ marginTop: '10px' }}>
-                <label>Subcategories List</label>
-                <select>
-                  {subcategories.map((sub, index) => (
-                    <option key={index}>
-                      {sub.name} - ₹{sub.price}
-                    </option>
-                  ))}
-                </select>
+              <div
+                style={{
+                  width: "100px",
+                  height: "100px",
+                  marginTop: "-30px",
+                  backgroundColor: "#ccc",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  color: "#666",
+                }}
+              >
+                No Image
               </div>
             )}
-          </>
+          </div>
+        </div>
+
+        {/* Description */}
+        <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "20px" }}>
+          <div><label style={{fontWeight:'500'}}>Description</label></div>
+          <div style={{ width: "59%", marginLeft: "45px" }}>
+            <textarea
+              placeholder="Enter Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              style={{ width: "100%", height: "100px",borderRadius:'10px',padding:'5px' }}
+            />
+          </div>
+        </div>
+
+        {/* Type */}
+        <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "30px" }}>
+          <div><label style={{fontWeight:'500'}}>Type</label></div>
+          <div style={{ width: "60%" }}>
+            <select value={type} onChange={(e) => setType(e.target.value)} style={{ marginLeft: "30px",backgroundColor:'white',border:'1px solid black' }}>
+              <option value="">-- Select an option --</option>
+              <option value="Main Category">Main Category</option>
+              <option value="Sub Category">Sub Category</option>
+              <option value="Sub Sub-Category">Sub Sub-Category</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Main Category (only for Sub Category) */}
+        {type === "Sub Category" && (
+          <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "30px" }}>
+            <div><label style={{fontWeight:'500'}}>Select Main Category</label></div>
+            <div style={{ width: "60%" }}>
+              <select
+                value={mainCategory}
+                onChange={(e) => setMainCategory(e.target.value)}
+                style={{ marginLeft: "-8px",backgroundColor:'white',border:'1px solid black' }}
+              >
+                <option value="">-- Select Main Category --</option>
+                <option value="Food">Food</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Clothing">Clothing</option>
+              </select>
+            </div>
+          </div>
         )}
 
-        <div className="button-group">
-          <button className="save-btn" onClick={ManageData}>Save</button>
-          <button className="back-btn" onClick={Home}>Back</button>
+        {/* Sub Category (only for Sub Sub-Category) */}
+        {type === "Sub Sub-Category" && (
+          <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "30px" }}>
+            <div><label style={{fontWeight:'500'}}>Select Sub Category</label></div>
+            <div style={{ width: "60%",marginLeft:'10px' }}>
+              <select
+                value={subCategory}
+                onChange={(e) => setSubCategory(e.target.value)}
+                style={{ marginLeft: "-8px",backgroundColor:'white',border:'1px solid black' }}
+              >
+                <option value="">-- Select Sub Category --</option>
+                <option value="Snacks">Snacks</option>
+                <option value="Mobiles">Mobiles</option>
+                <option value="Mens Clothing">Mens Clothing</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <div style={{ textAlign: "center",}}>
+          <button onClick={handleSubmit} style={{ width:'80px',height:'40px', fontSize: "16px",marginTop:'10px',
+            marginBottom:'20px',backgroundColor:'green',color:'white',borderRadius:'15px',marginRight:'50px',cursor:'pointer' }}
+            >
+            SAVE
+          </button>
+          <button onClick={()=>navigate(-1)} style={{ width:'80px',height:'40px', fontSize: "16px",marginTop:'10px',
+            marginBottom:'20px',backgroundColor:'green',color:'white',borderRadius:'15px',cursor:'pointer' }}
+            
+            >
+            BACK
+          </button>
         </div>
       </div>
     </MDBox>
   );
-}
+};
 
 export default AddCategories;

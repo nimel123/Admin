@@ -49,12 +49,11 @@ import Demo from 'layouts/dashboard/Demo'
 
 // @mui icons
 import Icon from "@mui/material/Icon";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import CategoryIcon from "@mui/icons-material/Category";
-import Categories from "layouts/Categories/Categories";
 import City from "layouts/City Management/City";
 import CityTable from "layouts/City Management/CityTable";
 import UserData from "layouts/Users/Users";
+import BanerManagement from "layouts/Banner/Banner";
+import Categories from "layouts/Categories/Categories";
 
 
 
@@ -79,7 +78,7 @@ const routes = [
     type: "collapse",
     name: "Zone Management",
     key: "zone-management",
-    icon: <LocationOnIcon fontSize="small" />,
+    icon: <Icon fontSize="small">location_on</Icon>,
     route: "/serviceArea",
     component: <Table />,
   },
@@ -87,15 +86,23 @@ const routes = [
     type: "collapse",
     name: "Categories",
     key: "servicearea",
-    icon: <CategoryIcon fontSize="small" />,
+    icon: <Icon fontSize="small">storefront</Icon>,
     route: "/categories",
     component: <Categories />,
+  },
+    {
+    type: "collapse",
+    name: "Banner-Management",
+    key: "banner",
+    icon: <Icon fontSize="small" >add_photo_alternate</Icon>,
+    route: "/banner-manage",
+    component: <BanerManagement />,
   },
    {
     type: "collapse",
     name: "UserData",
     key: "userdata",
-    icon: <CategoryIcon fontSize="small" />,
+    icon: <Icon fontSize="small">diversity_3</Icon>,
     route: "/user-data",
     component: <UserData />,
   },
