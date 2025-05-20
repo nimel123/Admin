@@ -4,7 +4,6 @@ import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@mui/material";
 
-
 const headerCell = {
   padding: "14px 12px",
   border: "1px solid #ddd",
@@ -19,7 +18,7 @@ const bodyCell = {
   border: "1px solid #eee",
   fontSize: 17,
   backgroundColor: "#fff",
-  paddingLeft:'30px'
+  paddingLeft: '30px'
 };
 
 function Categories() {
@@ -27,50 +26,39 @@ function Categories() {
   const { miniSidenav } = controller;
   const navigate = useNavigate();
 
-  const [locations, setLocations] = useState([]);
   const [entriesToShow, setEntriesToShow] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCity, setSelectedCity] = useState("All Cities"); // <-- new state for city filter
+  const [categories, setMainCategories] = useState([]);
 
   useEffect(() => {
-    const fetchLocations = async () => {
+    const getMainCategory = async () => {
       try {
-        const res = await fetch("https://node-m8jb.onrender.com/getlocations");
-        const data = await res.json();
-        setLocations(data.result || []);
+        const data = await fetch('https://node-m8jb.onrender.com/getMainCategory');
+        if (data.status === 200) {
+          const result = await data.json();
+          setMainCategories(result.result);
+        } else {
+          console.log('Something Wrong');
+        }
       } catch (err) {
-        console.error("Error fetching locations:", err);
+        console.log(err);
       }
     };
-
-    fetchLocations();
+    getMainCategory();
   }, []);
 
-  // Get distinct cities for dropdown
-  const distinctCities = ["All Cities", ...new Set(locations.map((loc) => loc.city))];
-
-  // Filter locations by search term AND selected city
-  const filteredLocations = locations.filter((item) => {
+  const filteredCategories = categories.filter((item) => {
     const search = searchTerm.toLowerCase();
-    const formattedRange =
-      item.range >= 1000 ? (item.range / 1000).toFixed(1) + " km" : item.range + " m";
-
-    // Check city filter: if 'All Cities' selected, ignore city filtering
-    const cityMatch = selectedCity === "All Cities" || item.city === selectedCity;
-
-    // Check if search term matches any field
-    const searchMatch =
-      item.city.toLowerCase().includes(search) ||
-      item.address.toLowerCase().includes(search) ||
-      formattedRange.toLowerCase().includes(search);
-
-    return cityMatch && searchMatch;
+    const nameMatch = item.name.toLowerCase().includes(search);
+    const itemsMatch = String(item.items || "100").toLowerCase().includes(search);
+    const publicMatch = "yes".includes(search) || "no".includes(search); // adjust if dynamic
+    return nameMatch || itemsMatch || publicMatch;
   });
 
-  const totalPages = Math.ceil(filteredLocations.length / entriesToShow);
+  const totalPages = Math.ceil(filteredCategories.length / entriesToShow);
   const startIndex = (currentPage - 1) * entriesToShow;
-  const currentLocations = filteredLocations.slice(startIndex, startIndex + entriesToShow);
+  const currentCategories = filteredCategories.slice(startIndex, startIndex + entriesToShow);
 
   const handleEntriesChange = (e) => {
     setEntriesToShow(Number(e.target.value));
@@ -82,37 +70,25 @@ function Categories() {
     setCurrentPage(1);
   };
 
-  const handleCityChange = (e) => {
-    setSelectedCity(e.target.value);
-    setCurrentPage(1);
-  };
-
   const goToPreviousPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
   const goToNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
 
-
-  const handledeleteZone=async(id)=>{
-    try{
-       const confirmDelete = window.confirm("Are you sure you want to delete this zone?");
-         if(confirmDelete){
-            const result=await fetch(`https://node-m8jb.onrender.com/deletezone/${id}`,{
-          method:'DELETE'
+  const handleCate = async (id) => {
+    try {
+      const confirmDelete = window.confirm("Are you sure you want to delete this category?");
+      if (confirmDelete) {
+        const result = await fetch(`https://node-m8jb.onrender.com/delete/${id}`, {
+          method: 'DELETE'
         });
-        if(result.status===200){
-          setLocations((prev) => prev.filter((loc) => loc._id !== id));
-           alert('Success')
+        if (result.status === 200) {
+          setMainCategories((prev) => prev.filter((cat) => cat._id !== id));
+          alert('Deleted Successfully');
         }
-         }
-         else{
-          return;
-         }
-       
-    }
-    catch(err){
+      }
+    } catch (err) {
       console.log(err);
-      
     }
-  }
+  };
 
   return (
     <MDBox
@@ -123,25 +99,20 @@ function Categories() {
       }}
     >
       <div className="city-container">
-        <div
-          className="add-city-box"
-          style={{
-            width: "100%",
-            borderRadius: 15,
-            padding: 20,
-            overflowX: "auto",
-          }}
-        >
+        <div className="add-city-box" style={{
+          width: "100%",
+          borderRadius: 15,
+          padding: 20,
+          overflowX: "auto",
+        }}>
           {/* Header */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 20,
-              flexWrap: "wrap",
-            }}
-          >
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 20,
+            flexWrap: "wrap",
+          }}>
             <div>
               <span style={{ fontWeight: "bold", fontSize: 26 }}>Categories Lists</span>
               <br />
@@ -150,7 +121,7 @@ function Categories() {
             <div>
               <Button
                 style={{
-                  backgroundColor: "green",
+                  backgroundColor: "#00c853",
                   height: 45,
                   width: 160,
                   fontSize: 12,
@@ -165,17 +136,12 @@ function Categories() {
           </div>
 
           {/* Controls */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 10,
-              flexWrap: "wrap",
-            }}
-          >
-
-
-            {/* Entries dropdown */}
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 10,
+            flexWrap: "wrap",
+          }}>
             <div style={{ marginBottom: 10 }}>
               <span style={{ fontSize: 16 }}>Show Entries</span>&nbsp;
               <select value={entriesToShow} onChange={handleEntriesChange}>
@@ -185,78 +151,71 @@ function Categories() {
               </select>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
-              {/* Left side dropdown for city */}
-              <div style={{ marginBottom: 10,marginRight:'40px',marginTop:'' }}>
-                <label style={{ fontSize: 16, }}>Filter by City:</label>
-                <select value={selectedCity} onChange={handleCityChange} style={{ fontSize: 16,  borderRadius: "6px" }}>
-                  {distinctCities.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Search input */}
-              <div style={{ marginBottom: 8, marginTop: "15px", display: "flex", flexDirection: "column" }}>
-                <label  style={{ fontSize: 16,marginTop:'-8px',marginLeft:'5px',marginBottom:'5px'}}>Search</label>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  placeholder="Search..."
-                  style={{
-                    padding: "5px",
-                    borderRadius: "20px",
-                    height: "45px",
-                    marginTop:'-5px',
-                    width: "200px",
-                    border: "1px solid #ccc",
-                    fontSize: 17,
-                    paddingLeft: "15px",
-                  }}
-                />
-              </div>
-
+            {/* Search Input */}
+            <div style={{ marginBottom: 8, display: "flex", flexDirection: "column" }}>
+              <label style={{ fontSize: 16, marginBottom: 5 }}>Search</label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                placeholder="Search by name, items, public..."
+                style={{
+                  padding: "5px",
+                  borderRadius: "20px",
+                  height: "45px",
+                  width: "200px",
+                  border: "1px solid #ccc",
+                  fontSize: 17,
+                  paddingLeft: "15px",
+                }}
+              />
             </div>
           </div>
 
-          {/* Table and pagination remain unchanged */}
+          {/* Table */}
           <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "separate",
-                borderSpacing: 0,
-                overflow: "hidden",
-                boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-              }}
-            >
+            <table style={{
+              width: "100%",
+              borderCollapse: "separate",
+              borderSpacing: 0,
+              overflow: "hidden",
+              boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+            }}>
               <thead>
                 <tr>
-                  <th style={{...headerCell,width:'10%'}}>Sr. No</th>
+                  <th style={{ ...headerCell, width: '10%' }}>Sr. No</th>
                   <th style={headerCell}>Category Name</th>
-                  <th style={{...headerCell,width:'15%'}}>Sub Categories</th>
+                  <th style={{ ...headerCell, width: '15%' }}>Sub Categories</th>
                   <th style={headerCell}>Items</th>
                   <th style={headerCell}>Public</th>
                   <th style={{ ...headerCell, width: "20%", textAlign: "center" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {currentLocations.map((item, index) => (
+                {currentCategories.map((item, index) => (
                   <tr key={item._id}>
-                    <td style={{...bodyCell,textAlign:'center'}}>{startIndex + index + 1}</td>
-                    <td style={{...bodyCell,textAlign:'center'}}>
-                      <div style={{display:'flex',gap:'30px',alignItems:'center'}}>
-                        <img src="" style={{width:'50px',height:'50px',borderRadius:"100%"}}/>
-                        <span >Food</span>
+                    <td style={{ ...bodyCell, textAlign: 'center' }}>{startIndex + index + 1}</td>
+                    <td style={{ ...bodyCell, textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '30px', alignItems: "center" }}>
+                        <img
+                          src={`https://node-m8jb.onrender.com/${item.image}`}
+                          alt={item.name}
+                          style={{
+                            width: '50px',
+                            height: '50px',
+                            borderRadius: '100%',
+                            objectFit: 'cover'
+                          }}
+                        />
+                        <span>{item.name}</span>
                       </div>
                     </td>
-                    <td style={{...bodyCell,textAlign:'center',cursor:'pointer'}} onClick={()=>navigate('/getsubcate')}>{'10'}</td>
-                    <td style={{...bodyCell,textAlign:'center'}}>{'100'}</td>
-                     <td style={{...bodyCell,textAlign:'center'}}>{'100'}</td>
-                    <td style={{...bodyCell,textAlign:'center'}}>
+                    <td style={{ ...bodyCell, textAlign: 'center', cursor: 'pointer' }} onClick={() => navigate('/getsubcate')}>
+                      10
+                    </td>
+                    <td style={{ ...bodyCell, textAlign: 'center' }}>{'100'}</td>
+                    <td style={{ ...bodyCell, textAlign: 'center' }}>{'Yes'}</td>
+                    <td style={{ ...bodyCell, textAlign: 'center' }}>
                       <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
                         <button
                           style={{
@@ -279,7 +238,8 @@ function Categories() {
                             padding: "8px 16px",
                             borderRadius: "6px",
                             cursor: "pointer",
-                          }} onClick={()=>handledeleteZone(item._id)}
+                          }}
+                          onClick={() => handleCate(item._id)}
                         >
                           Delete
                         </button>
@@ -291,19 +251,18 @@ function Categories() {
             </table>
           </div>
 
-          <div
-            style={{
-              marginTop: 20,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
+          {/* Pagination */}
+          <div style={{
+            marginTop: 20,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}>
             <span>
-              Showing {startIndex + 1}-
-              {Math.min(startIndex + entriesToShow, filteredLocations.length)} of{" "}
-              {filteredLocations.length} locations
+              Showing {startIndex + 1}-{
+                Math.min(startIndex + entriesToShow, filteredCategories.length)
+              } of {filteredCategories.length} categories
             </span>
             <div>
               <button

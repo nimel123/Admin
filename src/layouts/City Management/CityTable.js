@@ -129,10 +129,10 @@ export default function CityTable() {
                     </div>
                     <Button
                         style={{
-                            backgroundColor: "green",
+                            backgroundColor: "#00c853",
                             height: 45,
                             width: 150,
-                            fontSize: 12,
+                            fontSize: 15,
                             color: "white",
                             letterSpacing: "1px",
                         }}

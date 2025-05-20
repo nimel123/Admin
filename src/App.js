@@ -38,6 +38,10 @@ import CityTable from "layouts/City Management/CityTable";
 import UserData from "layouts/Users/Users";
 import CreateUser from "layouts/Users/AddUser";
 import AddBanner from "layouts/Banner/AddBanner";
+import AddBrand from "layouts/Brand/Brand";
+import BrandTable from "layouts/Brand/BrandTable";
+import Attributes from "layouts/Attribute/Value";
+import Tax from "layouts/Attribute/Tax";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -163,6 +167,12 @@ export default function App() {
                 <Route path="/user-data" element={<UserData />} />
                 <Route path="/user-create" element={<CreateUser />} />
                 <Route path="/add-banner" element={<AddBanner />} />
+                <Route path="/brands-table" element={<BrandTable />} />
+                 <Route path="/add-brand" element={<AddBrand />} />
+                   <Route path="/attribute-table" element={<Attributes />} />
+                    <Route path="/attribute-value" element={<Attributes />} />
+                    <Route path="/attribute-tax" element={<Tax />} />
+                   
               </Routes>
             </MDBox>
           </>
@@ -200,6 +210,10 @@ export default function App() {
             <Route path="/user-data" element={<UserData />} />
             <Route path="/user-create" element={<CreateUser />} />
             <Route path="/add-banner" element={<AddBanner />} />
+             <Route path="/brands-table" element={<BrandTable />} />
+                 <Route path="/add-brand" element={<AddBrand />} />
+                 <Route path="/attribute-table" element={<Attributes />} />
+                  <Route path="/add-attribute" element={<Attributes />} />
             <Route path="*" element={<Navigate to="/dashboard" />} />
 
           </Routes>

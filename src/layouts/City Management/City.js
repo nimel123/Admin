@@ -14,6 +14,7 @@ import {
     useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
+import { Button } from "@mui/material";
 
 // Leaflet icon fix
 delete L.Icon.Default.prototype._getIconUrl;
@@ -249,10 +250,10 @@ function City() {
 
                     {/* Buttons */}
                     <div className="button-group" style={{ marginTop: "20px" }}>
-                        <button className="save-btn" onClick={handleSave}>Save</button>
-                        <button className="back-btn" onClick={() => navigate(-1)}>
+                        <Button style={{ backgroundColor: "#00c853", color: "white", width: '100px', height: '35px', borderRadius: '15px', fontSize: '15px', }} onClick={handleSave}>Save</Button>
+                        <Button style={{ backgroundColor: "gray", color: "white", width: '100px', height: '35px', borderRadius: '15px', fontSize: '15px', }} onClick={() => navigate(-1)}>
                             Back
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

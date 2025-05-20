@@ -254,10 +254,10 @@ function AddServiceArea() {
           variant="contained"
           color="primary"
           fullWidth
-          style={{ marginTop: "20px" }}
+          style={{ marginTop: "20px",backgroundColor:'#00c853' }}
           onClick={handleSave}
         >
-          <h4 style={{ color: "black" }}>Save Service Area</h4>
+          <h4 style={{ color: "white",fontSize:'15px' }}>Save Service Area</h4>
         </Button>
       </div>
     </MDBox>

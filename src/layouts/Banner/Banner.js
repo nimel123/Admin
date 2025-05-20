@@ -166,7 +166,7 @@ function BanerManagement() {
                         <div>
                             <Button
                                 style={{
-                                    backgroundColor: "green",
+                                    backgroundColor: "#00c853",
                                     height: 45,
                                     width: 150,
                                     fontSize: 12,

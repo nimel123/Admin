@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@mui/material";
 
 function AddBanner() {
   const [controller] = useMaterialUIController();
@@ -13,6 +14,10 @@ function AddBanner() {
   const [zoneInput, setZoneInput] = useState("");
   const [zones, setZones] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [type, setType] = useState('');
+  const [main, setMain] = useState([]);
+  const [mainId, setMainId] = useState('')
+  const [subId, setSubId] = useState('')
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -26,6 +31,18 @@ function AddBanner() {
     };
 
     fetchLocations();
+
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch("https://node-m8jb.onrender.com/getMainCategory");
+        const data = await res.json();
+        setMain(data.result);
+      } catch (err) {
+        console.error("Error fetching locations:", err);
+      }
+    };
+
+    fetchCategories();
   }, []);
 
   const ImagePreview = (e) => {
@@ -44,6 +61,7 @@ function AddBanner() {
     return parts.length > 1 ? `${parts[0]},${parts[1]}` : fullAddress;
   };
 
+  const allSubCategories = main.flatMap(cat => cat.subcat || []);
   return (
     <MDBox
       p={2}
@@ -134,37 +152,38 @@ function AddBanner() {
         <div style={{
           display: "flex",
           justifyContent: "space-around",
-          alignItems: "flex-start",
+          alignItems: "center",
           marginBottom: "25px"
         }}>
-          <label style={{ fontWeight: "500", marginTop: "8px", marginLeft: '15px' }}>Select Zone</label>
-          <div style={{ width: "52.5%", position: "relative" }}>
-            <input
-              type="text"
-              placeholder="Search and press Enter"
+          <label style={{ fontWeight: "500", marginLeft: "15px" }}>Select Zone</label>
+          <div style={{ width: "52.5%" }}>
+            <select
               value={zoneInput}
-              onChange={(e) => setZoneInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && zoneInput.trim()) {
-                  e.preventDefault();
-                  const matched = locations.find(loc =>
-                    loc.address.toLowerCase() === zoneInput.toLowerCase()
-                  );
-                  if (matched && !zones.includes(matched.address)) {
-                    setZones([...zones, matched.address]);
-                    setZoneInput("");
-                  }
+              onChange={(e) => {
+                const selectedAddress = e.target.value;
+                if (selectedAddress && !zones.includes(selectedAddress)) {
+                  setZones([...zones, selectedAddress]);
                 }
+                setZoneInput(""); // Reset input after selection
               }}
               style={{
-                width: "95%",
-                height: '45px',
+                width: "96%",
+                height: "45px",
                 padding: "8px",
                 borderRadius: "10px",
-                border: '0.5px solid black',
-                backgroundColor: 'white'
+                border: "0.5px solid black",
+                backgroundColor: "white"
               }}
-            />
+            >
+              <option value="">-- Select Zone --</option>
+              {[...locations]
+                .sort((a, b) => a.address.localeCompare(b.address))
+                .map((loc, idx) => (
+                  <option key={idx} value={loc.address}>
+                    {loc.address}
+                  </option>
+                ))}
+            </select>
 
             {/* Suggestions */}
             {zoneInput && (
@@ -227,7 +246,7 @@ function AddBanner() {
                   }}
                   title={zone}
                 >
-                  {getShortAddress(zone)} &times;
+                 
                 </span>
               ))}
             </div>
@@ -252,6 +271,7 @@ function AddBanner() {
               backgroundColor: 'white',
               marginLeft: '10px'
             }}
+            onChange={(e) => setType(e.target.value)}
           >
             <option value="">--Select Type--</option>
             <option value="Category">Category</option>
@@ -259,6 +279,64 @@ function AddBanner() {
             <option value="Sub Sub-Category">Sub Sub-Category</option>
           </select>
         </div>
+
+
+        {/* Category */}
+
+        {type === 'Category' ? (
+          <div style={{
+            display: "flex",
+            justifyContent: "space-around",
+            alignItems: "center",
+            marginBottom: "25px"
+          }}>
+            <label style={{ fontWeight: "500" }}>Select Category</label>
+            <select
+              style={{
+                width: "50%",
+                height: '45px',
+                padding: "8px",
+                borderRadius: "10px",
+                border: '0.5px solid black',
+                backgroundColor: 'white',
+                marginRight: '30px'
+              }}
+              value={mainId}
+              onChange={(e) => setMainId(e.target.value)}
+            >
+              {main.map((item) => (
+                <option key={item._id} value={item._id}>{item.name}</option>
+              ))}
+            </select>
+          </div>
+        ) : type === 'SubCategory' ? (
+          <div style={{
+            display: "flex",
+            justifyContent: "space-around",
+            alignItems: "center",
+            marginBottom: "25px"
+          }}>
+            <label style={{ fontWeight: "500" }}>Select Category</label>
+            <select
+              style={{
+                width: "50%",
+                height: '45px',
+                padding: "8px",
+                borderRadius: "10px",
+                border: '0.5px solid black',
+                backgroundColor: 'white',
+                marginRight: '30px'
+              }}
+              value={subId}
+              onChange={(e) => setSubId(e.target.value)}
+            >
+              {allSubCategories.map((item) => (
+                <option key={item._id} value={item._id}>{item.name}</option>
+              ))}
+            </select>
+          </div>
+        ) : null
+        }
 
         {/* Submit Button */}
         <div style={{
@@ -268,31 +346,31 @@ function AddBanner() {
           marginBottom: "50px",
           marginTop: '50px'
         }}>
-          <button style={{
-            width: '150px',
+          <Button style={{
+            width: '110px',
             height: '40px',
             borderRadius: '10px',
-            backgroundColor: 'skyblue',
-            color: 'black',
+            backgroundColor: '#00c853',
+            color: 'white',
             fontWeight: '600',
             fontSize: '18px',
             cursor: 'pointer',
           }}>
             SUBMIT
-          </button>
-          <button style={{
-            width: '150px',
+          </Button>
+          <Button style={{
+            width: '110px',
             height: '40px',
             borderRadius: '10px',
-            backgroundColor: 'skyblue',
-            color: 'black',
+            backgroundColor: 'gray',
+            color: 'white',
             fontWeight: '600',
             fontSize: '18px',
             cursor: 'pointer',
-            marginLeft:"30px"
-          }} onClick={()=>navigate(-1)}>
+            marginLeft: "30px"
+          }} onClick={() => navigate(-1)}>
             BACK
-          </button>
+          </Button>
         </div>
       </div>
     </MDBox>

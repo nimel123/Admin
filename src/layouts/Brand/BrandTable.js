@@ -20,55 +20,37 @@ const bodyCell = {
   backgroundColor: "#fff",
 };
 
-function Table() {
+function BrandTable() {
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
   const navigate = useNavigate();
 
-  const [locations, setLocations] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [entriesToShow, setEntriesToShow] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCity, setSelectedCity] = useState("All Cities"); // <-- new state for city filter
 
   useEffect(() => {
-    const fetchLocations = async () => {
+    const fetchBrands = async () => {
       try {
-        const res = await fetch("https://node-m8jb.onrender.com/getlocations");
+        const res = await fetch("https://fivlia.onrender.com/getBrand");
         const data = await res.json();
-        setLocations(data.result || []);
+        setBrands(data || []);
       } catch (err) {
-        console.error("Error fetching locations:", err);
+        console.error("Error fetching brands:", err);
       }
     };
 
-    fetchLocations();
+    fetchBrands();
   }, []);
 
-  // Get distinct cities for dropdown
-  const distinctCities = ["All Cities", ...new Set(locations.map((loc) => loc.city))];
+  const filteredBrands = brands.filter((item) =>
+    item.brandName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  // Filter locations by search term AND selected city
-  const filteredLocations = locations.filter((item) => {
-    const search = searchTerm.toLowerCase();
-    const formattedRange =
-      item.range >= 1000 ? (item.range / 1000).toFixed(1) + " km" : item.range + " m";
-
-    // Check city filter: if 'All Cities' selected, ignore city filtering
-    const cityMatch = selectedCity === "All Cities" || item.city === selectedCity;
-
-    // Check if search term matches any field
-    const searchMatch =
-      item.city.toLowerCase().includes(search) ||
-      item.address.toLowerCase().includes(search) ||
-      formattedRange.toLowerCase().includes(search);
-
-    return cityMatch && searchMatch;
-  });
-
-  const totalPages = Math.ceil(filteredLocations.length / entriesToShow);
+  const totalPages = Math.ceil(filteredBrands.length / entriesToShow);
   const startIndex = (currentPage - 1) * entriesToShow;
-  const currentLocations = filteredLocations.slice(startIndex, startIndex + entriesToShow);
+  const currentBrands = filteredBrands.slice(startIndex, startIndex + entriesToShow);
 
   const handleEntriesChange = (e) => {
     setEntriesToShow(Number(e.target.value));
@@ -80,37 +62,26 @@ function Table() {
     setCurrentPage(1);
   };
 
-  const handleCityChange = (e) => {
-    setSelectedCity(e.target.value);
-    setCurrentPage(1);
-  };
-
   const goToPreviousPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
   const goToNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
 
+  const handleDeleteBrand = async (id) => {
+    try {
+      const confirmDelete = window.confirm("Are you sure you want to delete this brand?");
+      if (!confirmDelete) return;
 
-  const handledeleteZone=async(id)=>{
-    try{
-       const confirmDelete = window.confirm("Are you sure you want to delete this zone?");
-         if(confirmDelete){
-            const result=await fetch(`https://node-m8jb.onrender.com/deletezone/${id}`,{
-          method:'DELETE'
-        });
-        if(result.status===200){
-          setLocations((prev) => prev.filter((loc) => loc._id !== id));
-           alert('Success')
-        }
-         }
-         else{
-          return;
-         }
-       
+      const res = await fetch(`https://fivlia.onrender.com/deleteBrand/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.status === 200) {
+        setBrands((prev) => prev.filter((b) => b._id !== id));
+        alert("Deleted successfully!");
+      }
+    } catch (err) {
+      console.log("Delete failed:", err);
     }
-    catch(err){
-      console.log(err);
-      
-    }
-  }
+  };
 
   return (
     <MDBox
@@ -141,23 +112,23 @@ function Table() {
             }}
           >
             <div>
-              <span style={{ fontWeight: "bold", fontSize: 26 }}>Zones Lists</span>
+              <span style={{ fontWeight: "bold", fontSize: 26 }}>Brands List</span>
               <br />
-              <span style={{ fontSize: 17 }}>View and manage all zones</span>
+              <span style={{ fontSize: 17 }}>View and manage all brands</span>
             </div>
             <div>
               <Button
                 style={{
-                  backgroundColor: "#00c853",
+                  backgroundColor: "green",
                   height: 45,
                   width: 150,
-                  fontSize: 12,
+                  fontSize: 14,
                   color: "white",
                   letterSpacing: "1px",
                 }}
-                onClick={() => navigate("/addlocation")}
+                onClick={() => navigate("/add-brand")}
               >
-                + Create Zone
+                + ADD BRAND
               </Button>
             </div>
           </div>
@@ -171,9 +142,6 @@ function Table() {
               flexWrap: "wrap",
             }}
           >
-
-
-            {/* Entries dropdown */}
             <div style={{ marginBottom: 10 }}>
               <span style={{ fontSize: 16 }}>Show Entries</span>&nbsp;
               <select value={entriesToShow} onChange={handleEntriesChange}>
@@ -183,44 +151,27 @@ function Table() {
               </select>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
-              {/* Left side dropdown for city */}
-              <div style={{ marginBottom: 10,marginRight:'40px',marginTop:'' }}>
-                <label style={{ fontSize: 16, }}>Filter by City:</label>
-                <select value={selectedCity} onChange={handleCityChange} style={{ fontSize: 16,  borderRadius: "6px" }}>
-                  {distinctCities.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Search input */}
-              <div style={{ marginBottom: 8, marginTop: "15px", display: "flex", flexDirection: "column" }}>
-                <label  style={{ fontSize: 16,marginTop:'-8px',marginLeft:'5px',marginBottom:'5px'}}>Search</label>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  placeholder="Search..."
-                  style={{
-                    padding: "5px",
-                    borderRadius: "20px",
-                    height: "45px",
-                    marginTop:'-5px',
-                    width: "200px",
-                    border: "1px solid #ccc",
-                    fontSize: 17,
-                    paddingLeft: "15px",
-                  }}
-                />
-              </div>
-
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 16 }}>Search</label><br />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                placeholder="Search Brand..."
+                style={{
+                  padding: "5px",
+                  borderRadius: "20px",
+                  height: "40px",
+                  width: "200px",
+                  border: "1px solid #ccc",
+                  fontSize: 17,
+                  paddingLeft: "15px",
+                }}
+              />
             </div>
           </div>
 
-          {/* Table and pagination remain unchanged */}
+          {/* Table */}
           <div style={{ overflowX: "auto" }}>
             <table
               style={{
@@ -234,25 +185,21 @@ function Table() {
               <thead>
                 <tr>
                   <th style={headerCell}>Sr. No</th>
-                  <th style={headerCell}>Zone Name</th>
-                  <th style={headerCell}>Range</th>
-                  <th style={headerCell}>City</th>
-                  <th style={{ ...headerCell, width: "20%", textAlign: "center" }}>Action</th>
+                  <th style={headerCell}>Brand Name</th>
+                  <th style={headerCell}>Brand Logo</th>
+                  <th style={{ ...headerCell, textAlign: "center" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {currentLocations.map((item, index) => (
+                {currentBrands.map((item, index) => (
                   <tr key={item._id}>
                     <td style={bodyCell}>{startIndex + index + 1}</td>
-                    <td style={bodyCell}>{item.address.split(",").slice(0, 2).join(",")}</td>
-                    <td style={bodyCell}>
-                      {item.range >= 1000
-                        ? (item.range / 1000).toFixed(1) + " km"
-                        : item.range + " m"}
+                    <td style={bodyCell}>{item.brandName}</td>
+                    <td style={{...bodyCell,textAlign:'center'}}>
+                      <img src={item.brandLogo} alt="logo" width='100' height="100" style={{ borderRadius: "100%" }} />
                     </td>
-                    <td style={bodyCell}>{item.city}</td>
                     <td style={bodyCell}>
-                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                      <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
                         <button
                           style={{
                             backgroundColor: "#007BFF",
@@ -261,8 +208,8 @@ function Table() {
                             padding: "8px 16px",
                             borderRadius: "6px",
                             cursor: "pointer",
-                            marginRight: "10px",
                           }}
+                          onClick={() => navigate(`/edit-brand/${item._id}`)}
                         >
                           Edit
                         </button>
@@ -274,7 +221,8 @@ function Table() {
                             padding: "8px 16px",
                             borderRadius: "6px",
                             cursor: "pointer",
-                          }} onClick={()=>handledeleteZone(item._id)}
+                          }}
+                          onClick={() => handleDeleteBrand(item._id)}
                         >
                           Delete
                         </button>
@@ -286,6 +234,7 @@ function Table() {
             </table>
           </div>
 
+          {/* Pagination */}
           <div
             style={{
               marginTop: 20,
@@ -297,8 +246,8 @@ function Table() {
           >
             <span>
               Showing {startIndex + 1}-
-              {Math.min(startIndex + entriesToShow, filteredLocations.length)} of{" "}
-              {filteredLocations.length} locations
+              {Math.min(startIndex + entriesToShow, filteredBrands.length)} of{" "}
+              {filteredBrands.length} brands
             </span>
             <div>
               <button
@@ -332,4 +281,4 @@ function Table() {
   );
 }
 
-export default Table;
+export default BrandTable;

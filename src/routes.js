@@ -54,6 +54,10 @@ import CityTable from "layouts/City Management/CityTable";
 import UserData from "layouts/Users/Users";
 import BanerManagement from "layouts/Banner/Banner";
 import Categories from "layouts/Categories/Categories";
+import AddBrand from "layouts/Brand/Brand";
+import BrandTable from "layouts/Brand/BrandTable";
+import Attributes from "layouts/Attribute/Value";
+import AttributeTable from "layouts/Attribute/AttributeArray";
 
 
 
@@ -97,6 +101,22 @@ const routes = [
     icon: <Icon fontSize="small" >add_photo_alternate</Icon>,
     route: "/banner-manage",
     component: <BanerManagement />,
+  },
+   {
+    type: "collapse",
+    name: "Brands",
+    key: "brands",
+    icon: <Icon fontSize="small" >diamond_shine</Icon>,
+    route: "/brands-table",
+    component: <BrandTable />,
+  },
+   {
+    type: "collapse",
+    name: "Item-Attribute",
+    key: "attributes",
+    icon: <Icon fontSize="small" >diamond_shine</Icon>,
+    route: "/attribute-table",
+    component: <AttributeTable />,
   },
    {
     type: "collapse",
