@@ -30,6 +30,7 @@ function Attributes() {
 
             if(result.status===200){
                 alert('Attribute Success')
+                navigate(-1)
             }
         }
         catch(err){
@@ -57,7 +58,9 @@ function Attributes() {
                         >
                             SAVE
                         </Button>
-                        <Button style={{ backgroundColor: "#00c853", color: "white", width: '100px', height: '35px', borderRadius: '15px', fontSize: '15px' }}>
+                        <Button style={{ backgroundColor: "#00c853", color: "white", width: '100px', height: '35px', borderRadius: '15px', fontSize: '15px' }}
+                        onClick={()=>navigate(-1)}
+                        >
                             BACK
                         </Button>
                     </div>

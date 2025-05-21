@@ -8,7 +8,7 @@ function AddBanner() {
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
   const navigate = useNavigate();
-
+  const [cities, setCities] = useState([]);
   const [name, setName] = useState("");
   const [image, setImage] = useState(null);
   const [zoneInput, setZoneInput] = useState("");
@@ -43,6 +43,17 @@ function AddBanner() {
     };
 
     fetchCategories();
+
+    const getCity = async () => {
+            try {
+                const result = await fetch("https://node-m8jb.onrender.com/getcitydata");
+                const data = await result.json();
+                setCities(citiesWithStatus);
+            } catch (err) {
+                console.log(err);
+            }
+        };
+        getCity();
   }, []);
 
   const ImagePreview = (e) => {
@@ -148,6 +159,33 @@ function AddBanner() {
           </div>
         </div>
 
+        {/* Type */}
+        <div style={{
+          display: "flex",
+          justifyContent: "space-around",
+          alignItems: "center",
+          marginBottom: "25px"
+        }}>
+          <label style={{ fontWeight: "500" }}>City</label>
+          <select
+            style={{
+              width: "50%",
+              height: '45px',
+              padding: "8px",
+              borderRadius: "10px",
+              border: '0.5px solid black',
+              backgroundColor: 'white',
+              marginLeft: '10px'
+            }}
+            onChange={(e) => setType(e.target.value)}
+          >
+            <option value="">--Select City--</option>
+            {cities.map((item,index)=>{
+              <option key={item._id} value={item.name}>{item.name}</option>
+            })}
+          </select>
+        </div>
+
         {/* Select Zone with Autocomplete */}
         <div style={{
           display: "flex",
@@ -246,7 +284,7 @@ function AddBanner() {
                   }}
                   title={zone}
                 >
-                 
+                  {getShortAddress(zone)}
                 </span>
               ))}
             </div>

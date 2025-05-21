@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@mui/material";
+import { Button,Switch } from "@mui/material";
 
 export default function CityTable() {
     const [controller] = useMaterialUIController();
@@ -289,19 +289,20 @@ export default function CityTable() {
                                         >
                                             {city.state}
                                         </td>
-                                        <td
+                                       <td
                                             style={{
                                                 border: "1px solid #ddd",
                                                 padding: "14px 24px",
                                                 verticalAlign: "middle",
                                                 textAlign: "center",
-                                                fontWeight: "bold",
-                                                color: city.active ? "green" : "red",
-                                                cursor: "pointer",
                                             }}
-                                            onClick={() => toggleStatus(city.id)} // Toggle status on click
                                         >
-                                            {city.active ? "Active" : "Deactive"}
+                                            <Switch
+                                                checked={city.active}
+                                                onChange={() => toggleStatus(city.id)}
+                                                color="success"
+                                                inputProps={{ "aria-label": "controlled" }}
+                                            />
                                         </td>
                                         <td
                                             style={{

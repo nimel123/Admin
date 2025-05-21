@@ -42,6 +42,7 @@ import AddBrand from "layouts/Brand/Brand";
 import BrandTable from "layouts/Brand/BrandTable";
 import Attributes from "layouts/Attribute/Value";
 import Tax from "layouts/Attribute/Tax";
+import AttributeTable from "layouts/Attribute/AttributeArray";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -101,9 +102,9 @@ export default function App() {
 
   const getRoutes = (allRoutes) =>
     allRoutes.map((route) => {
-      if (route.collapse) {
-        return getRoutes(route.collapse);
-      }
+     if (route.collapse) {
+      return getRoutes(route.collapse); 
+    }
 
       if (route.route) {
         return <Route exact path={route.route} element={route.component} key={route.key} />;
@@ -159,20 +160,15 @@ export default function App() {
                 {getRoutes(routes)}
                 <Route path="/addlocation" element={<AddServiceArea />} />
                 <Route path="/addCategories" element={<AddCategories />} />
-                <Route path="/categories" element={<Categories />} />
                 <Route path="/edit-sub" element={<EditSub />} />
                 <Route path="*" element={<Navigate to="/dashboard" />} />
                 <Route path="/city" element={<City />} />
-                <Route path="/citytable" element={<CityTable />} />
                 <Route path="/user-data" element={<UserData />} />
                 <Route path="/user-create" element={<CreateUser />} />
                 <Route path="/add-banner" element={<AddBanner />} />
-                <Route path="/brands-table" element={<BrandTable />} />
-                 <Route path="/add-brand" element={<AddBrand />} />
-                   <Route path="/attribute-table" element={<Attributes />} />
-                    <Route path="/attribute-value" element={<Attributes />} />
-                    <Route path="/attribute-tax" element={<Tax />} />
-                   
+                <Route path="/add-brand" element={<AddBrand />} />
+                <Route path="/attribute-value" element={<Attributes />} />
+
               </Routes>
             </MDBox>
           </>
@@ -202,18 +198,14 @@ export default function App() {
             {getRoutes(routes)}
             <Route path="/addCategories" element={<AddCategories />} />
             <Route path="/getsubcate" element={<GetSubCategories />} />
-            <Route path="/categories" element={<Categories />} />
             <Route path="/addlocation" element={<AddServiceArea />} />
             <Route path="/edit-sub" element={<EditSub />} />
             <Route path="/city" element={<City />} />
-            <Route path="/citytable" element={<CityTable />} />
             <Route path="/user-data" element={<UserData />} />
             <Route path="/user-create" element={<CreateUser />} />
             <Route path="/add-banner" element={<AddBanner />} />
-             <Route path="/brands-table" element={<BrandTable />} />
-                 <Route path="/add-brand" element={<AddBrand />} />
-                 <Route path="/attribute-table" element={<Attributes />} />
-                  <Route path="/add-attribute" element={<Attributes />} />
+            <Route path="/add-brand" element={<AddBrand />} />
+            <Route path="/add-attribute" element={<Attributes />} />
             <Route path="*" element={<Navigate to="/dashboard" />} />
 
           </Routes>

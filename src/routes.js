@@ -8,34 +8,11 @@
 
 Coded by www.creative-tim.com
 
- =========================================================
+=========================================================
 
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
-/** 
-  All of the routes for the Material Dashboard 2 React are added here,
-  You can add a new route, customize the routes and delete the routes here.
-
-  Once you add a new route on this file it will be visible automatically on
-  the Sidenav.
-
-  For adding a new route you can follow the existing routes in the routes array.
-  1. The `type` key with the `collapse` value is used for a route.
-  2. The `type` key with the `title` value is used for a title inside the Sidenav. 
-  3. The `type` key with the `divider` value is used for a divider between Sidenav items.
-  4. The `name` key is used for the name of the route on the Sidenav.
-  5. The `key` key is used for the key of the route (It will help you with the key prop inside a loop).
-  6. The `icon` key is used for the icon of the route on the Sidenav, you have to add a node.
-  7. The `collapse` key is used for making a collapsible item on the Sidenav that has other routes
-  inside (nested routes), you need to pass the nested routes inside an array as a value for the `collapse` key.
-  8. The `route` key is used to store the route location which is used for the react router.
-  9. The `href` key is used to store the external links location.
-  10. The `title` key is only for the item with the type of `title` and its used for the title text on the Sidenav.
-  10. The `component` key is used to store the component of its route.
-*/
-
-// Material Dashboard 2 React layouts
 import Dashboard from "layouts/dashboard";
 import Tables from "layouts/tables";
 import Billing from "layouts/billing";
@@ -45,21 +22,16 @@ import Profile from "layouts/profile";
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
 import Table from "layouts/servicearea/ServiceTable";
-import Demo from 'layouts/dashboard/Demo'
-
-// @mui icons
+import Demo from "layouts/dashboard/Demo";
 import Icon from "@mui/material/Icon";
-import City from "layouts/City Management/City";
 import CityTable from "layouts/City Management/CityTable";
 import UserData from "layouts/Users/Users";
 import BanerManagement from "layouts/Banner/Banner";
 import Categories from "layouts/Categories/Categories";
-import AddBrand from "layouts/Brand/Brand";
 import BrandTable from "layouts/Brand/BrandTable";
-import Attributes from "layouts/Attribute/Value";
 import AttributeTable from "layouts/Attribute/AttributeArray";
-
-
+import Tax from "layouts/Attribute/Tax";
+import Product from "layouts/Products/Product";
 
 const routes = [
   {
@@ -74,7 +46,7 @@ const routes = [
     type: "collapse",
     name: "City Management",
     key: "city-management",
-    icon: <Icon fontSize="small">City Management</Icon>,
+    icon: <Icon fontSize="small">location_city</Icon>, // Updated icon for clarity
     route: "/citytable",
     component: <CityTable />,
   },
@@ -94,31 +66,53 @@ const routes = [
     route: "/categories",
     component: <Categories />,
   },
-    {
+  {
     type: "collapse",
     name: "Banner-Management",
     key: "banner",
-    icon: <Icon fontSize="small" >add_photo_alternate</Icon>,
+    icon: <Icon fontSize="small">add_photo_alternate</Icon>,
     route: "/banner-manage",
     component: <BanerManagement />,
   },
-   {
+  {
     type: "collapse",
     name: "Brands",
     key: "brands",
-    icon: <Icon fontSize="small" >diamond_shine</Icon>,
+    icon: <Icon fontSize="small">diamond_shine</Icon>,
     route: "/brands-table",
     component: <BrandTable />,
   },
-   {
+  {
     type: "collapse",
-    name: "Item-Attribute",
-    key: "attributes",
-    icon: <Icon fontSize="small" >diamond_shine</Icon>,
-    route: "/attribute-table",
-    component: <AttributeTable />,
+    name: "Attributes",
+    key: "Attributes",
+    icon: <Icon fontSize="small">format_list_bulleted</Icon>,
+    collapse: [
+       {
+        name: "Item-Attributes",
+        key: "Item-Attributes",
+        route: "/attribute-table",
+        component: <AttributeTable />,
+        icon: <Icon fontSize="small">view_array</Icon>,
+      },
+      {
+        name: "Tax",
+        key: "attribute-tax",
+        route: "/attribute-tax",
+        component: <Tax />,
+        icon: <Icon fontSize="small">account_balance</Icon>, 
+      },
+    ],
   },
-   {
+  {
+    type:"collapse",
+    name:"Products",
+    key:"product",
+    icon:<Icon fontSize="small">storefront</Icon>,
+    route:"/products",
+    component:<Product />
+  },
+  {
     type: "collapse",
     name: "UserData",
     key: "userdata",
@@ -126,7 +120,6 @@ const routes = [
     route: "/user-data",
     component: <UserData />,
   },
-
   {
     type: "collapse",
     name: "Tables",
