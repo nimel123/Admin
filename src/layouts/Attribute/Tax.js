@@ -30,7 +30,7 @@ function Tax() {
   useEffect(() => {
     const fetchAttribute = async () => {
       try {
-        const res = await fetch("http://localhost:5000/getTax");
+        const res = await fetch("https://node-m8jb.onrender.com/getTax");
         const data = await res.json();
         setAttribute(data.result);
       } catch (err) {
