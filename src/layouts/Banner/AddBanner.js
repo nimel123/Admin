@@ -8,16 +8,16 @@ function AddBanner() {
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
   const navigate = useNavigate();
-  const [cities, setCities] = useState([]);
   const [name, setName] = useState("");
   const [image, setImage] = useState(null);
   const [zoneInput, setZoneInput] = useState("");
   const [zones, setZones] = useState([]);
   const [locations, setLocations] = useState([]);
-  const [type, setType] = useState('');
   const [main, setMain] = useState([]);
-  const [mainId, setMainId] = useState('')
-  const [subId, setSubId] = useState('')
+  const [type, setType] = useState("");
+  const [mainId, setMainId] = useState("");
+  const [subId, setSubId] = useState("");
+  const [selectedCityId, setSelectedCityId] = useState("");
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -30,30 +30,18 @@ function AddBanner() {
       }
     };
 
-    fetchLocations();
-
     const fetchCategories = async () => {
       try {
         const res = await fetch("https://node-m8jb.onrender.com/getMainCategory");
         const data = await res.json();
-        setMain(data.result);
+        setMain(data.result || []);
       } catch (err) {
-        console.error("Error fetching locations:", err);
+        console.error("Error fetching categories:", err);
       }
     };
 
+    fetchLocations();
     fetchCategories();
-
-    const getCity = async () => {
-            try {
-                const result = await fetch("https://node-m8jb.onrender.com/getcitydata");
-                const data = await result.json();
-                setCities(citiesWithStatus);
-            } catch (err) {
-                console.log(err);
-            }
-        };
-        getCity();
   }, []);
 
   const ImagePreview = (e) => {
@@ -72,7 +60,9 @@ function AddBanner() {
     return parts.length > 1 ? `${parts[0]},${parts[1]}` : fullAddress;
   };
 
-  const allSubCategories = main.flatMap(cat => cat.subcat || []);
+  const selectedCity = locations.find((loc) => loc._id === selectedCityId);
+  const cityZones = selectedCity ? selectedCity.zones : [];
+
   return (
     <MDBox
       p={2}
@@ -81,68 +71,46 @@ function AddBanner() {
         transition: "margin-left 0.3s ease",
       }}
     >
-      <div style={{
-        width: "95%",
-        margin: "0 auto",
-        padding: "20px",
-        borderRadius: "15px",
-        border: "1px solid gray"
-      }}>
-        <h2 style={{
-          textAlign: "center",
-          color: "green",
-          fontWeight: "bold",
-          marginBottom: '50px',
-        }}>ADD NEW BANNER</h2>
+      <div
+        style={{
+          width: "95%",
+          margin: "0 auto",
+          padding: "20px",
+          borderRadius: "15px",
+          border: "1px solid gray",
+        }}
+      >
+        <h2
+          style={{
+            textAlign: "center",
+            color: "green",
+            fontWeight: "bold",
+            marginBottom: "50px",
+          }}
+        >
+          ADD NEW BANNER
+        </h2>
 
         {/* Name */}
-        <div style={{
-          display: "flex",
-          justifyContent: "space-around",
-          alignItems: "center",
-          marginBottom: "25px"
-        }}>
-          <label style={{ fontWeight: "500" }}>Name</label>
+        <div style={formRowStyle}>
+          <label style={labelStyle}>Name</label>
           <input
             type="text"
             placeholder="Enter Banner Title"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            style={{
-              width: "50%",
-              padding: "10px",
-              borderRadius: "10px",
-              border: '0.5px solid black',
-              backgroundColor: 'white',
-              height: '45px'
-            }}
+            style={inputStyle}
           />
         </div>
 
         {/* Image */}
-        <div style={{
-          display: "flex",
-          justifyContent: "space-around",
-          alignItems: "center",
-          marginBottom: "25px"
-        }}>
-          <label style={{ fontWeight: "500" }}>Image</label>
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            width: "50%"
-          }}>
+        <div style={formRowStyle}>
+          <label style={labelStyle}>Image</label>
+          <div style={{ display: "flex", alignItems: "center", width: "50%" }}>
             <input
               type="file"
               onChange={ImagePreview}
-              style={{
-                width: "100%",
-                height: '45px',
-                borderRadius: '10px',
-                marginRight: "20px",
-                border: '0.5px solid black',
-                backgroundColor: 'white'
-              }}
+              style={{ ...inputStyle, marginRight: "20px" }}
             />
             {image && (
               <img
@@ -152,49 +120,37 @@ function AddBanner() {
                   width: "100px",
                   height: "100px",
                   objectFit: "cover",
-                  borderRadius: "10px"
+                  borderRadius: "10px",
                 }}
               />
             )}
           </div>
         </div>
 
-        {/* Type */}
-        <div style={{
-          display: "flex",
-          justifyContent: "space-around",
-          alignItems: "center",
-          marginBottom: "25px"
-        }}>
-          <label style={{ fontWeight: "500" }}>City</label>
+        {/* City */}
+        <div style={formRowStyle}>
+          <label style={labelStyle}>City</label>
           <select
-            style={{
-              width: "50%",
-              height: '45px',
-              padding: "8px",
-              borderRadius: "10px",
-              border: '0.5px solid black',
-              backgroundColor: 'white',
-              marginLeft: '10px'
+            style={inputStyle}
+            value={selectedCityId}
+            onChange={(e) => {
+              setSelectedCityId(e.target.value);
+              setZones([]);
             }}
-            onChange={(e) => setType(e.target.value)}
           >
-            <option value="">--Select City--</option>
-            {cities.map((item,index)=>{
-              <option key={item._id} value={item.name}>{item.name}</option>
-            })}
+            <option value="">-- Select City --</option>
+            {locations.map((loc) => (
+              <option key={loc._id} value={loc._id}>
+                {loc.city}
+              </option>
+            ))}
           </select>
         </div>
 
-        {/* Select Zone with Autocomplete */}
-        <div style={{
-          display: "flex",
-          justifyContent: "space-around",
-          alignItems: "center",
-          marginBottom: "25px"
-        }}>
-          <label style={{ fontWeight: "500", marginLeft: "15px" }}>Select Zone</label>
-          <div style={{ width: "52.5%" }}>
+        {/* Zone Selection */}
+        <div style={formRowStyle}>
+          <label style={labelStyle}>Select Zone</label>
+          <div style={{ width: "50%",marginRight:'20px', position: "relative" }}>
             <select
               value={zoneInput}
               onChange={(e) => {
@@ -202,86 +158,30 @@ function AddBanner() {
                 if (selectedAddress && !zones.includes(selectedAddress)) {
                   setZones([...zones, selectedAddress]);
                 }
-                setZoneInput(""); // Reset input after selection
+
+                // Defer clearing the dropdown to after rendering
+                setTimeout(() => setZoneInput(""), 100);
               }}
               style={{
-                width: "96%",
-                height: "45px",
-                padding: "8px",
-                borderRadius: "10px",
-                border: "0.5px solid black",
-                backgroundColor: "white"
+                ...inputStyle,
+                width: "100%",
               }}
             >
               <option value="">-- Select Zone --</option>
-              {[...locations]
-                .sort((a, b) => a.address.localeCompare(b.address))
-                .map((loc, idx) => (
-                  <option key={idx} value={loc.address}>
-                    {loc.address}
-                  </option>
-                ))}
+              {cityZones.map((zone, idx) => (
+                <option key={idx} value={zone.address}>
+                  {zone.address}
+                </option>
+              ))}
             </select>
 
-            {/* Suggestions */}
-            {zoneInput && (
-              <div style={{
-                position: "absolute",
-                top: "100%",
-                left: 0,
-                width: "95%",
-                maxHeight: "150px",
-                overflowY: "auto",
-                backgroundColor: "white",
-                border: "1px solid #ccc",
-                borderRadius: "0 0 10px 10px",
-                zIndex: 1000
-              }}>
-                {locations
-                  .filter(loc =>
-                    loc.address.toLowerCase().includes(zoneInput.toLowerCase())
-                  )
-                  .map((loc, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => {
-                        if (!zones.includes(loc.address)) {
-                          setZones([...zones, loc.address]);
-                        }
-                        setZoneInput("");
-                      }}
-                      style={{
-                        padding: "8px 10px",
-                        cursor: "pointer",
-                        borderBottom: "1px solid #eee",
-                        fontSize: "12px",
-                      }}
-                    >
-                      {loc.address}
-                    </div>
-                  ))}
-              </div>
-            )}
-
             {/* Tags */}
-            <div style={{
-              marginTop: "10px",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
-              backgroundColor: 'white',
-            }}>
+            <div style={tagsContainerStyle}>
               {zones.map((zone, index) => (
                 <span
                   key={index}
                   onClick={() => handleRemoveZone(zone)}
-                  style={{
-                    backgroundColor: "#f0f0f0",
-                    padding: "6px 10px",
-                    borderRadius: "20px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                  }}
+                  style={tagStyle}
                   title={zone}
                 >
                   {getShortAddress(zone)}
@@ -291,24 +191,13 @@ function AddBanner() {
           </div>
         </div>
 
+
         {/* Type */}
-        <div style={{
-          display: "flex",
-          justifyContent: "space-around",
-          alignItems: "center",
-          marginBottom: "25px"
-        }}>
-          <label style={{ fontWeight: "500" }}>Type</label>
+        <div style={formRowStyle}>
+          <label style={labelStyle}>Type</label>
           <select
-            style={{
-              width: "50%",
-              height: '45px',
-              padding: "8px",
-              borderRadius: "10px",
-              border: '0.5px solid black',
-              backgroundColor: 'white',
-              marginLeft: '10px'
-            }}
+            style={inputStyle}
+            value={type}
             onChange={(e) => setType(e.target.value)}
           >
             <option value="">--Select Type--</option>
@@ -318,101 +207,56 @@ function AddBanner() {
           </select>
         </div>
 
-
-        {/* Category */}
-
-        {type === 'Category' ? (
-          <div style={{
-            display: "flex",
-            justifyContent: "space-around",
-            alignItems: "center",
-            marginBottom: "25px"
-          }}>
-            <label style={{ fontWeight: "500" }}>Select Category</label>
-            <select
-              style={{
-                width: "50%",
-                height: '45px',
-                padding: "8px",
-                borderRadius: "10px",
-                border: '0.5px solid black',
-                backgroundColor: 'white',
-                marginRight: '30px'
-              }}
-              value={mainId}
-              onChange={(e) => setMainId(e.target.value)}
-            >
-              {main.map((item) => (
-                <option key={item._id} value={item._id}>{item.name}</option>
-              ))}
-            </select>
-          </div>
-        ) : type === 'SubCategory' ? (
-          <div style={{
-            display: "flex",
-            justifyContent: "space-around",
-            alignItems: "center",
-            marginBottom: "25px"
-          }}>
-            <label style={{ fontWeight: "500" }}>Select Category</label>
-            <select
-              style={{
-                width: "50%",
-                height: '45px',
-                padding: "8px",
-                borderRadius: "10px",
-                border: '0.5px solid black',
-                backgroundColor: 'white',
-                marginRight: '30px'
-              }}
-              value={subId}
-              onChange={(e) => setSubId(e.target.value)}
-            >
-              {allSubCategories.map((item) => (
-                <option key={item._id} value={item._id}>{item.name}</option>
-              ))}
-            </select>
-          </div>
-        ) : null
-        }
-
         {/* Submit Button */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: "50px",
-          marginTop: '50px'
-        }}>
-          <Button style={{
-            width: '110px',
-            height: '40px',
-            borderRadius: '10px',
-            backgroundColor: '#00c853',
-            color: 'white',
-            fontWeight: '600',
-            fontSize: '18px',
-            cursor: 'pointer',
-          }}>
-            SUBMIT
-          </Button>
-          <Button style={{
-            width: '110px',
-            height: '40px',
-            borderRadius: '10px',
-            backgroundColor: 'gray',
-            color: 'white',
-            fontWeight: '600',
-            fontSize: '18px',
-            cursor: 'pointer',
-            marginLeft: "30px"
-          }} onClick={() => navigate(-1)}>
-            BACK
+        <div style={{ textAlign: "center" }}>
+          <Button
+            variant="contained"
+            style={{backgroundColor:'#00c853',color:'white'}}
+            onClick={() => alert("Submit clicked")}
+          >
+            Submit
           </Button>
         </div>
       </div>
     </MDBox>
   );
 }
+
+// ✅ Reusable styles
+const formRowStyle = {
+  display: "flex",
+  justifyContent: "space-around",
+  alignItems: "center",
+  marginBottom: "25px",
+};
+
+const labelStyle = {
+  fontWeight: "500",
+};
+
+const inputStyle = {
+  width: "50%",
+  height: "45px",
+  padding: "8px",
+  borderRadius: "10px",
+  border: "0.5px solid black",
+  backgroundColor: "white",
+};
+
+const tagsContainerStyle = {
+  marginTop: "10px",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "8px",
+};
+
+const tagStyle = {
+  backgroundColor: "#f0f0f0",
+  padding: "6px 10px",
+  borderRadius: "20px",
+  cursor: "pointer",
+  fontSize: "14px",
+  color: 'black'
+};
 
 export default AddBanner;

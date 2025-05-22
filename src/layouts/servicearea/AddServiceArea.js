@@ -48,25 +48,27 @@ function AddServiceArea() {
   // Fetch cities from API on mount
   useEffect(() => {
     async function fetchCities() {
-      try {
-        const res = await fetch("https://node-m8jb.onrender.com/getcitydata");
-        const data = await res.json();
-        if (data.result && data.result.length > 0) {
-          setCities(data.result);
-          // Set first city as default selected
-          const firstCity = data.result[0];
-          setCity(firstCity);
-          setMarkerPosition([firstCity.latitude, firstCity.longitude]);
-          setLatitude(firstCity.latitude);
-          setLongitude(firstCity.longitude);
-        }
-      } catch (err) {
-        console.error("Failed to fetch cities", err);
-        alert("Failed to load cities from API.");
-      }
+  try {
+    const res = await fetch("https://fivlia.onrender.com/getAviableCity");
+    const data = await res.json();
+
+    if (data && data.length > 0) {
+      setCities(data);
+      // Set first city as default selected
+      const firstCity = data[0];
+      setCity(firstCity);
+      setMarkerPosition([firstCity.latitude, firstCity.longitude]);
+      setLatitude(firstCity.latitude);
+      setLongitude(firstCity.longitude);
     }
-    fetchCities();
-  }, []);
+  } catch (err) {
+    console.error("Failed to fetch cities", err);
+    alert("Failed to load cities from API.");
+  }
+}
+
+fetchCities();
+ }, []);
 
   const handleRangeChange = (_, newValue) => {
     setRange(newValue);

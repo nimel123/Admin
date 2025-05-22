@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@mui/material";
+import { Button, Switch } from "@mui/material";
 
 const headerCell = {
   padding: "14px 12px",
@@ -36,7 +36,16 @@ function Table() {
       try {
         const res = await fetch("https://node-m8jb.onrender.com/getlocations");
         const data = await res.json();
-        setLocations(data.result || []);
+
+        // Extract zones from each city and combine into one array
+        const allZones = (data.result || []).flatMap(city => {
+          return city.zones?.map(zone => ({
+            ...zone,
+            city: city.city  // Optional: keep city name with each zone
+          })) || [];
+        });
+
+        setLocations(allZones); // Save only zones
       } catch (err) {
         console.error("Error fetching locations:", err);
       }
@@ -44,6 +53,7 @@ function Table() {
 
     fetchLocations();
   }, []);
+
 
   // Get distinct cities for dropdown
   const distinctCities = ["All Cities", ...new Set(locations.map((loc) => loc.city))];
@@ -89,28 +99,27 @@ function Table() {
   const goToNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
 
 
-  const handledeleteZone=async(id)=>{
-    try{
-       const confirmDelete = window.confirm("Are you sure you want to delete this zone?");
-         if(confirmDelete){
-            const result=await fetch(`https://node-m8jb.onrender.com/deletezone/${id}`,{
-          method:'DELETE'
-        });
-        if(result.status===200){
-          setLocations((prev) => prev.filter((loc) => loc._id !== id));
-           alert('Success')
-        }
-         }
-         else{
-          return;
-         }
-       
-    }
-    catch(err){
+  const handledeleteZone = async (id) => {
+    try {
+      const confirmDelete = window.confirm("Are you sure you want to delete this zone?");
+      if (!confirmDelete) return;
+
+      const result = await fetch(`https://node-m8jb.onrender.com/deletezone/${id}`, { 
+        method: 'DELETE'
+      });
+
+      if (result.status === 200) {
+        setLocations((prev) => prev.filter((loc) => loc._id !== id));
+        alert('Zone deleted successfully');
+      } else {
+        alert('Failed to delete zone');
+      }
+    } catch (err) {
       console.log(err);
-      
+      alert('Error deleting zone');
     }
   }
+
 
   return (
     <MDBox
@@ -185,9 +194,9 @@ function Table() {
 
             <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
               {/* Left side dropdown for city */}
-              <div style={{ marginBottom: 10,marginRight:'40px',marginTop:'' }}>
+              <div style={{ marginBottom: 10, marginRight: '40px', marginTop: '' }}>
                 <label style={{ fontSize: 16, }}>Filter by City:</label>
-                <select value={selectedCity} onChange={handleCityChange} style={{ fontSize: 16,  borderRadius: "6px" }}>
+                <select value={selectedCity} onChange={handleCityChange} style={{ fontSize: 16, borderRadius: "6px" }}>
                   {distinctCities.map((city) => (
                     <option key={city} value={city}>
                       {city}
@@ -198,7 +207,7 @@ function Table() {
 
               {/* Search input */}
               <div style={{ marginBottom: 8, marginTop: "15px", display: "flex", flexDirection: "column" }}>
-                <label  style={{ fontSize: 16,marginTop:'-8px',marginLeft:'5px',marginBottom:'5px'}}>Search</label>
+                <label style={{ fontSize: 16, marginTop: '-8px', marginLeft: '5px', marginBottom: '5px' }}>Search</label>
                 <input
                   type="text"
                   value={searchTerm}
@@ -208,7 +217,7 @@ function Table() {
                     padding: "5px",
                     borderRadius: "20px",
                     height: "45px",
-                    marginTop:'-5px',
+                    marginTop: '-5px',
                     width: "200px",
                     border: "1px solid #ccc",
                     fontSize: 17,
@@ -235,6 +244,8 @@ function Table() {
                 <tr>
                   <th style={headerCell}>Sr. No</th>
                   <th style={headerCell}>Zone Name</th>
+                  <th style={headerCell}>COD Option</th>
+                  <th style={headerCell}>Status</th>
                   <th style={headerCell}>Range</th>
                   <th style={headerCell}>City</th>
                   <th style={{ ...headerCell, width: "20%", textAlign: "center" }}>Action</th>
@@ -243,8 +254,24 @@ function Table() {
               <tbody>
                 {currentLocations.map((item, index) => (
                   <tr key={item._id}>
-                    <td style={bodyCell}>{startIndex + index + 1}</td>
+                    <td style={{ ...bodyCell, textAlign: 'center' }}>{startIndex + index + 1}</td>
                     <td style={bodyCell}>{item.address.split(",").slice(0, 2).join(",")}</td>
+                    <td style={{ ...bodyCell, width: '150px', textAlign: 'center' }}>
+                      <Switch
+                        key={`${item.id}-${item.status}`}
+                        checked={item.status}
+                        color="success"
+                        inputProps={{ "aria-label": "controlled" }}
+                      />
+                    </td>
+                    <td style={{ ...bodyCell, textAlign: 'center' }}>
+                      <Switch
+                        key={`${item.id}-${item.status}`}
+                        checked={item.status}
+                        color="success"
+                        inputProps={{ "aria-label": "controlled" }}
+                      />
+                    </td>
                     <td style={bodyCell}>
                       {item.range >= 1000
                         ? (item.range / 1000).toFixed(1) + " km"
@@ -274,7 +301,7 @@ function Table() {
                             padding: "8px 16px",
                             borderRadius: "6px",
                             cursor: "pointer",
-                          }} onClick={()=>handledeleteZone(item._id)}
+                          }} onClick={() => handledeleteZone(item._id)}
                         >
                           Delete
                         </button>
