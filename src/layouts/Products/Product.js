@@ -3,6 +3,7 @@ import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
 import "./Product.css";
+import ColorNamer from "color-namer";
 import { Button } from "@mui/material";
 
 function Product() {
@@ -10,14 +11,15 @@ function Product() {
     const { miniSidenav } = controller;
     const navigate = useNavigate();
     const [activeSection, setActiveSection] = useState("");
+    const [variantPrices, setVariantPrices] = useState({});
 
     const sectionIds = ["basicinfo", "imagesection", "category-section", "citysection", "taxsection"];
+
 
     const [categories, setCategories] = useState([]);
     const [subCategories, setSubCategories] = useState([]);
     const [subsubCategories, setSubsubCategories] = useState([]);
     const [citydata, setCityData] = useState([]);
-    const [taxdata, setTaxData] = useState([]);
 
     // Basic Product Info
     const [name, setName] = useState('');
@@ -28,8 +30,10 @@ function Product() {
     const [sellingprice, setSellingPrice] = useState('');
     const [minqty, setMinQty] = useState('');
     const [maxqty, setMaxQty] = useState('');
-    const [showPopup, setShowPopup] = React.useState(false);
-    const [addAttribute,setAddattribute]=useState('')
+    const [showPopup, setShowPopup] = useState(false);
+    const [showVariantPopup, setShowVariantPopup] = useState(false);
+    const [addAttribute, setAddattribute] = useState('')
+    const [addVarient, setAddVarient] = useState('')
 
     // Categories
     const [category, setCategory] = useState('');
@@ -45,17 +49,48 @@ function Product() {
     const [attributeValue, setAttributeValue] = useState([]);
 
     // Tax
-    const [tax, setTax] = useState('');
-    const [taxType, setTaxType] = useState('');
+    const [taxdata, setTaxData] = useState([]);
+    const [cgst, setCgst] = useState('');
+    const [igst, setIgst] = useState('');
+    const [sgst, setSgst] = useState('');
+    const [vat, setVat] = useState('');
+
+    const [selectedcgst, setSelectedCgst] = useState('')
+    const [selectedigst, setSelectedIgst] = useState('')
+    const [selectedsgst, setSelectedSgst] = useState('')
+    const [selectedvat, setSelectedVat] = useState('')
 
     // Image Upload
     const [selectedImages, setSelectedImages] = useState([]);
     const [error, setError] = useState("");
+    const [thumbnailImage, setThumbnailImage] = useState(null);
+    const [thumbnailError, setThumbnailError] = useState('');
 
     const [zones, setZones] = useState([]);
     const [selectedZone, setSelectedZone] = useState('');
     const [attributedata, setAttributeData] = useState('');
 
+    const [colors, setColors] = useState([]);
+    const [currentColor, setCurrentColor] = useState("#000000");
+
+    const maxSize = 500 * 1024; // 500KB
+    const handleThumbnailChange = (e) => {
+        const file = e.target.files[0];
+        if (file && file.size <= maxSize) {
+            const imageUrl = URL.createObjectURL(file);
+            setThumbnailImage(imageUrl);
+            setThumbnailError('');
+        } else {
+            setThumbnailError("Thumbnail image must be less than 500KB.");
+        }
+    };
+
+    const handlePriceChange = (variantName, price) => {
+        setVariantPrices(prev => ({
+            ...prev,
+            [variantName]: price,
+        }));
+    };
 
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
@@ -118,8 +153,8 @@ function Product() {
     const handleCategoryChange = (e) => {
         const selectedId = e.target.value;
         setCategory(selectedId);
-        setSubCategory(""); // reset sub-category
-        setSubSubCategory(""); // reset sub-sub-category
+        setSubCategory(""); 
+        setSubSubCategory(""); 
 
         const selectedCat = categories.find(cat => cat._id === selectedId);
         if (selectedCat) {
@@ -142,27 +177,34 @@ function Product() {
         }
     };
 
-    const handleAttribute=async()=>{
-        try{
-           const result=await fetch('https://fivlia.onrender.com/addAtribute',{
-            method:'POST',
-            body:JSON.stringify({
-                name:attribute
-            }),
-            headers:{
-                'Content-Type':'application/json'
+    const handleAttribute = async () => {
+        try {
+            console.log('hii');
+
+            const result = await fetch('https://fivlia.onrender.com/addAtribute', {
+                method: 'POST',
+                body: JSON.stringify({
+                    Attribute_name: addAttribute
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            if (result.status === 200) {
+                alert('Attribute Success')
+                setShowPopup(false)
             }
-           })
-           if(result.status===200){
-            alert('Attribute Success')
-           }
-           else{
-            alert('Somthing Wrong')
-           }
+            else {
+                alert('Somthing Wrong')
+            }
         }
-        catch(err){
-            console.log(err);          
+        catch (err) {
+            console.log(err);
         }
+    }
+
+    const handleVarient = async () => {
+
     }
 
     useEffect(() => {
@@ -203,11 +245,26 @@ function Product() {
         }
         getActiveCity();
 
+        const getTax = async () => {
+            try {
+                const res = await fetch("https://node-m8jb.onrender.com/getTax");
+                const data = await res.json();
+                setTaxData(data.result);
+                console.log(data.result);
+
+            } catch (err) {
+                console.error("Error fetching locations:", err);
+            }
+        }
+        getTax();
+
         const fetchAttribute = async () => {
             try {
                 const res = await fetch("https://fivlia.onrender.com/getAttributes");
                 const data = await res.json();
                 setAttribute(data);
+                console.log(data);
+
             } catch (err) {
                 console.error("Error fetching locations:", err);
             }
@@ -253,6 +310,17 @@ function Product() {
         }
     };
 
+
+    const addColor = () => {
+        const name = ColorNamer(currentColor).ntc[0].name;
+        if (!colors.some(c => c.hex === currentColor)) {
+            setColors(prev => [...prev, { hex: currentColor, name }]);
+        }
+    };
+
+    const removeColor = (hexToRemove) => {
+        setColors(prev => prev.filter(c => c.hex !== hexToRemove));
+    };
 
     return (
         <MDBox
@@ -371,6 +439,43 @@ function Product() {
                     {/* Image Upload */}
                     <div className="background" id="imagesection">
                         <span style={{ marginLeft: '20px', fontWeight: 'bold', marginBottom: '10px' }}>Images</span>
+                        <div className="row-section">
+                            <div style={{ display: 'flex', flexDirection: 'row' }} >
+                                <div style={{width:'93%'}}>
+                                    <label>Product Thumbnail</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleThumbnailChange}
+                                        className="input-field"
+                                        style={{ backgroundColor: 'white' }}
+                                        disabled={!!thumbnailImage}
+                                    />
+                                </div>
+                                <div>
+                                    {thumbnailError && <p style={{ color: "red", fontSize: '12px' }}>{thumbnailError}</p>}
+                                    {thumbnailImage && (
+                                        <img
+                                            src={thumbnailImage}
+                                            alt="Thumbnail"
+                                            onClick={() => setThumbnailImage('')}
+                                            title="Click to remove"
+                                            style={{
+                                                width: '180px',
+                                                height: '100px',
+                                                objectFit: 'cover',
+                                                borderRadius: '8px',
+                                                border: '1px solid #ccc',
+                                                cursor: 'pointer',
+                                                marginTop: '10px',
+                                                marginLeft: '20px'
+                                            }}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="row-section">
                             <div style={{ display: 'flex', flexDirection: 'row' }} >
                                 <div>
@@ -495,131 +600,239 @@ function Product() {
                                     <option value="">--Select Attribute--</option>
                                     {
                                         attribute.map((item) => (
-                                            <option key={item._id} value={item._id}>{item.name}</option>
+                                            <option key={item._id} value={item._id}>{item.Attribute_name}</option>
                                         ))
                                     }
                                 </select>
-    
-                                    <h3
-                                        style={{ fontSize: '12px', cursor: 'pointer', color: 'green', marginTop: '10px', marginLeft: '5px' }}
-                                        onClick={() => setShowPopup(true)}
-                                    >
-                                        + ADD ATTRIBUTE
-                                    </h3>
 
-                                    {showPopup && (
+                                <h3
+                                    style={{ fontSize: '12px', cursor: 'pointer', color: 'green', marginTop: '10px', marginLeft: '5px' }}
+                                    onClick={() => setShowPopup(true)}
+                                >
+                                    + ADD ATTRIBUTE
+                                </h3>
+
+                                {showPopup && (
+                                    <div style={{
+                                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                                        backgroundColor: 'rgba(0,0,0,0.5)',
+                                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                        zIndex: 1000,
+                                    }}>
                                         <div style={{
-                                            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                                            backgroundColor: 'rgba(0,0,0,0.5)',
-                                            display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                            zIndex: 1000,
+                                            background: 'white', padding: 20, borderRadius: 5, minWidth: 300
                                         }}>
-                                            <div style={{
-                                                background: 'white', padding: 20, borderRadius: 5, minWidth: 300
-                                            }}>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Enter attribute"
-                                                    value={addAttribute}
-                                                    onChange={(e) => setAddattribute(e.target.value)}
-                                                    style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
-                                                />
-                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                                                    
-                                                    <button onClick={handleAttribute}>Save</button>
-                                                    <button onClick={() => setShowPopup(false)}>Cancel</button>
-                                                </div>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter attribute"
+                                                value={addAttribute}
+                                                onChange={(e) => setAddattribute(e.target.value)}
+                                                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+                                            />
+                                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+
+                                                <Button onClick={handleAttribute}>Save</Button>
+                                                <Button onClick={() => setShowPopup(false)}>Cancel</Button>
                                             </div>
                                         </div>
-                                    )}
+                                    </div>
+                                )}
 
                             </div>
 
                             <div className="input-container">
-                                <label>Select Attribute Value (Multi)</label>
+                                <label>Select Varient</label>
                                 <select className="input-field" onChange={handleAttributeValueChange}>
                                     <option value="">--Select Attribute Value--</option>
-                                    <option value="Small">Small</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="Large">Large</option>
+                                    {
+                                        attribute
+                                            .find((attr) => attr._id === attributedata)?.varient
+                                            ?.map((variant, index) => (
+                                                <option key={index} value={variant.name}>
+                                                    {variant.name}
+                                                </option>
+                                            ))
+                                    }
                                 </select>
+                                <h3
+                                    style={{ fontSize: '12px', cursor: 'pointer', color: 'green', marginTop: '10px', marginLeft: '5px' }}
+                                    onClick={() => setShowVariantPopup(true)}
+                                >
+                                    + ADD VARIENT
+                                </h3>
+
+                                {showVariantPopup && (
+                                    <div style={{
+                                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                                        backgroundColor: 'rgba(0,0,0,0.5)',
+                                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                        zIndex: 1000,
+                                    }}>
+                                        <div style={{
+                                            background: 'white', padding: 20, borderRadius: 5, minWidth: 300
+                                        }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter varient value"
+                                                value={addVarient}
+                                                onChange={(e) => setAddVarient(e.target.value)}
+                                                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+                                            />
+                                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+
+                                                <Button onClick={handleVarient}>Save</Button>
+                                                <Button onClick={() => setShowVariantPopup(false)}>Cancel</Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                            </div>
+
+                        </div>
+
+                        <div className="row-section" style={{ flexWrap: 'wrap' }}>
+                            {attributeValue.map((item, index) => (
+                                <div key={index} className="input-container" style={{ flex: '1 0 30%', }}>
+                                    <label >{item}</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter Price"
+                                        className="input-field"
+                                        value={variantPrices[item] || ""}
+                                        style={{ backgroundColor: 'white' }}
+                                        onChange={(e) => handlePriceChange(item, e.target.value)}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="input-container" style={{ width: "100%", padding: '20px' }}>
+                            <label>Select Colors</label>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                                <input
+                                    type="color"
+                                    value={currentColor}
+                                    onChange={(e) => setCurrentColor(e.target.value)}
+                                    style={{ width: "100%", height: "40px", border: "none", cursor: "pointer" }}
+                                />
+                                <button
+                                    onClick={addColor}
+                                    style={{
+                                        padding: "8px 16px",
+                                        background: "#1976d2",
+                                        color: "white",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        borderRadius: "5px"
+                                    }}
+                                >
+                                    Add
+                                </button>
+                            </div>
+
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                                {colors.map((color, index) => (
+                                    <div
+                                        key={index}
+                                        style={{
+                                            border: "1px solid #ccc",
+                                            padding: "10px",
+                                            borderRadius: "8px",
+                                            minWidth: "10px",
+                                            position: "relative"
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                width: "30px",
+                                                height: "30px",
+                                                backgroundColor: color.hex,
+                                                borderRadius: "50%",
+                                                marginBottom: "5px",
+                                                border: "1px solid #aaa",
+                                            }}
+                                        />
+                                        <div style={{ fontSize: "12px" }}>
+                                            <strong>{color.name}</strong>
+                                            <br />
+                                            {color.hex}
+                                        </div>
+                                        <button
+                                            onClick={() => removeColor(color.hex)}
+                                            style={{
+                                                position: "absolute",
+                                                top: "-6px",
+                                                right: "-6px",
+                                                background: "red",
+                                                color: "white",
+                                                border: "none",
+                                                borderRadius: "50%",
+                                                width: "20px",
+                                                height: "20px",
+                                                cursor: "pointer",
+                                                fontSize: "12px"
+                                            }}
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                        <div style={{ padding: "10px", backgroundColor: "white", marginBottom: "10px" }}>
-                            <strong>Selected Zones:</strong> {zone.join(", ")}
-                        </div>
-
-                        <div style={{ padding: "10px", backgroundColor: "white", marginBottom: '30px' }}>
-                            <strong>Selected Attribute Values:</strong> {attributeValue.join(", ")}
-                        </div>
-
                     </div>
-
-
 
 
                     {/* Tax Section */}
                     <div className="background" id="taxsection">
                         <span style={{ marginLeft: '20px', fontWeight: 'bold', marginBottom: '10px' }}>Product Taxes</span>
-                        <div style={{ padding: '20px' }}>
+                        <div className="row-section">
                             <div className="input-container">
                                 <label>CGST</label>
-                            </div>
-
-                            <div className="input-container">
-                                <label>Precentage</label>
-                                <select className="input-field" value={taxType} onChange={(e) => setTaxType(e.target.value)}>
+                                <select className="input-field" value={cgst} onChange={(e) => setCgst(e.target.value)}>
                                     <option value="">--Select Tax Precentage--</option>
-                                    <option value="Inclusive">Inclusive</option>
-                                    <option value="Exclusive">Exclusive</option>
+                                    {taxdata.map((item) => (
+                                        <option key={item._id} value={item.value}>{item.value}</option>
+                                    ))}
                                 </select>
                             </div>
-                        </div>
 
-                        <div style={{ padding: '20px' }} >
                             <div className="input-container">
                                 <label>IGST</label>
-                            </div>
 
-                            <div className="input-container">
-                                <label>Precentage</label>
-                                <select className="input-field" value={taxType} onChange={(e) => setTaxType(e.target.value)}>
+                                <select className="input-field" value={igst} onChange={(e) => setIgst(e.target.value)}>
                                     <option value="">--Select Tax Precentage--</option>
-                                    <option value="Inclusive">Inclusive</option>
-                                    <option value="Exclusive">Exclusive</option>
+
+                                    {taxdata.map((item) => (
+                                        <option key={item._id} value={item.value}>{item.value}</option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
 
-                        <div style={{ padding: '20px' }}>
+                        <div className="row-section" >
                             <div className="input-container">
                                 <label>SGST</label>
-                            </div>
-
-                            <div className="input-container">
-                                <label>Precentage</label>
-                                <select className="input-field" value={taxType} onChange={(e) => setTaxType(e.target.value)}>
+                                <select className="input-field" value={sgst} onChange={(e) => setSgst(e.target.value)}>
                                     <option value="">--Select Tax Precentage--</option>
-                                    <option value="Inclusive">Inclusive</option>
-                                    <option value="Exclusive">Exclusive</option>
+
+                                    {taxdata.map((item) => (
+                                        <option key={item._id} value={item.value}>{item.value}</option>
+                                    ))}
                                 </select>
                             </div>
-                        </div>
 
-                        <div style={{ padding: '20px' }}>
                             <div className="input-container">
                                 <label>VAT</label>
-                            </div>
-
-                            <div className="input-container">
-                                <label>Precentage</label>
-                                <select className="input-field" value={taxType} onChange={(e) => setTaxType(e.target.value)}>
+                                <select className="input-field" value={vat} onChange={(e) => setVat(e.target.value)}>
                                     <option value="">--Select Tax Precentage--</option>
-                                    <option value="Inclusive">Inclusive</option>
-                                    <option value="Exclusive">Exclusive</option>
+                                    {taxdata.map((item) => (
+                                        <option key={item._id} value={item.value}>{item.value}</option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
+
                     </div>
                     <div style={{ display: 'flex', gap: '30px', alignItems: 'center', justifyContent: 'center' }}>
                         <Button
@@ -647,7 +860,7 @@ function Product() {
                         { id: 'basicinfo', label: 'Basic Information' },
                         { id: 'imagesection', label: 'Image Section' },
                         { id: 'category-section', label: 'Category Section' },
-                        { id: 'citysection', label: 'City Selection' },
+                        { id: 'citysection', label: 'City & Attribute' },
                         { id: 'taxsection', label: 'Tax Information' },
                     ].map((item, index, array) => (
                         <div key={item.id} style={{ position: 'relative' }}>

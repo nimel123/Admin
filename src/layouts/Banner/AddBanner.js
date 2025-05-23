@@ -17,6 +17,7 @@ function AddBanner() {
   const [type, setType] = useState("");
   const [mainId, setMainId] = useState("");
   const [subId, setSubId] = useState("");
+  const [subsubId,setSubsubId]=useState('');
   const [selectedCityId, setSelectedCityId] = useState("");
 
   useEffect(() => {
@@ -29,19 +30,27 @@ function AddBanner() {
         console.error("Error fetching locations:", err);
       }
     };
+    fetchLocations();
 
     const fetchCategories = async () => {
       try {
         const res = await fetch("https://node-m8jb.onrender.com/getMainCategory");
-        const data = await res.json();
-        setMain(data.result || []);
+        if (res.status === 200) {
+          const data = await res.json();
+          setMain(data.result);
+          console.log(data.result);
+        }
+        else {
+          alert('Try Again')
+        }
+
       } catch (err) {
         console.error("Error fetching categories:", err);
       }
     };
-
-    fetchLocations();
     fetchCategories();
+
+
   }, []);
 
   const ImagePreview = (e) => {
@@ -62,6 +71,17 @@ function AddBanner() {
 
   const selectedCity = locations.find((loc) => loc._id === selectedCityId);
   const cityZones = selectedCity ? selectedCity.zones : [];
+
+  const handleBanner = async () => {
+    // try{
+    //   const reset=await fetch('https://fivlia.onrender.com/banner',{
+    //     method:'POST'
+    //   })
+    // }
+    // catch(err){
+    //   console.log(err);   
+    // }
+  }
 
   return (
     <MDBox
@@ -117,7 +137,7 @@ function AddBanner() {
                 src={image}
                 alt="preview"
                 style={{
-                  width: "100px",
+                  width: "238px",
                   height: "100px",
                   objectFit: "cover",
                   borderRadius: "10px",
@@ -147,49 +167,52 @@ function AddBanner() {
           </select>
         </div>
 
-        {/* Zone Selection */}
-        <div style={formRowStyle}>
-          <label style={labelStyle}>Select Zone</label>
-          <div style={{ width: "50%",marginRight:'20px', position: "relative" }}>
-            <select
-              value={zoneInput}
-              onChange={(e) => {
-                const selectedAddress = e.target.value;
-                if (selectedAddress && !zones.includes(selectedAddress)) {
-                  setZones([...zones, selectedAddress]);
-                }
+        {selectedCity ? (
+          <div style={formRowStyle}>
+            <label style={labelStyle}>Select Zone</label>
+            <div style={{ width: "50%", marginRight: '20px', position: "relative" }}>
+              <select
+                value={zoneInput}
+                onChange={(e) => {
+                  const selectedAddress = e.target.value;
+                  if (selectedAddress && !zones.includes(selectedAddress)) {
+                    setZones([...zones, selectedAddress]);
+                  }
 
-                // Defer clearing the dropdown to after rendering
-                setTimeout(() => setZoneInput(""), 100);
-              }}
-              style={{
-                ...inputStyle,
-                width: "100%",
-              }}
-            >
-              <option value="">-- Select Zone --</option>
-              {cityZones.map((zone, idx) => (
-                <option key={idx} value={zone.address}>
-                  {zone.address}
-                </option>
-              ))}
-            </select>
+                  // Defer clearing the dropdown to after rendering
+                  setTimeout(() => setZoneInput(""), 100);
+                }}
+                style={{
+                  ...inputStyle,
+                  width: "100%",
+                }}
+              >
+                <option value="">-- Select Zone --</option>
+                {cityZones.map((zone, idx) => (
+                  <option key={idx} value={zone.address}>
+                    {zone.address}
+                  </option>
+                ))}
+              </select>
 
-            {/* Tags */}
-            <div style={tagsContainerStyle}>
-              {zones.map((zone, index) => (
-                <span
-                  key={index}
-                  onClick={() => handleRemoveZone(zone)}
-                  style={tagStyle}
-                  title={zone}
-                >
-                  {getShortAddress(zone)}
-                </span>
-              ))}
+              {/* Tags */}
+              <div style={tagsContainerStyle}>
+                {zones.map((zone, index) => (
+                  <span
+                    key={index}
+                    onClick={() => handleRemoveZone(zone)}
+                    style={tagStyle}
+                    title={zone}
+                  >
+                    {getShortAddress(zone)}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        ) : null
+        }
+
 
 
         {/* Type */}
@@ -207,14 +230,144 @@ function AddBanner() {
           </select>
         </div>
 
+        {type === "Category" && (
+          <div style={formRowStyle}>
+            <label style={labelStyle}>Select Category</label>
+            <select
+              style={{ ...inputStyle, marginRight: "30px" }}
+              value={mainId}
+              onChange={(e) => setMainId(e.target.value)}
+            >
+              <option value="">--Select Category--</option>
+              {main.map((item) => (
+                <option key={item._id} value={item._id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {type === "SubCategory" && (
+          <>
+            <div style={formRowStyle}>
+              <label style={labelStyle}>Main Category</label>
+              <select
+                style={{ ...inputStyle, marginRight: "30px" }}
+                value={mainId}
+                onChange={(e) => {
+                  setMainId(e.target.value);
+                  setSubId("");
+                }}
+              >
+                <option value="">--Select Main Category--</option>
+                {main.map((item) => (
+                  <option key={item._id} value={item._id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {mainId && (
+              <div style={formRowStyle}>
+                <label style={labelStyle}>Sub Category</label>
+                <select
+                  style={{ ...inputStyle, marginRight: "25px" }}
+                  value={subId}
+                  onChange={(e) => setSubId(e.target.value)}
+                >
+                  <option value="">--Select Sub Category--</option>
+                  {(main.find((cat) => cat._id === mainId)?.subcat || []).map((sub) => (
+                    <option key={sub._id} value={sub._id}>
+                      {sub.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </>
+        )}
+
+        {type === "Sub Sub-Category" && (
+          <>
+            <div style={formRowStyle}>
+              <label style={labelStyle}>Main Category</label>
+              <select
+                style={{ ...inputStyle, marginRight: "30px" }}
+                value={mainId}
+                onChange={(e) => {
+                  setMainId(e.target.value);
+                  setSubId("");
+                }}
+              >
+                <option value="">--Select Main Category--</option>
+                {main.map((item) => (
+                  <option key={item._id} value={item._id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {mainId && (
+              <div style={formRowStyle}>
+                <label style={labelStyle}>Sub Category</label>
+                <select
+                  style={{ ...inputStyle, marginRight: "30px" }}
+                  value={subId}
+                  onChange={(e) => setSubId(e.target.value)}
+                >
+                  <option value="">--Select Sub Category--</option>
+                  {(main.find((cat) => cat._id === mainId)?.subcat || []).map((sub) => (
+                    <option key={sub._id} value={sub._id}>
+                      {sub.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {subId && (
+              <div style={formRowStyle}>
+                <label style={labelStyle}>Sub Sub Category</label>
+                <select
+                  style={{ ...inputStyle, marginRight: "40px" }}
+                  value={subsubId}
+                  onChange={(e) => setSubsubId(e.target.value)}
+                >
+                  <option value="">--Select Sub Sub Category--</option>
+                  {(main
+                    .find((cat) => cat._id === mainId)
+                    ?.subcat.find((sub) => sub._id === subId)?.subsubcat || []
+                  ).map((subsub) => (
+                    <option key={subsub._id} value={subsub._id}>
+                      {subsub.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </>
+        )}
+
+
         {/* Submit Button */}
-        <div style={{ textAlign: "center" }}>
+        <div style={{display:'flex',gap:'50px',justifyContent:'center',alignItems:'center',marginTop:'50px' }}>
           <Button
             variant="contained"
-            style={{backgroundColor:'#00c853',color:'white'}}
-            onClick={() => alert("Submit clicked")}
+            style={{ backgroundColor: '#00c853', color: 'white' }}
+            onClick={handleBanner}
           >
-            Submit
+            SAVE
+          </Button>
+
+          <Button
+            variant="contained"
+            style={{ backgroundColor: '#00c853', color: 'white' }}
+            onClick={()=>navigate(-1)}
+          >
+            BACK
           </Button>
         </div>
       </div>

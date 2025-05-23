@@ -29,23 +29,29 @@ function Table() {
   const [entriesToShow, setEntriesToShow] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCity, setSelectedCity] = useState("All Cities"); // <-- new state for city filter
+  const [selectedCity, setSelectedCity] = useState("All Cities");
 
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const res = await fetch("https://node-m8jb.onrender.com/getlocations");
+        const res = await fetch("https://fivlia.onrender.com/getAllZone");
         const data = await res.json();
 
-        // Extract zones from each city and combine into one array
-        const allZones = (data.result || []).flatMap(city => {
-          return city.zones?.map(zone => ({
-            ...zone,
-            city: city.city  // Optional: keep city name with each zone
-          })) || [];
-        });
+      console.log(data);
+      
+       const allZones = (data || []).flatMap(cityObj => {
+  if (!Array.isArray(cityObj.zones) || cityObj.zones.length === 0) return [];
 
-        setLocations(allZones); // Save only zones
+  const cityName = Array.isArray(cityObj.city) ? cityObj.city[0] : cityObj.city;
+
+  return cityObj.zones.map(zone => ({
+    ...zone,
+    city: cityName
+  }));
+});
+
+
+        setLocations(allZones);
       } catch (err) {
         console.error("Error fetching locations:", err);
       }
@@ -54,11 +60,9 @@ function Table() {
     fetchLocations();
   }, []);
 
-
-  // Get distinct cities for dropdown
+  
   const distinctCities = ["All Cities", ...new Set(locations.map((loc) => loc.city))];
 
-  // Filter locations by search term AND selected city
   const filteredLocations = locations.filter((item) => {
     const search = searchTerm.toLowerCase();
     const formattedRange =
@@ -102,23 +106,60 @@ function Table() {
   const handledeleteZone = async (id) => {
     try {
       const confirmDelete = window.confirm("Are you sure you want to delete this zone?");
-      if (!confirmDelete) return;
-
-      const result = await fetch(`https://node-m8jb.onrender.com/deletezone/${id}`, { 
-        method: 'DELETE'
-      });
-
-      if (result.status === 200) {
-        setLocations((prev) => prev.filter((loc) => loc._id !== id));
-        alert('Zone deleted successfully');
-      } else {
-        alert('Failed to delete zone');
+      if (confirmDelete) {
+        const result = await fetch(`https://node-m8jb.onrender.com/deletezone/${id}`, {
+          method: 'DELETE'
+        });
+        if (result.status === 200) {
+          setLocations((prev) => prev.filter((loc) => loc._id !== id));
+          alert('Success')
+        }
       }
-    } catch (err) {
+      else {
+        return;
+      }
+
+    }
+    catch (err) {
       console.log(err);
-      alert('Error deleting zone');
+
     }
   }
+const updateZone = async (id, updatedFields) => {
+  try {
+    const res = await fetch(`https://fivlia.onrender.com/updateZoneStatus/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedFields),
+    });
+
+    if (res.ok) {
+      const result = await res.json();
+      setLocations((prev) =>
+        prev.map((zone) =>
+          zone._id === id ? { ...zone, ...updatedFields } : zone
+        )
+      );
+    } else {
+      alert("Failed to update zone");
+    }
+  } catch (error) {
+    console.error("Error updating zone:", error);
+  }
+};
+
+// Toggle zone status
+const handleToggleStatus = (id, newStatus, currentCOD) => {
+  updateZone(id, { status: newStatus, cashOnDelivery: currentCOD });
+};
+
+// Toggle cash on delivery
+const handleToggleCashOnDelivery = (id, currentStatus, newCOD) => {
+  updateZone(id, { status: currentStatus, cashOnDelivery: newCOD });
+};
+
 
 
   return (
@@ -244,7 +285,7 @@ function Table() {
                 <tr>
                   <th style={headerCell}>Sr. No</th>
                   <th style={headerCell}>Zone Name</th>
-                  <th style={headerCell}>COD Option</th>
+                  <th style={headerCell}>Cash Delivery</th>
                   <th style={headerCell}>Status</th>
                   <th style={headerCell}>Range</th>
                   <th style={headerCell}>City</th>
@@ -252,26 +293,27 @@ function Table() {
                 </tr>
               </thead>
               <tbody>
-                {currentLocations.map((item, index) => (
+                {currentLocations.map((item, index) => (  
                   <tr key={item._id}>
-                    <td style={{ ...bodyCell, textAlign: 'center' }}>{startIndex + index + 1}</td>
+                    <td style={{...bodyCell,textAlign:'center'}}>{startIndex + index + 1}</td>
                     <td style={bodyCell}>{item.address.split(",").slice(0, 2).join(",")}</td>
-                    <td style={{ ...bodyCell, width: '150px', textAlign: 'center' }}>
-                      <Switch
-                        key={`${item.id}-${item.status}`}
-                        checked={item.status}
-                        color="success"
-                        inputProps={{ "aria-label": "controlled" }}
-                      />
-                    </td>
-                    <td style={{ ...bodyCell, textAlign: 'center' }}>
-                      <Switch
-                        key={`${item.id}-${item.status}`}
-                        checked={item.status}
-                        color="success"
-                        inputProps={{ "aria-label": "controlled" }}
-                      />
-                    </td>
+                <td style={{ ...bodyCell, width: '150px', textAlign: 'center' }}>
+                <Switch
+                  checked={item.cashOnDelivery}
+                  color="success"
+                  inputProps={{ "aria-label": "controlled" }}
+                  onChange={() => handleToggleCashOnDelivery(item._id, item.status, !item.cashOnDelivery)}
+                />
+              </td>
+              <td style={{ ...bodyCell, textAlign: 'center' }}>
+                <Switch
+                  checked={item.status}
+                  color="success"
+                  inputProps={{ "aria-label": "controlled" }}
+                  onChange={() => handleToggleStatus(item._id, !item.status, item.cashOnDelivery)}
+                />
+              </td>
+
                     <td style={bodyCell}>
                       {item.range >= 1000
                         ? (item.range / 1000).toFixed(1) + " km"

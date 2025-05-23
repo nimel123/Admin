@@ -21,90 +21,89 @@ const bodyCell = {
     verticalAlign: "middle",
 };
 
-function BanerManagement() {
+function BannerManagement() {
     const [controller] = useMaterialUIController();
     const { miniSidenav } = controller;
     const navigate = useNavigate();
 
-    // Dummy data with bannerName as {image + name}, type and public toggle state
-    const [locations, setLocations] = useState([
-        {
-            _id: "1",
-            bannerName: "Summer Sale",
-            bannerImage: "https://via.placeholder.com/50x30?text=Summer", // dummy image
-            type: "main",
-            public: true,
-            city: "New York",
-            address: "123 Main St, New York",
-            range: 1500,
-        },
-        {
-            _id: "2",
-            bannerName: "Winter Specials",
-            bannerImage: "https://via.placeholder.com/50x30?text=Winter",
-            type: "sub-categories",
-            public: false,
-            city: "Los Angeles",
-            address: "456 Sunset Blvd, Los Angeles",
-            range: 800,
-        },
-        {
-            _id: "3",
-            bannerName: "Flash Deals",
-            bannerImage: "https://via.placeholder.com/50x30?text=Flash",
-            type: "main",
-            public: true,
-            city: "Chicago",
-            address: "789 Lake Shore Dr, Chicago",
-            range: 500,
-        },
-        {
-            _id: "4",
-            bannerName: "Festive Offers",
-            bannerImage: "https://via.placeholder.com/50x30?text=Festive",
-            type: "sub-categories",
-            public: false,
-            city: "New York",
-            address: "101 Broadway, New York",
-            range: 2000,
-        },
-    ]);
-
+    const [banners, setBanners] = useState([]);
     const [entriesToShow, setEntriesToShow] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedCity, setSelectedCity] = useState("All Cities");
 
-    // Toggle public status for a banner
-    const togglePublic = (id) => {
-        setLocations((prev) =>
-            prev.map((loc) =>
-                loc._id === id ? { ...loc, public: !loc.public } : loc
-            )
-        );
+    // Fetch banners from API
+    useEffect(() => {
+        const getBanner = async () => {
+            try {
+                const response = await fetch("https://fivlia.onrender.com/getAllBanner");
+                const bannersArray = await response.json();
+
+                if (Array.isArray(bannersArray)) {
+                    const bannerWithStatus = bannersArray.map(banner => ({
+                        _id: banner._id,
+                        bannerId: banner.bannerId,
+                        bannerImage: banner.image,
+                        bannerName: banner.title,
+                        type: banner.type,
+                        city: banner.zone?.length ? banner.zone[0] : "N/A",
+                        // Assume backend status is boolean true/false
+                        status: banner.status, 
+                        public: banner.status === true, // boolean for switch
+                    }));
+                    setBanners(bannerWithStatus);
+                } else {
+                    console.error("Expected an array but got:", bannersArray);
+                }
+            } catch (error) {
+                console.error("Error fetching banners:", error);
+            }
+        };
+
+        getBanner();
+    }, []);
+
+    // Toggle status (boolean) and update backend
+    const togglePublic = async (banner) => {
+        const newStatus = !banner.public; // toggle boolean
+
+        try {
+            const res = await fetch(`https://fivlia.onrender.com/admin/banner/${banner._id}/status`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ status: newStatus }), // send boolean status
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                setBanners(prev =>
+                    prev.map(b =>
+                        b._id === banner._id
+                            ? { ...b, status: newStatus, public: newStatus }
+                            : b
+                    )
+                );
+            } else {
+                console.error("Error updating banner:", data.message);
+            }
+        } catch (err) {
+            console.error("Network error:", err);
+        }
     };
 
-    // Get distinct cities for dropdown
-    const distinctCities = ["All Cities", ...new Set(locations.map((loc) => loc.city))];
-
-    // Filter locations by search term AND selected city
-    const filteredLocations = locations.filter((item) => {
+    const filteredBanners = banners.filter((item) => {
         const search = searchTerm.toLowerCase();
-        const formattedRange =
-            item.range >= 1000 ? (item.range / 1000).toFixed(1) + " km" : item.range + " m";
-
-        const cityMatch = selectedCity === "All Cities" || item.city === selectedCity;
-        const searchMatch =
+        return (
             item.bannerName.toLowerCase().includes(search) ||
-            item.city.toLowerCase().includes(search) ||
-            item.type.toLowerCase().includes(search);
-
-        return cityMatch && searchMatch;
+            item.type.toLowerCase().includes(search) ||
+            item.city.toLowerCase().includes(search)
+        );
     });
 
-    const totalPages = Math.ceil(filteredLocations.length / entriesToShow);
+    const totalPages = Math.ceil(filteredBanners.length / entriesToShow);
     const startIndex = (currentPage - 1) * entriesToShow;
-    const currentLocations = filteredLocations.slice(startIndex, startIndex + entriesToShow);
+    const currentBanners = filteredBanners.slice(startIndex, startIndex + entriesToShow);
 
     const handleEntriesChange = (e) => {
         setEntriesToShow(Number(e.target.value));
@@ -116,17 +115,13 @@ function BanerManagement() {
         setCurrentPage(1);
     };
 
-    const handleCityChange = (e) => {
-        setSelectedCity(e.target.value);
-        setCurrentPage(1);
-    };
-
     const goToPreviousPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
     const goToNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
 
-    const handledeleteZone = async (id) => {
+    const handleDeleteBanner = async (bannerId) => {
         if (window.confirm("Are you sure you want to delete this banner?")) {
-            setLocations((prev) => prev.filter((loc) => loc._id !== id));
+            setBanners((prev) => prev.filter((banner) => banner.bannerId !== bannerId));
+            // TODO: Make API call to delete banner on backend
         }
     };
 
@@ -138,9 +133,9 @@ function BanerManagement() {
                 transition: "margin-left 0.3s ease",
             }}
         >
-            <div className="city-container">
+            <div className="banner-container">
                 <div
-                    className="add-city-box"
+                    className="add-banner-box"
                     style={{
                         width: "100%",
                         borderRadius: 15,
@@ -199,52 +194,41 @@ function BanerManagement() {
                             </select>
                         </div>
 
-                        <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
-                            {/* Left side dropdown for city */}
-                            <div style={{ marginBottom: 10, marginRight: "40px" }}>
-                                <label style={{ fontSize: 16 }}>Filter by City:</label>
-                                <select
-                                    value={selectedCity}
-                                    onChange={handleCityChange}
-                                    style={{ fontSize: 16, borderRadius: "6px" }}
-                                >
-                                    {distinctCities.map((city) => (
-                                        <option key={city} value={city}>
-                                            {city}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Search input */}
-                            <div
+                        {/* Search input */}
+                        <div
+                            style={{
+                                marginBottom: 8,
+                                marginTop: "15px",
+                                display: "flex",
+                                flexDirection: "column",
+                            }}
+                        >
+                            <label
                                 style={{
-                                    marginBottom: 8,
-                                    marginTop: "15px",
-                                    display: "flex",
-                                    flexDirection: "column",
+                                    fontSize: 16,
+                                    marginTop: "-8px",
+                                    marginLeft: "5px",
+                                    marginBottom: "5px",
                                 }}
                             >
-                                <label style={{ fontSize: 16, marginTop: "-8px", marginLeft: "5px", marginBottom: "5px" }}>
-                                    Search
-                                </label>
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={handleSearchChange}
-                                    placeholder="Search..."
-                                    style={{
-                                        padding: "5px",
-                                        borderRadius: "20px",
-                                        height: "45px",
-                                        marginTop: "-5px",
-                                        width: "200px",
-                                        border: "1px solid #ccc",
-                                        fontSize: 17,
-                                        paddingLeft: "15px",
-                                    }}
-                                />
-                            </div>
+                                Search
+                            </label>
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                placeholder="Search by banner name, type or city..."
+                                style={{
+                                    padding: "5px",
+                                    borderRadius: "20px",
+                                    height: "45px",
+                                    marginTop: "-5px",
+                                    width: "200px",
+                                    border: "1px solid #ccc",
+                                    fontSize: 17,
+                                    paddingLeft: "15px",
+                                }}
+                            />
                         </div>
                     </div>
 
@@ -263,73 +247,78 @@ function BanerManagement() {
                                 <tr>
                                     <th style={headerCell}>Sr. No</th>
                                     <th style={headerCell}>Banner Name</th>
-                                    <th style={{ ...headerCell, width: '15%' }}>Type</th>
+                                    <th style={{ ...headerCell, width: "15%" }}>Type</th>
+                                    <th style={headerCell}>City</th>
                                     <th style={headerCell}>Public</th>
                                     <th style={{ ...headerCell, width: "20%", textAlign: "center" }}>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {currentLocations.map((item, index) => (
+                                {currentBanners.map((item, index) => (
                                     <tr key={item._id}>
-                                        <td style={bodyCell}>{startIndex + index + 1}</td>
-                                        <td style={{ ...bodyCell, paddingLeft: "20px" }}>
-                                            <div style={{ display: "flex", alignItems: "center", gap: "15px",paddingLeft:'20px' }}>
+                                        <td style={{ ...bodyCell, width: '7%' }}>{startIndex + index + 1}</td>
+                                        <td style={{ ...bodyCell, paddingLeft: "20px", }}>
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: "15px",
+                                                    paddingLeft: "20px",
+                                                }}
+                                            >
                                                 <img
                                                     src={item.bannerImage}
+                                                    alt={item.bannerName}
                                                     style={{ width: 50, height: 50, objectFit: "cover", borderRadius: 5 }}
-                                                   
                                                 />
                                                 <span style={{ fontSize: 16 }}>{item.bannerName}</span>
                                             </div>
                                         </td>
 
-                                        <td style={bodyCell}>{item.type}</td>
+                                        <td style={{ ...bodyCell, width: '3%' }}>{item.type}</td>
+                                        <td style={{ ...bodyCell, width: '10%' }}>{item.city}</td>
                                         <td style={bodyCell}>
                                             <Switch
                                                 checked={item.public}
-                                                onChange={() => togglePublic(item._id)}
+                                                onChange={() => togglePublic(item)}
                                                 color="primary"
                                                 inputProps={{ "aria-label": "public toggle" }}
                                             />
                                         </td>
-                                        <td style={bodyCell}>
-                                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                                <button
-                                                    style={{
-                                                        backgroundColor: "#007BFF",
-                                                        color: "white",
-                                                        border: "none",
-                                                        padding: "8px 16px",
-                                                        borderRadius: "6px",
-                                                        cursor: "pointer",
-                                                        marginRight: "10px",
-                                                    }}
-                                                    onClick={() => alert(`Edit banner ${item.bannerName} (id: ${item._id})`)}
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    style={{
-                                                        backgroundColor: "#dc3545",
-                                                        color: "white",
-                                                        border: "none",
-                                                        padding: "8px 16px",
-                                                        borderRadius: "6px",
-                                                        cursor: "pointer",
-                                                    }}
-                                                    onClick={() => handledeleteZone(item._id)}
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
+                                        <td style={{ ...bodyCell, textAlign: "center", padding: "14px" }}>
+                                            <button
+                                                style={{
+                                                    backgroundColor: "#007BFF",
+                                                    color: "white",
+                                                    padding: "8px 16px",
+                                                    borderRadius: "6px",
+                                                    marginRight: "10px",
+                                                    border: "none",
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                style={{
+                                                    backgroundColor: "#dc3545",
+                                                    color: "white",
+                                                    padding: "8px 16px",
+                                                    borderRadius: "6px",
+                                                    border: "none",
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                Delete
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
 
-                                {currentLocations.length === 0 && (
+                                {currentBanners.length === 0 && (
                                     <tr>
-                                        <td colSpan={5} style={{ textAlign: "center", padding: 20 }}>
-                                            No banners found.
+                                        <td colSpan={6} style={{ ...bodyCell, textAlign: "center" }}>
+                                            No banners found
                                         </td>
                                     </tr>
                                 )}
@@ -340,42 +329,56 @@ function BanerManagement() {
                     {/* Pagination */}
                     <div
                         style={{
-                            marginTop: 20,
+                            marginTop: 15,
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
                             flexWrap: "wrap",
+                            fontSize: 18,
+                            fontWeight: "bold",
                         }}
                     >
-                        <span>
-                            Showing {filteredLocations.length === 0 ? 0 : startIndex + 1}-
-                            {Math.min(startIndex + entriesToShow, filteredLocations.length)} of{" "}
-                            {filteredLocations.length} locations
-                        </span>
-                        <div>
-                            <button
+                        <div style={{ marginTop: 10 }}>
+                            Showing {startIndex + 1} to{" "}
+                            {startIndex + currentBanners.length} of {filteredBanners.length} entries
+                        </div>
+
+                        <div
+                            style={{
+                                display: "flex",
+                                gap: 12,
+                                marginTop: 10,
+                                justifyContent: "center",
+                            }}
+                        >
+                            <Button
+                                variant="outlined"
+                                size="small"
                                 onClick={goToPreviousPage}
                                 disabled={currentPage === 1}
                                 style={{
-                                    padding: "8px 16px",
-                                    marginRight: 10,
-                                    borderRadius: 10,
-                                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                                    minWidth: "40px",
+                                    fontWeight: "bold",
+                                    borderRadius: "5px",
+                                    fontSize: 15,
                                 }}
                             >
-                                Previous
-                            </button>
-                            <button
+                                {"<"}
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                size="small"
                                 onClick={goToNextPage}
                                 disabled={currentPage === totalPages || totalPages === 0}
                                 style={{
-                                    padding: "8px 16px",
-                                    borderRadius: 10,
-                                    cursor: currentPage === totalPages || totalPages === 0 ? "not-allowed" : "pointer",
+                                    minWidth: "40px",
+                                    fontWeight: "bold",
+                                    borderRadius: "5px",
+                                    fontSize: 15,
                                 }}
                             >
-                                Next
-                            </button>
+                                {">"}
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -384,4 +387,4 @@ function BanerManagement() {
     );
 }
 
-export default BanerManagement;
+export default BannerManagement;
