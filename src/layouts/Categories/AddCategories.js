@@ -322,7 +322,7 @@ const AddCategories = () => {
               <select value={selectedAtt} onChange={handleAttributeSelect} style={{ width: "100%", backgroundColor: 'white', border: '1px solid black' }}>
                 <option value="">-- Select Attribute --</option>
                 {attribute.map((item) => (
-                  <option key={item._id} value={item.name}>{item.name}</option>
+                  <option key={item._id} value={item.name}>{item.Attribute_name}</option>
                 ))}
               </select>
             </div>
