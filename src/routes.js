@@ -32,6 +32,7 @@ import BrandTable from "layouts/Brand/BrandTable";
 import AttributeTable from "layouts/Attribute/AttributeArray";
 import Tax from "layouts/Attribute/Tax";
 import Product from "layouts/Products/Product";
+import ProductTable from "layouts/Products/ProductTable";
 
 const routes = [
   {
@@ -109,8 +110,8 @@ const routes = [
     name:"Products",
     key:"product",
     icon:<Icon fontSize="small">storefront</Icon>,
-    route:"/products",
-    component:<Product />
+    route:"/producttable",
+    component:<ProductTable />
   },
   {
     type: "collapse",
