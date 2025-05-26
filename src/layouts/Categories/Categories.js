@@ -81,8 +81,8 @@ function Categories() {
           method: 'DELETE'
         });
         if (result.status === 200) {
-          setMainCategories((prev) => prev.filter((cat) => cat._id !== id));
           alert('Deleted Successfully');
+          setMainCategories((prev) => prev.filter((cat) => cat._id !== id));       
         }
       }
     } catch (err) {
@@ -198,7 +198,7 @@ function Categories() {
                     <td style={{ ...bodyCell, textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: '30px', alignItems: "center" }}>
                         <img
-                          src={`https://node-m8jb.onrender.com/${item.image}`}
+                          src={item.image}
                           alt={item.name}
                           style={{
                             width: '50px',
@@ -210,10 +210,24 @@ function Categories() {
                         <span>{item.name}</span>
                       </div>
                     </td>
-                    <td style={{ ...bodyCell, textAlign: 'center', cursor: 'pointer' }} onClick={() => navigate('/getsubcate')}>
-                      10
+                    <td style={{ ...bodyCell, textAlign: 'center', cursor: 'pointer' }} 
+                    onClick={() => navigate('/getsubcate',{state :{category:item}})}>
+                      {item.subcat ? item.subcat.length : 0}
                     </td>
-                    <td style={{ ...bodyCell, textAlign: 'center' }}>{'100'}</td>
+                    <td style={{ ...bodyCell, textAlign: 'center' }}>
+                      {(() => {
+                        const subCatCount = item.subcat ? item.subcat.length : 0;
+
+                        const subSubCatCount = item.subcat
+                          ? item.subcat.reduce((total, subcat) => {
+                            return total + (subcat.subsubcat ? subcat.subsubcat.length : 0);
+                          }, 0)
+                          : 0;
+
+                        return subCatCount + subSubCatCount;
+                      })()}
+                    </td>
+
                     <td style={{ ...bodyCell, textAlign: 'center' }}>{'Yes'}</td>
                     <td style={{ ...bodyCell, textAlign: 'center' }}>
                       <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>

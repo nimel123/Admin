@@ -44,6 +44,8 @@ import Attributes from "layouts/Attribute/Value";
 import Tax from "layouts/Attribute/Tax";
 import AttributeTable from "layouts/Attribute/AttributeArray";
 import Product from "layouts/Products/Product";
+import AddStore from "layouts/Store/AddStore";
+import SubSubCat from "layouts/Categories/SubSubCat";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -161,6 +163,7 @@ export default function App() {
                 {getRoutes(routes)}
                 <Route path="/addlocation" element={<AddServiceArea />} />
                 <Route path="/addCategories" element={<AddCategories />} />
+                 <Route path="/getsubsubcat" element={<SubSubCat />} />
                 <Route path="/edit-sub" element={<EditSub />} />
                 <Route path="*" element={<Navigate to="/dashboard" />} />
                 <Route path="/city" element={<City />} />
@@ -170,6 +173,7 @@ export default function App() {
                 <Route path="/add-brand" element={<AddBrand />} />
                 <Route path="/attribute-value" element={<Attributes />} />
                  <Route path="/add-product" element={<Product />} />
+                  <Route path="/add-store" element={<AddStore />} />
               </Routes>
             </MDBox>
           </>
@@ -199,6 +203,7 @@ export default function App() {
             {getRoutes(routes)}
             <Route path="/addCategories" element={<AddCategories />} />
             <Route path="/getsubcate" element={<GetSubCategories />} />
+            <Route path="/getsubsubcat" element={<SubSubCat />} />
             <Route path="/addlocation" element={<AddServiceArea />} />
             <Route path="/edit-sub" element={<EditSub />} />
             <Route path="/city" element={<City />} />
@@ -208,6 +213,7 @@ export default function App() {
             <Route path="/add-brand" element={<AddBrand />} />
             <Route path="/add-attribute" element={<Attributes />} />
               <Route path="/add-product" element={<Product />} />
+              <Route path="/add-store" element={<AddStore />} />
             <Route path="*" element={<Navigate to="/dashboard" />} />
 
           </Routes>

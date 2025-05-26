@@ -112,7 +112,7 @@ function AttributeTable() {
                 {attribute.map((item, index) => (
                   <tr key={item._id}>
                     <td style={bodyCell}>{index + 1}</td>
-                     <td style={bodyCell}>{item.name}</td>
+                     <td style={bodyCell}>{item.Attribute_name}</td>
                     <td style={bodyCell}>
                       <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
                         <button

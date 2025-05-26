@@ -97,11 +97,14 @@ const AddCategories = () => {
     if (type === "Sub Sub-Category") {
       formData.append("subCategoryId", subCategory);
     }
- formData.append("attribute", JSON.stringify(attribute || []));
+    formData.append("attribute", JSON.stringify(attributeArray || []));
+
 
 
     //Main Category Add
     if (type === "Main Category") {
+      console.log(name, description);
+
       try {
         const response = await fetch("https://node-m8jb.onrender.com/addMainCategory", {
           method: "POST",
@@ -174,18 +177,18 @@ const AddCategories = () => {
 
 
   const handleAttributeSelect = (e) => {
-    const selected = e.target.value;
+    const selected = e.target.value;  
     setSelectedAtt(selected);
 
-    // Add attribute to array if not already added and selected is not empty
     if (selected && !attributeArray.includes(selected)) {
       setAttributeArray([...attributeArray, selected]);
     }
   };
 
+
   const handleTagRemove = (tagToRemove) => {
-  setAttributeArray(attributeArray.filter(tag => tag !== tagToRemove));
-};
+    setAttributeArray(attributeArray.filter(tag => tag !== tagToRemove));
+  };
 
 
   return (
@@ -328,46 +331,46 @@ const AddCategories = () => {
             </div>
           </div>
         ) : null}
-           
-         {selectedAtt ?(  
-        <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "30px" }}>
-          <div><label style={{ fontWeight: '500' }}>Selected Attributes</label></div>
-          <div style={{backgroundColor:'white',width:"60%"}}>
-          {attributeArray.map((zone, index) => (
-            <div
-              key={index}
-              style={{
-                backgroundColor: "#f0f0f0",
-                padding: "6px 10px",
-                borderRadius: "20px",
-                cursor: "pointer",
-                fontSize: "14px",
-                display: "inline-flex",
-                alignItems: "center",
-              }}
-              title={zone}
-            >
-              {zone}
-              <button
-                onClick={() => handleTagRemove(zone)}
-                style={{
-                  marginLeft: "8px",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "16px",
-                  lineHeight: "1",
-                  color: "#888",
-                }}
-              >
-                &times;
-              </button>
+
+        {selectedAtt ? (
+          <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "30px" }}>
+            <div><label style={{ fontWeight: '500' }}>Selected Attributes</label></div>
+            <div style={{ backgroundColor: 'white', width: "60%" }}>
+              {attributeArray.map((zone, index) => (
+                <div
+                  key={index}
+                  style={{
+                    backgroundColor: "#f0f0f0",
+                    padding: "6px 10px",
+                    borderRadius: "20px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                  title={zone}
+                >
+                  {zone}
+                  <button
+                    onClick={() => handleTagRemove(zone)}
+                    style={{
+                      marginLeft: "8px",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                      fontSize: "16px",
+                      lineHeight: "1",
+                      color: "#888",
+                    }}
+                  >
+                    &times;
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        </div>
-         ):null
+          </div>
+        ) : null
         }
 
         {/* Submit Button */}

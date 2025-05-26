@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react"; // Added useRef
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
@@ -14,7 +14,7 @@ function Product() {
     const [variantPrices, setVariantPrices] = useState({});
     const [colorHexCodes, setColorHexCodes] = useState({});
     const [colorError, setColorError] = useState("");
-    const [activeVariant, setActiveVariant] = useState(""); // Track active variant
+    const [activeVariant, setActiveVariant] = useState("");
 
     const sectionIds = ["basicinfo", "imagesection", "category-section", "citysection", "taxsection"];
 
@@ -34,8 +34,17 @@ function Product() {
     const [maxqty, setMaxQty] = useState('');
     const [showPopup, setShowPopup] = useState(false);
     const [showVariantPopup, setShowVariantPopup] = useState(false);
+    const [showUnitPopup, setShowUnitPopup] = useState(false);
+    const [showbrandPopup, setShowbrandPopup] = useState(false);
     const [addAttribute, setAddattribute] = useState('');
     const [addVarient, setAddVarient] = useState('');
+    const [addUnit, setAddUnit] = useState('');
+    const [addBrand, setBrand] = useState('');
+    const [unitsData, setUnitsData] = useState([]);
+    const [des, setDes] = useState('');
+    const [brandImage, setBrandImage] = useState(null);
+    const [brandImageError, setBrandImageError] = useState(''); 
+    const brandImageInputRef = useRef(null);
 
     // Categories
     const [category, setCategory] = useState('');
@@ -74,6 +83,7 @@ function Product() {
 
     const [colors, setColors] = useState([]);
     const [currentColor, setCurrentColor] = useState("#000000");
+    const [brands, setBrands] = useState([]);
 
     const maxSize = 500 * 1024; // 500KB
     const handleThumbnailChange = (e) => {
@@ -164,7 +174,6 @@ function Product() {
                     variantName,
                 }];
                 setAttributeValue(newAttributeValue);
-                // If this is a color variant, automatically set it as the active variant
                 if (selectedAttr.Attribute_name.toLowerCase() === 'color') {
                     setActiveVariant(variantName);
                 }
@@ -200,7 +209,6 @@ function Product() {
     };
 
     const handleAttribute = async () => {
-        // Validate that addAttribute is not empty
         if (!addAttribute.trim()) {
             alert("Please enter an attribute name.");
             return;
@@ -217,7 +225,6 @@ function Product() {
                 }
             });
 
-            // Log the response status and body for debugging
             console.log("Add Attribute API Response Status:", result.status);
             const responseBody = await result.json();
             console.log("Add Attribute API Response Body:", responseBody);
@@ -225,13 +232,11 @@ function Product() {
             if (result.status === 200) {
                 alert('Attribute Added Successfully');
                 setShowPopup(false);
-                setAddattribute(''); // Clear the input
-                // Refresh attributes
+                setAddattribute('');
                 const res = await fetch("https://fivlia.onrender.com/getAttributes");
                 const data = await res.json();
                 setAttribute(data);
             } else {
-                // Show specific error message if available
                 const errorMessage = responseBody.message || `Failed to add attribute (Status: ${result.status})`;
                 alert(errorMessage);
             }
@@ -269,18 +274,108 @@ function Product() {
                 alert('Variant Added Successfully');
                 setShowVariantPopup(false);
                 setAddVarient('');
-                // Refresh attributes to reflect the updated variant
                 const res = await fetch("https://fivlia.onrender.com/getAttributes");
                 const data = await res.json();
                 setAttribute(data);
             } else {
-                // Show specific error message if available
                 const errorMessage = responseBody.message || `Failed to add variant (Status: ${result.status})`;
                 alert(errorMessage);
             }
         } catch (err) {
             console.error("Error adding variant:", err);
             alert('Error adding variant: ' + err.message);
+        }
+    };
+
+    const handleUnitData = async () => {
+        try {
+            if (!addUnit) {
+                return alert('Please Input Unit Name');
+            }
+            const result = await fetch('https://fivlia.onrender.com/unit', {
+                method: "POST",
+                body: JSON.stringify({
+                    unitname: addUnit
+                }),
+                headers: {
+                    "Content-type": "application/json"
+                }
+            });
+            if (result.status === 200) {
+                alert('Unit Added Successfully');
+                setShowUnitPopup(false);
+
+                const res = await fetch('https://fivlia.onrender.com/getUnit');
+                const data = await res.json();
+                setUnitsData(data.Result);
+            } else {
+                alert('Something Wrong');
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
+    const handleBrandImage = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const validImageTypes = ["image/jpeg", "image/png", "image/jpg"];
+            if (!validImageTypes.includes(file.type)) {
+                setBrandImageError("Please upload a valid image (JPEG, PNG, JPG)");
+                setBrandImage(null);
+                return;
+            }
+
+
+            const maxSizeInBytes = 500 * 1024; // 500KB
+            if (file.size > maxSizeInBytes) {
+                setBrandImageError("Image size must be less than 500KB");
+                setBrandImage(null);
+                return;
+            }
+
+            setBrandImageError(""); 
+            setBrandImage(file); 
+        }
+    };
+
+    const handleBrand = async () => {
+        if (!addBrand.trim()) {
+            alert("Please enter a brand name.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("brandName", addBrand);
+        formData.append("description", des);
+        if (brandImage) {
+            formData.append("image", brandImage);
+        }
+
+        try {
+            const result = await fetch('https://fivlia.onrender.com/brand', {
+                method: "POST",
+                body: formData
+            });
+
+            if (result.status === 200) {
+                alert('Brand Created Successfully');
+                setShowbrandPopup(false);
+                setBrand('');
+                setDes('');
+                setBrandImage(null);
+                if (brandImageInputRef.current) {
+                    brandImageInputRef.current.value = ""; 
+                }
+                // Refresh brands
+                const res = await fetch("https://fivlia.onrender.com/getBrand");
+                const data = await res.json();
+                setBrands(data);
+            } else {
+                alert('Something went wrong');
+            }
+        } catch (err) {
+            console.log(err);
         }
     };
 
@@ -315,6 +410,18 @@ function Product() {
         };
         getActiveCity();
 
+        const fetchBrands = async () => {
+            try {
+                const res = await fetch("https://fivlia.onrender.com/getBrand");
+                const data = await res.json();
+                setBrands(data);
+            } catch (err) {
+                console.error("Error fetching brands:", err);
+            }
+        };
+
+        fetchBrands();
+
         const getTax = async () => {
             try {
                 const res = await fetch("https://node-m8jb.onrender.com/getTax");
@@ -336,6 +443,21 @@ function Product() {
             }
         };
         fetchAttribute();
+
+        const getUnits = async () => {
+            try {
+                const result = await fetch("https://fivlia.onrender.com/getUnit");
+                if (result.status === 200) {
+                    const res = await result.json();
+                    setUnitsData(res.Result);
+                } else {
+                    console.log('Something wrong');
+                }
+            } catch (err) {
+                console.log(err);
+            }
+        };
+        getUnits();
 
         const handleScroll = () => {
             let current = '';
@@ -368,27 +490,24 @@ function Product() {
     };
 
     const addColor = () => {
-        // Check if a "color" variant is selected
         const hasColorVariant = attributeValue.some(item => item.attributeName.toLowerCase() === 'color');
         if (!hasColorVariant) {
             setColorError("Please select a color variant first.");
             return;
         }
 
-        setColorError(""); // Clear error if validation passes
+        setColorError("");
         const name = ColorNamer(currentColor).ntc[0].name;
         if (!colors.some(c => c.hex === currentColor)) {
             const newColors = [...colors, { hex: currentColor, name }];
             setColors(newColors);
 
-            // Assign the color to the active variant's hex code field
             if (activeVariant) {
                 setColorHexCodes(prev => ({
                     ...prev,
                     [activeVariant]: currentColor,
                 }));
             } else {
-                // If no active variant, default to the most recent color variant
                 const colorVariants = attributeValue.filter(item => item.attributeName.toLowerCase() === 'color');
                 if (colorVariants.length > 0) {
                     const latestColorVariant = colorVariants[colorVariants.length - 1];
@@ -404,7 +523,6 @@ function Product() {
 
     const removeColor = (hexToRemove) => {
         setColors(prev => prev.filter(c => c.hex !== hexToRemove));
-        // Remove the hex code from any variant that was using it
         setColorHexCodes(prev => {
             const updated = { ...prev };
             Object.keys(updated).forEach(key => {
@@ -417,7 +535,7 @@ function Product() {
     };
 
     const handleHexCodeClick = (variantName) => {
-        setActiveVariant(variantName); // Set the clicked variant as active
+        setActiveVariant(variantName);
     };
 
     const selectedAttribute = attribute.find(attr => attr._id === attributedata);
@@ -670,6 +788,125 @@ function Product() {
                         </div>
                         <div className="row-section">
                             <div className="input-container">
+                                <label>Select Units</label>
+                                <select className="input-field">
+                                    <option value="">--Select Units--</option>
+                                    {unitsData.map((item) => (
+                                        <option key={item._id} value={item.unitname}>{item.unitname}</option>
+                                    ))}
+                                </select>
+
+                                <h3
+                                    style={{ fontSize: '12px', cursor: 'pointer', color: 'green', marginTop: '10px', marginLeft: '5px' }}
+                                    onClick={() => setShowUnitPopup(true)}
+                                >
+                                    + ADD UNIT
+                                </h3>
+
+                                {showUnitPopup && (
+                                    <div style={{
+                                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                                        backgroundColor: 'rgba(0,0,0,0.5)',
+                                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                        zIndex: 1000,
+                                    }}>
+                                        <div style={{
+                                            background: 'white', padding: 20, borderRadius: 5, minWidth: 300
+                                        }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter Unit Name"
+                                                value={addUnit}
+                                                onChange={(e) => setAddUnit(e.target.value)}
+                                                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+                                            />
+                                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                                <Button onClick={handleUnitData}>Save</Button>
+                                                <Button onClick={() => setShowUnitPopup(false)}>Cancel</Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="input-container">
+                                <label>Select Brand</label>
+                                <select className="input-field">
+                                    <option value="">--Select Brand--</option>
+                                    {brands.map((item) => (
+                                        <option key={item._id} value={item._id}>{item.brandName}</option>
+                                    ))}
+                                </select>
+
+                                <h3
+                                    style={{ fontSize: '12px', cursor: 'pointer', color: 'green', marginTop: '10px', marginLeft: '5px' }}
+                                    onClick={() => setShowbrandPopup(true)}
+                                >
+                                    + ADD BRAND
+                                </h3>
+
+                                {showbrandPopup && (
+                                    <div style={{
+                                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                                        backgroundColor: 'rgba(0,0,0,0.5)',
+                                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                        zIndex: 1000,
+                                    }}>
+                                        <div style={{
+                                            background: 'white', padding: 20, borderRadius: 15, minWidth: 300
+                                        }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter Brand Name"
+                                                value={addBrand}
+                                                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+                                                onChange={(e) => setBrand(e.target.value)}
+                                            />
+
+                                            <input
+                                                type="file"
+                                                accept="image/jpeg,image/png,image/jpg"
+                                                ref={brandImageInputRef}
+                                                onChange={handleBrandImage}
+                                                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+                                            />
+                                            {brandImage && (
+                                                <p style={{ fontSize: '12px', marginBottom: '10px' }}>
+                                                    Selected: {brandImage.name}
+                                                </p>
+                                            )}
+                                            {brandImageError && (
+                                                <p style={{ color: 'red', fontSize: '12px', marginBottom: '10px' }}>
+                                                    {brandImageError}
+                                                </p>
+                                            )}
+
+                                            <textarea
+                                                placeholder="Enter Brand Description"
+                                                value={des}
+                                                onChange={(e) => setDes(e.target.value)}
+                                                style={{ width: '100%', padding: '8px', marginBottom: '10px', borderRadius: '10px' }}
+                                            />
+                                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                                <Button onClick={handleBrand}>Save</Button>
+                                                <Button onClick={() => {
+                                                    setShowbrandPopup(false);
+                                                    setBrand('');
+                                                    setDes('');
+                                                    setBrandImage(null);
+                                                    if (brandImageInputRef.current) {
+                                                        brandImageInputRef.current.value = "";
+                                                    }
+                                                }}>Cancel</Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="row-section">
+                            <div className="input-container">
                                 <label>Select Attribute</label>
                                 <select className="input-field" value={attributedata} onChange={(e) => setAttributeData(e.target.value)}>
                                     <option value="">--Select Attribute--</option>
@@ -896,16 +1133,6 @@ function Product() {
                             <div className="input-container">
                                 <label>SGST</label>
                                 <select className="input-field" value={sgst} onChange={(e) => setSgst(e.target.value)}>
-                                    <option value="">--Select Tax Percentage--</option>
-                                    {taxdata.map((item) => (
-                                        <option key={item._id} value={item.value}>{item.value}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="input-container">
-                                <label>VAT</label>
-                                <select className="input-field" value={vat} onChange={(e) => setVat(e.target.value)}>
                                     <option value="">--Select Tax Percentage--</option>
                                     {taxdata.map((item) => (
                                         <option key={item._id} value={item.value}>{item.value}</option>

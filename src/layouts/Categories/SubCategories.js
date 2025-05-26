@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@mui/material";
-
+import { useNavigate, useLocation } from "react-router-dom";
+import { Button, Switch } from "@mui/material";
 
 const headerCell = {
   padding: "14px 12px",
@@ -19,99 +18,50 @@ const bodyCell = {
   border: "1px solid #eee",
   fontSize: 17,
   backgroundColor: "#fff",
-  paddingLeft:'30px'
+  paddingLeft: '30px'
 };
 
 function GetSubCategories() {
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
   const navigate = useNavigate();
+  const location = useLocation();
+  const category = location.state?.category;
 
-  const [locations, setLocations] = useState([]);
-  const [entriesToShow, setEntriesToShow] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCity, setSelectedCity] = useState("All Cities"); // <-- new state for city filter
+  const [toggleStates, setToggleStates] = useState({});
 
   useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const res = await fetch("https://node-m8jb.onrender.com/getlocations");
-        const data = await res.json();
-        setLocations(data.result || []);
-      } catch (err) {
-        console.error("Error fetching locations:", err);
+    const initialToggles = {};
+    category?.subcat?.forEach((item) => {
+      initialToggles[item._id] = true; // default status
+    });
+    setToggleStates(initialToggles);
+  }, [category]);
+
+  const handleToggle = (id) => {
+    setToggleStates((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+    // Optional: update backend here
+  };
+
+  const handleDeleteSubcat = async (id) => {
+    const confirm = window.confirm("Are you sure you want to delete this sub-category?");
+    if (!confirm) return;
+
+    try {
+      const res = await fetch(`https://node-m8jb.onrender.com/deletesubcategory/${id}`, {
+        method: "DELETE",
+      });
+      if (res.status === 200) {
+        alert("Deleted successfully");
+        window.location.reload();
       }
-    };
-
-    fetchLocations();
-  }, []);
-
- 
-  const distinctCities = ["All Cities", ...new Set(locations.map((loc) => loc.city))];
-
-  const filteredLocations = locations.filter((item) => {
-    const search = searchTerm.toLowerCase();
-    const formattedRange =
-      item.range >= 1000 ? (item.range / 1000).toFixed(1) + " km" : item.range + " m";
-
-    // Check city filter: if 'All Cities' selected, ignore city filtering
-    const cityMatch = selectedCity === "All Cities" || item.city === selectedCity;
-
-    // Check if search term matches any field
-    const searchMatch =
-      item.city.toLowerCase().includes(search) ||
-      item.address.toLowerCase().includes(search) ||
-      formattedRange.toLowerCase().includes(search);
-
-    return cityMatch && searchMatch;
-  });
-
-  const totalPages = Math.ceil(filteredLocations.length / entriesToShow);
-  const startIndex = (currentPage - 1) * entriesToShow;
-  const currentLocations = filteredLocations.slice(startIndex, startIndex + entriesToShow);
-
-  const handleEntriesChange = (e) => {
-    setEntriesToShow(Number(e.target.value));
-    setCurrentPage(1);
-  };
-
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const handleCityChange = (e) => {
-    setSelectedCity(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const goToPreviousPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
-  const goToNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
-
-
-  const handledeleteZone=async(id)=>{
-    try{
-       const confirmDelete = window.confirm("Are you sure you want to delete this zone?");
-         if(confirmDelete){
-            const result=await fetch(`https://node-m8jb.onrender.com/deletezone/${id}`,{
-          method:'DELETE'
-        });
-        if(result.status===200){
-          setLocations((prev) => prev.filter((loc) => loc._id !== id));
-           alert('Success')
-        }
-         }
-         else{
-          return;
-         }
-       
+    } catch (err) {
+      console.error("Delete error:", err);
     }
-    catch(err){
-      console.log(err);
-      
-    }
-  }
+  };
 
   return (
     <MDBox
@@ -132,188 +82,94 @@ function GetSubCategories() {
           }}
         >
           {/* Header */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 20,
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <span style={{ fontWeight: "bold", fontSize: 26 }}>Sub-Categories Lists</span>
-              <br />
-              <span style={{ fontSize: 17 }}>View and manage all Sub-Categories</span>
-            </div>
-
+          <div style={{ marginBottom: 20 }}>
+            <span style={{ fontWeight: "bold", fontSize: 26 }}>Sub-Categories List</span>
+            <br />
+            <span style={{ fontSize: 17 }}>View and manage all Sub-Categories of {category?.name}</span>
           </div>
 
-          {/* Controls */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 10,
-              flexWrap: "wrap",
-            }}
-          >
-
-
-            {/* Entries dropdown */}
-            <div style={{ marginBottom: 10 }}>
-              <span style={{ fontSize: 16 }}>Show Entries</span>&nbsp;
-              <select value={entriesToShow} onChange={handleEntriesChange}>
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
-              {/* Left side dropdown for city */}
-              <div style={{ marginBottom: 10,marginRight:'40px',marginTop:'' }}>
-                <label style={{ fontSize: 16, }}>Filter by City:</label>
-                <select value={selectedCity} onChange={handleCityChange} style={{ fontSize: 16,  borderRadius: "6px" }}>
-                  {distinctCities.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Search input */}
-              <div style={{ marginBottom: 8, marginTop: "15px", display: "flex", flexDirection: "column" }}>
-                <label  style={{ fontSize: 16,marginTop:'-8px',marginLeft:'5px',marginBottom:'5px'}}>Search</label>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  placeholder="Search..."
-                  style={{
-                    padding: "5px",
-                    borderRadius: "20px",
-                    height: "45px",
-                    marginTop:'-5px',
-                    width: "200px",
-                    border: "1px solid #ccc",
-                    fontSize: 17,
-                    paddingLeft: "15px",
-                  }}
-                />
-              </div>
-
-            </div>
-          </div>
-
-          {/* Table and pagination remain unchanged */}
+          {/* Table */}
           <div style={{ overflowX: "auto" }}>
             <table
               style={{
                 width: "100%",
                 borderCollapse: "separate",
                 borderSpacing: 0,
-                overflow: "hidden",
               }}
             >
               <thead>
                 <tr>
-                  <th style={{...headerCell,width:'10%'}}>Sr. No</th>
+                  <th style={{ ...headerCell, width: "8%" }}>Sr. No</th>
                   <th style={headerCell}>Sub-Category Name</th>
-                  <th style={{...headerCell,width:'20%'}}>Sub Sub-Categories</th>
+                  <th style={{ ...headerCell, width: "20%" }}>Sub Sub-Categories</th>
                   <th style={headerCell}>Items</th>
                   <th style={headerCell}>Public</th>
                   <th style={{ ...headerCell, width: "20%", textAlign: "center" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {currentLocations.map((item, index) => (
-                  <tr key={item._id}>
-                    <td style={{...bodyCell,textAlign:'center'}}>{startIndex + index + 1}</td>
-                    <td style={{...bodyCell,textAlign:'center'}}>
-                      <div style={{display:'flex',gap:'30px',alignItems:'center'}}>
-                        <img src="" style={{width:'50px',height:'50px',borderRadius:"100%"}}/>
-                        <span >Food</span>
-                      </div>
-                    </td>
-                    <td style={{...bodyCell,textAlign:'center'}}>{'10'}</td>
-                    <td style={{...bodyCell,textAlign:'center'}}>{'100'}</td>
-                     <td style={{...bodyCell,textAlign:'center'}}>{'100'}</td>
-                    <td style={{...bodyCell,textAlign:'center'}}>
-                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                        <button
-                          style={{
-                            backgroundColor: "#007BFF",
-                            color: "white",
-                            border: "none",
-                            padding: "8px 16px",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            marginRight: "10px",
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          style={{
-                            backgroundColor: "#dc3545",
-                            color: "white",
-                            border: "none",
-                            padding: "8px 16px",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                          }} onClick={()=>handledeleteZone(item._id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {category?.subcat?.map((subcatItem, index) => {
+                  const subSubCount = subcatItem.subsubcat?.length || 0;
+                  const totalItems = 1 + subSubCount;
+
+                  return (
+                    <tr key={subcatItem._id}>
+                      <td style={{ ...bodyCell, textAlign: "center" }}>{index + 1}</td>
+                      <td style={{ ...bodyCell }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                          <img
+                            src={subcatItem.image}
+                            alt={subcatItem.name}
+                            style={{ width: "50px", height: "50px", borderRadius: "50%", objectFit: "cover" }}
+                          />
+                          <span>{subcatItem.name}</span>
+                        </div>
+                      </td>
+                      <td style={{ ...bodyCell, textAlign: "center",cursor:'pointer' }}
+                      onClick={()=>navigate('/getsubsubcat',{state :{subcat:subcatItem}})}
+                      >{subSubCount}</td>
+                      <td style={{ ...bodyCell, textAlign: "center" }}>{totalItems}</td>
+                      <td style={{ ...bodyCell, textAlign: "center" }}>
+                        <Switch
+                          checked={toggleStates[subcatItem._id] || false}
+                          onChange={() => handleToggle(subcatItem._id)}
+                          color="primary"
+                        />
+                      </td>
+                      <td style={{ ...bodyCell, textAlign: "center" }}>
+                        <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+                          <button
+                            style={{
+                              backgroundColor: "#007BFF",
+                              color: "white",
+                              border: "none",
+                              padding: "8px 16px",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            style={{
+                              backgroundColor: "#dc3545",
+                              color: "white",
+                              border: "none",
+                              padding: "8px 16px",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                            }}
+                            onClick={() => handleDeleteSubcat(subcatItem._id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
-          </div>
-
-          <div
-            style={{
-              marginTop: 20,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <span>
-              Showing {startIndex + 1}-
-              {Math.min(startIndex + entriesToShow, filteredLocations.length)} of{" "}
-              {filteredLocations.length} locations
-            </span>
-            <div>
-              <button
-                onClick={goToPreviousPage}
-                disabled={currentPage === 1}
-                style={{
-                  padding: "8px 16px",
-                  marginRight: 10,
-                  borderRadius: 10,
-                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                }}
-              >
-                Previous
-              </button>
-              <button
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: 10,
-                  cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-                }}
-              >
-                Next
-              </button>
-            </div>
           </div>
         </div>
       </div>

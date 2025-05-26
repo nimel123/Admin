@@ -8,18 +8,20 @@ function AddBanner() {
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
   const navigate = useNavigate();
+
   const [name, setName] = useState("");
   const [image, setImage] = useState(null);
-  const [zoneInput, setZoneInput] = useState("");
+  const [selectedZone, setSelectedZone] = useState("");
   const [zones, setZones] = useState([]);
   const [locations, setLocations] = useState([]);
   const [main, setMain] = useState([]);
   const [type, setType] = useState("");
   const [mainId, setMainId] = useState("");
   const [subId, setSubId] = useState("");
-  const [subsubId,setSubsubId]=useState('');
+  const [subsubId, setSubsubId] = useState("");
   const [selectedCityId, setSelectedCityId] = useState("");
 
+  // Fetch locations and categories on mount
   useEffect(() => {
     const fetchLocations = async () => {
       try {
@@ -30,29 +32,22 @@ function AddBanner() {
         console.error("Error fetching locations:", err);
       }
     };
-    fetchLocations();
 
     const fetchCategories = async () => {
       try {
         const res = await fetch("https://node-m8jb.onrender.com/getMainCategory");
-        if (res.status === 200) {
-          const data = await res.json();
-          setMain(data.result);
-          console.log(data.result);
-        }
-        else {
-          alert('Try Again')
-        }
-
+        const data = await res.json();
+        setMain(data.result || []);
       } catch (err) {
         console.error("Error fetching categories:", err);
       }
     };
+
+    fetchLocations();
     fetchCategories();
-
-
   }, []);
 
+  // Preview selected image
   const ImagePreview = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -60,28 +55,64 @@ function AddBanner() {
     }
   };
 
-  const handleRemoveZone = (zone) => {
-    setZones(zones.filter((z) => z !== zone));
+  // Remove selected zone tag
+  const handleRemoveZone = (addressToRemove) => {
+    setZones(zones.filter((zone) => zone.address !== addressToRemove));
   };
 
-  const getShortAddress = (fullAddress) => {
-    const parts = fullAddress.split(",");
-    return parts.length > 1 ? `${parts[0]},${parts[1]}` : fullAddress;
+  // Shorten zone address for tags
+  const getShortAddress = (address) => {
+    if (typeof address !== "string") return "";
+    const parts = address.split(",");
+    return parts.length > 1 ? `${parts[0]},${parts[1]}` : address;
   };
 
   const selectedCity = locations.find((loc) => loc._id === selectedCityId);
   const cityZones = selectedCity ? selectedCity.zones : [];
 
+ 
   const handleBanner = async () => {
-    // try{
-    //   const reset=await fetch('https://fivlia.onrender.com/banner',{
-    //     method:'POST'
-    //   })
-    // }
-    // catch(err){
-    //   console.log(err);   
-    // }
-  }
+    if (!name || !image || !type || !selectedCityId || zones.length === 0) {
+      alert("Please fill all required fields.");
+      return;
+    }
+
+    const imageFile = document.querySelector('input[type="file"]').files[0];
+    if (!imageFile) {
+      alert("Please select an image file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("title", name);
+    formData.append("city", selectedCityId);
+    formData.append("image", imageFile);
+    formData.append("type", type);
+    formData.append("mainCategory", mainId);
+    formData.append("subCategory", subId);
+    formData.append("subSubCategory", subsubId);
+    formData.append("zones", JSON.stringify(zones));
+
+    try {
+      const response = await fetch("https://fivlia.onrender.com/banner", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert("✅ Banner Added Successfully!");
+        navigate(-1);
+      } else {
+        console.error("❌ Server responded with error:", result);
+        alert("Something went wrong: " + (result.message || "Server Error"));
+      }
+    } catch (error) {
+      console.error("❌ Network or Server Error:", error);
+      alert("Server Error. Please try again.");
+    }
+  };
 
   return (
     <MDBox
@@ -131,6 +162,7 @@ function AddBanner() {
               type="file"
               onChange={ImagePreview}
               style={{ ...inputStyle, marginRight: "20px" }}
+              accept="image/*"
             />
             {image && (
               <img
@@ -155,7 +187,7 @@ function AddBanner() {
             value={selectedCityId}
             onChange={(e) => {
               setSelectedCityId(e.target.value);
-              setZones([]);
+              setZones([]); // Reset zones when city changes
             }}
           >
             <option value="">-- Select City --</option>
@@ -167,25 +199,31 @@ function AddBanner() {
           </select>
         </div>
 
-        {selectedCity ? (
+        {/* Zone */}
+        {selectedCity && (
           <div style={formRowStyle}>
             <label style={labelStyle}>Select Zone</label>
-            <div style={{ width: "50%", marginRight: '20px', position: "relative" }}>
+            <div style={{ width: "50%", marginRight: "20px", position: "relative" }}>
               <select
-                value={zoneInput}
+                value={selectedZone}
                 onChange={(e) => {
                   const selectedAddress = e.target.value;
-                  if (selectedAddress && !zones.includes(selectedAddress)) {
-                    setZones([...zones, selectedAddress]);
+                  const zoneData = cityZones.find((zone) => zone.address === selectedAddress);
+
+                  if (zoneData && !zones.some((z) => z.address === zoneData.address)) {
+                    setZones([
+                      ...zones,
+                      {
+                        address: zoneData.address,
+                        latitude: zoneData.latitude,
+                        longitude: zoneData.longitude,
+                      },
+                    ]);
                   }
 
-                  // Defer clearing the dropdown to after rendering
-                  setTimeout(() => setZoneInput(""), 100);
+                  setSelectedZone("");
                 }}
-                style={{
-                  ...inputStyle,
-                  width: "100%",
-                }}
+                style={{ ...inputStyle, width: "100%" }}
               >
                 <option value="">-- Select Zone --</option>
                 {cityZones.map((zone, idx) => (
@@ -195,25 +233,21 @@ function AddBanner() {
                 ))}
               </select>
 
-              {/* Tags */}
               <div style={tagsContainerStyle}>
                 {zones.map((zone, index) => (
                   <span
                     key={index}
-                    onClick={() => handleRemoveZone(zone)}
+                    onClick={() => handleRemoveZone(zone.address)}
                     style={tagStyle}
-                    title={zone}
+                    title={`${zone.address} (Lat: ${zone.latitude}, Long: ${zone.longitude})`}
                   >
-                    {getShortAddress(zone)}
+                    {getShortAddress(zone.address)}
                   </span>
                 ))}
               </div>
             </div>
           </div>
-        ) : null
-        }
-
-
+        )}
 
         {/* Type */}
         <div style={formRowStyle}>
@@ -221,7 +255,13 @@ function AddBanner() {
           <select
             style={inputStyle}
             value={type}
-            onChange={(e) => setType(e.target.value)}
+            onChange={(e) => {
+              setType(e.target.value);
+              // Reset category selections on type change
+              setMainId("");
+              setSubId("");
+              setSubsubId("");
+            }}
           >
             <option value="">--Select Type--</option>
             <option value="Category">Category</option>
@@ -230,6 +270,7 @@ function AddBanner() {
           </select>
         </div>
 
+        {/* Category / SubCategory / SubSubCategory */}
         {type === "Category" && (
           <div style={formRowStyle}>
             <label style={labelStyle}>Select Category</label>
@@ -337,8 +378,7 @@ function AddBanner() {
                   onChange={(e) => setSubsubId(e.target.value)}
                 >
                   <option value="">--Select Sub Sub Category--</option>
-                  {(main
-                    .find((cat) => cat._id === mainId)
+                  {(main.find((cat) => cat._id === mainId)
                     ?.subcat.find((sub) => sub._id === subId)?.subsubcat || []
                   ).map((subsub) => (
                     <option key={subsub._id} value={subsub._id}>
@@ -351,21 +391,27 @@ function AddBanner() {
           </>
         )}
 
-
-        {/* Submit Button */}
-        <div style={{display:'flex',gap:'50px',justifyContent:'center',alignItems:'center',marginTop:'50px' }}>
+        {/* Submit Buttons */}
+        <div
+          style={{
+            display: "flex",
+            gap: "50px",
+            justifyContent: "center",
+            alignItems: "center",
+            marginTop: "50px",
+          }}
+        >
           <Button
             variant="contained"
-            style={{ backgroundColor: '#00c853', color: 'white' }}
+            style={{ backgroundColor: "#00c853", color: "white" }}
             onClick={handleBanner}
           >
             SAVE
           </Button>
-
           <Button
             variant="contained"
-            style={{ backgroundColor: '#00c853', color: 'white' }}
-            onClick={()=>navigate(-1)}
+            style={{ backgroundColor: "#00c853", color: "white" }}
+            onClick={() => navigate(-1)}
           >
             BACK
           </Button>
@@ -409,7 +455,7 @@ const tagStyle = {
   borderRadius: "20px",
   cursor: "pointer",
   fontSize: "14px",
-  color: 'black'
+  color: "black",
 };
 
 export default AddBanner;
