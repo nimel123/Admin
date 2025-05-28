@@ -80,7 +80,9 @@ function StoreList() {
                         marginBottom: 20,
                         flexWrap: "wrap",
                         marginTop:'30px',
-                        padding:'20px'
+                        padding:'20px',
+                        backgroundColor:'white',
+                        borderRadius:"20px"
                     }}
                 >
                     <div>

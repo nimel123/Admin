@@ -5,7 +5,6 @@ import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@mui/material";
 
-
 const AddCategories = () => {
   const [name, setCategoryName] = useState("");
   const [description, setDescription] = useState("");
@@ -13,12 +12,11 @@ const AddCategories = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [type, setType] = useState("");
   const [mainCategoryId, setMainCategoryId] = useState("");
-  const [mainCategories, setMainCategories] = useState([])
+  const [mainCategories, setMainCategories] = useState([]);
   const [subCategory, setSubCategory] = useState("");
   const [subCategories, setSubCategories] = useState([]);
-  const [attribute, setAttribute] = useState([])
-  const [selectedAtt, setSelectedAtt] = useState('');
-  const [attributeArray, setAttributeArray] = useState([])
+  const [attribute, setAttribute] = useState([]);
+  const [attributeArray, setAttributeArray] = useState([]);
   const navigate = useNavigate();
 
   const [controller] = useMaterialUIController();
@@ -30,21 +28,18 @@ const AddCategories = () => {
         const data = await fetch('https://node-m8jb.onrender.com/getMainCategory');
         if (data.status === 200) {
           const result = await data.json();
-          setMainCategories(result.result)
+          setMainCategories(result.result);
           const allSubCategories = result.result.flatMap(cat => cat.subcat || []);
           setSubCategories(allSubCategories);
           console.log("Main ", result.result);
           console.log("Sub", allSubCategories);
-        }
-        else {
+        } else {
           console.log('Something Wrong');
         }
-      }
-      catch (err) {
+      } catch (err) {
         console.log(err);
-
       }
-    }
+    };
     getMainCategory();
 
     const fetchAttribute = async () => {
@@ -53,12 +48,21 @@ const AddCategories = () => {
         const data = await res.json();
         setAttribute(data);
       } catch (err) {
-        console.error("Error fetching locations:", err);
+        console.error("Error fetching attributes:", err);
       }
     };
     fetchAttribute();
   }, []);
 
+  // Automatically set all attributes when type is selected
+  useEffect(() => {
+    if (type) {
+      const allAttributeNames = attribute.map(item => item.Attribute_name);
+      setAttributeArray(allAttributeNames);
+    } else {
+      setAttributeArray([]);
+    }
+  }, [type, attribute]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -86,7 +90,6 @@ const AddCategories = () => {
       return;
     }
 
-
     const formData = new FormData();
     formData.append("name", name);
     formData.append("description", description);
@@ -99,12 +102,8 @@ const AddCategories = () => {
     }
     formData.append("attribute", JSON.stringify(attributeArray || []));
 
-
-
-    //Main Category Add
+    // Main Category Add
     if (type === "Main Category") {
-      console.log(name, description);
-
       try {
         const response = await fetch("https://node-m8jb.onrender.com/addMainCategory", {
           method: "POST",
@@ -115,7 +114,7 @@ const AddCategories = () => {
         if (response.status === 201) {
           alert("Category Added Successfully");
           console.log("Submitted Data:", result);
-          navigate('/categories')
+          navigate('/categories');
         } else {
           alert("Something went wrong");
           console.error("Server response:", result);
@@ -124,44 +123,37 @@ const AddCategories = () => {
         console.error("Error while submitting:", err);
       }
     }
-
-    //ADD SUB CATEGORIES
-
+    // Add Sub Category
     else if (type === "Sub Category") {
       try {
         const result = await fetch('https://node-m8jb.onrender.com/addSubCategory', {
           method: "POST",
           body: formData,
-        })
+        });
         if (result.status === 201) {
-          alert('Success')
+          alert('Success');
           console.log(result);
-          navigate('/categories')
+          navigate('/categories');
+        } else {
+          alert('Something Wrong');
         }
-        else {
-          alert('Something Wrong')
-        }
-      }
-      catch (err) {
+      } catch (err) {
         console.log(err);
       }
     }
-
-    // subsubAddCategory
+    // Add Sub Sub-Category
     else {
       try {
         const result = await fetch('https://node-m8jb.onrender.com/addSubSubCategory', {
           method: "POST",
-          body: formData
-        })
+          body: formData,
+        });
         if (result.status === 201) {
-          alert('Success')
-          navigate('/categories')
+          alert('Success');
+          navigate('/categories');
         }
-      }
-      catch (err) {
+      } catch (err) {
         console.log(err);
-
       }
     }
 
@@ -173,23 +165,12 @@ const AddCategories = () => {
     setType("");
     setMainCategoryId("");
     setSubCategory("");
-  }
-
-
-  const handleAttributeSelect = (e) => {
-    const selected = e.target.value;  
-    setSelectedAtt(selected);
-
-    if (selected && !attributeArray.includes(selected)) {
-      setAttributeArray([...attributeArray, selected]);
-    }
+    setAttributeArray([]);
   };
-
 
   const handleTagRemove = (tagToRemove) => {
     setAttributeArray(attributeArray.filter(tag => tag !== tagToRemove));
   };
-
 
   return (
     <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "20px" }}>
@@ -201,7 +182,6 @@ const AddCategories = () => {
         border: '1px solid gray',
         boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)"
       }}>
-
         <h2 style={{ textAlign: "center", marginBottom: "30px", fontWeight: 'bold', color: 'green' }}>ADD NEW CATEGORY</h2>
 
         {/* Category Name */}
@@ -308,31 +288,16 @@ const AddCategories = () => {
                 style={{ marginLeft: "-8px", backgroundColor: 'white', border: '1px solid black' }}
               >
                 <option value="">-- Select Sub Category --</option>
-                {
-                  subCategories.map((subcat) => (
-                    <option key={subcat._id} value={subcat._id}>{subcat.name}</option>
-                  ))
-                }
+                {subCategories.map((subcat) => (
+                  <option key={subcat._id} value={subcat._id}>{subcat.name}</option>
+                ))}
               </select>
             </div>
           </div>
         )}
 
-        {type !== '' ? (
-          <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "30px" }}>
-            <div><label style={{ fontWeight: '500' }}>Select Attribute</label></div>
-            <div style={{ width: "59%" }}>
-              <select value={selectedAtt} onChange={handleAttributeSelect} style={{ width: "100%", backgroundColor: 'white', border: '1px solid black' }}>
-                <option value="">-- Select Attribute --</option>
-                {attribute.map((item) => (
-                  <option key={item._id} value={item.name}>{item.Attribute_name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        ) : null}
-
-        {selectedAtt ? (
+        {/* Display Selected Attributes as Tags */}
+        {attributeArray.length > 0 && (
           <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "30px" }}>
             <div><label style={{ fontWeight: '500' }}>Selected Attributes</label></div>
             <div style={{ backgroundColor: 'white', width: "60%" }}>
@@ -347,6 +312,7 @@ const AddCategories = () => {
                     fontSize: "14px",
                     display: "inline-flex",
                     alignItems: "center",
+                    margin: "5px"
                   }}
                   title={zone}
                 >
@@ -364,29 +330,26 @@ const AddCategories = () => {
                       color: "#888",
                     }}
                   >
-                    &times;
+                    ×
                   </button>
                 </div>
               ))}
             </div>
           </div>
-        ) : null
-        }
+        )}
 
         {/* Submit Button */}
-        <div style={{ textAlign: "center", }}>
+        <div style={{ textAlign: "center" }}>
           <Button onClick={handleSubmit} style={{
             width: '80px', height: '40px', fontSize: "16px", marginTop: '10px',
             marginBottom: '20px', backgroundColor: '#00c853', color: 'white', borderRadius: '15px', marginRight: '50px', cursor: 'pointer'
-          }}
-          >
+          }}>
             SAVE
           </Button>
           <Button onClick={() => navigate(-1)} style={{
             width: '80px', height: '40px', fontSize: "16px", marginTop: '10px',
             marginBottom: '20px', backgroundColor: '#00c853', color: 'white', borderRadius: '15px', cursor: 'pointer'
-          }}
-          >
+          }}>
             BACK
           </Button>
         </div>

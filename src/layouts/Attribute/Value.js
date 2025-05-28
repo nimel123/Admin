@@ -40,8 +40,8 @@ function Attributes() {
     return (
         <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "40px" }}>
             <div className="container">
-                <h2 style={{ marginLeft: "70px" }}>Create Attribute</h2>
-                <div className="inner-div">
+               
+                <div className="inner-div" style={{width:'100%'}}>
                     <div className="form-header">CREATE ITEM ATTRIBUTE</div>
 
                     <div >

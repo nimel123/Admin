@@ -125,6 +125,7 @@ function AttributeTable() {
                             cursor: "pointer",
                             marginRight: "10px",
                           }}
+                          onClick={()=>navigate('/edit-attribute',{state:item})}
                         >
                           Edit
                         </button>

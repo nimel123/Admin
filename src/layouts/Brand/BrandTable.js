@@ -70,7 +70,7 @@ function BrandTable() {
       const confirmDelete = window.confirm("Are you sure you want to delete this brand?");
       if (!confirmDelete) return;
 
-      const res = await fetch(`https://fivlia.onrender.com/deleteBrand/${id}`, {
+      const res = await fetch(`https://node-m8jb.onrender.com/deleteBrand/${id}`, {
         method: "DELETE",
       });
 
@@ -119,7 +119,7 @@ function BrandTable() {
             <div>
               <Button
                 style={{
-                  backgroundColor: "green",
+                  backgroundColor: "#00c853",
                   height: 45,
                   width: 150,
                   fontSize: 14,
@@ -209,7 +209,7 @@ function BrandTable() {
                             borderRadius: "6px",
                             cursor: "pointer",
                           }}
-                          onClick={() => navigate(`/edit-brand/${item._id}`)}
+                          onClick={() => navigate(`/edit-brand`,{state:item})}
                         >
                           Edit
                         </button>

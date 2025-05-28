@@ -35,6 +35,9 @@ import Product from "layouts/Products/Product";
 import ProductTable from "layouts/Products/ProductTable";
 import CreateStore from "layouts/Store/Store";
 import StoreList from "layouts/Store/Store";
+import UnitsTable from "layouts/Attribute/Units";
+import VarientTabel from "layouts/Attribute/Varient";
+import Setting from "Setting/Setting";
 
 const routes = [
   {
@@ -99,6 +102,20 @@ const routes = [
         icon: <Icon fontSize="small">view_array</Icon>,
       },
       {
+        name: "Item-Units",
+        key: "Item-Attributes",
+        route: "/units-table",
+        component: <UnitsTable />,
+        icon: <Icon fontSize="small">view_array</Icon>,
+      },
+      //   {
+      //   name: "Item-Varients",
+      //   key: "Item-Attributes",
+      //   route: "/varients-table",
+      //   component: <VarientTabel />,
+      //   icon: <Icon fontSize="small">view_array</Icon>,
+      // },
+      {
         name: "Tax",
         key: "attribute-tax",
         route: "/attribute-tax",
@@ -122,6 +139,14 @@ const routes = [
     icon:<Icon fontSize="small">store</Icon>,
     route:"/create-store",
     component:<StoreList />
+  },
+   {
+    type:"collapse",
+    name:"Setting",
+    key:"setting",
+    icon:<Icon fontSize="small">store</Icon>,
+    route:"/setting",
+    component:<Setting />
   },
   {
     type: "collapse",

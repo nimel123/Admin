@@ -103,28 +103,28 @@ function Table() {
   const goToNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
 
 
-  const handledeleteZone = async (id) => {
-    try {
-      const confirmDelete = window.confirm("Are you sure you want to delete this zone?");
-      if (confirmDelete) {
-        const result = await fetch(`https://node-m8jb.onrender.com/deletezone/${id}`, {
-          method: 'DELETE'
-        });
-        if (result.status === 200) {
-          setLocations((prev) => prev.filter((loc) => loc._id !== id));
-          alert('Success')
-        }
-      }
-      else {
-        return;
-      }
+  // const handledeleteZone = async (id) => {
+  //   try {
+  //     const confirmDelete = window.confirm("Are you sure you want to delete this zone?");
+  //     if (confirmDelete) {
+  //       const result = await fetch(`https://node-m8jb.onrender.com/deletezone/${id}`, {
+  //         method: 'DELETE'
+  //       });
+  //       if (result.status === 200) {
+  //         setLocations((prev) => prev.filter((loc) => loc._id !== id));
+  //         alert('Success')
+  //       }
+  //     }
+  //     else {
+  //       return;
+  //     }
 
-    }
-    catch (err) {
-      console.log(err);
+  //   }
+  //   catch (err) {
+  //     console.log(err);
 
-    }
-  }
+  //   }
+  // }
 const updateZone = async (id, updatedFields) => {
   try {
     const res = await fetch(`https://fivlia.onrender.com/updateZoneStatus/${id}`, {
@@ -332,10 +332,11 @@ const handleToggleCashOnDelivery = (id, currentStatus, newCOD) => {
                             cursor: "pointer",
                             marginRight: "10px",
                           }}
+                          onClick={() => navigate("/edit-zone", { state: { zone: item } })}
                         >
                           Edit
                         </button>
-                        <button
+                        {/* <button
                           style={{
                             backgroundColor: "#dc3545",
                             color: "white",
@@ -346,7 +347,7 @@ const handleToggleCashOnDelivery = (id, currentStatus, newCOD) => {
                           }} onClick={() => handledeleteZone(item._id)}
                         >
                           Delete
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>

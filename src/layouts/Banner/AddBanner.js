@@ -11,10 +11,11 @@ function AddBanner() {
 
   const [name, setName] = useState("");
   const [image, setImage] = useState(null);
-  const [selectedZone, setSelectedZone] = useState("");
   const [zones, setZones] = useState([]);
   const [locations, setLocations] = useState([]);
   const [main, setMain] = useState([]);
+  const [stores, setStores] = useState([]); // New state for stores
+  const [storeId, setStoreId] = useState(""); // New state for selected store ID
   const [type, setType] = useState("");
   const [mainId, setMainId] = useState("");
   const [subId, setSubId] = useState("");
@@ -47,6 +48,63 @@ function AddBanner() {
     fetchCategories();
   }, []);
 
+  // Automatically select all zones when a city is selected
+  const selectedCity = locations.find((loc) => loc._id === selectedCityId);
+  const cityZones = selectedCity ? selectedCity.zones : [];
+
+  useEffect(() => {
+    if (selectedCityId && cityZones.length > 0) {
+      const allZones = cityZones.map((zone) => ({
+        address: zone.address,
+        latitude: zone.latitude,
+        longitude: zone.longitude,
+      }));
+      setZones(allZones);
+    } else {
+      setZones([]); // Reset zones if no city is selected
+    }
+  }, [selectedCityId, cityZones]);
+
+  // Fetch stores whenever zones change
+  useEffect(() => {
+    const fetchStores = async () => {
+      if (zones.length === 0) {
+        setStores([]); // Clear stores if no zones are selected
+        setStoreId(""); // Reset selected store
+        return;
+      }
+
+      try {
+        const zoneAddresses = zones.map((zone) => zone.address);
+        const res = await fetch("https://node-m8jb.onrender.com/getStoresByZone", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ zoneAddresses }),
+        });
+        const data = await res.json();
+        const fetchedStores = data.result || [];
+
+        // Remove duplicates based on store ID
+        const uniqueStores = Array.from(
+          new Map(fetchedStores.map((store) => [store._id, store])).values()
+        );
+
+        setStores(uniqueStores);
+
+        // If the currently selected store is no longer in the list, reset it
+        if (storeId && !uniqueStores.some((store) => store._id === storeId)) {
+          setStoreId("");
+        }
+      } catch (err) {
+        console.error("Error fetching stores:", err);
+        setStores([]);
+        setStoreId("");
+      }
+    };
+
+    fetchStores();
+  }, [zones, storeId]);
+
   // Preview selected image
   const ImagePreview = (e) => {
     const file = e.target.files[0];
@@ -67,10 +125,6 @@ function AddBanner() {
     return parts.length > 1 ? `${parts[0]},${parts[1]}` : address;
   };
 
-  const selectedCity = locations.find((loc) => loc._id === selectedCityId);
-  const cityZones = selectedCity ? selectedCity.zones : [];
-
- 
   const handleBanner = async () => {
     if (!name || !image || !type || !selectedCityId || zones.length === 0) {
       alert("Please fill all required fields.");
@@ -89,8 +143,9 @@ function AddBanner() {
     formData.append("image", imageFile);
     formData.append("type", type);
     formData.append("mainCategory", mainId);
-    formData.append("subCategory", subId);
+    formData.append("subcategory", subId);
     formData.append("subSubCategory", subsubId);
+    formData.append("storeId", storeId || ""); // Optional storeId field
     formData.append("zones", JSON.stringify(zones));
 
     try {
@@ -105,11 +160,11 @@ function AddBanner() {
         alert("✅ Banner Added Successfully!");
         navigate(-1);
       } else {
-        console.error("❌ Server responded with error:", result);
+        console.error("Response error:", result);
         alert("Something went wrong: " + (result.message || "Server Error"));
       }
     } catch (error) {
-      console.error("❌ Network or Server Error:", error);
+      console.error("Network or Server Error:", error);
       alert("Server Error. Please try again.");
     }
   };
@@ -187,7 +242,6 @@ function AddBanner() {
             value={selectedCityId}
             onChange={(e) => {
               setSelectedCityId(e.target.value);
-              setZones([]); // Reset zones when city changes
             }}
           >
             <option value="">-- Select City --</option>
@@ -199,53 +253,47 @@ function AddBanner() {
           </select>
         </div>
 
-        {/* Zone */}
+        {/* Display Selected Zones */}
         {selectedCity && (
           <div style={formRowStyle}>
-            <label style={labelStyle}>Select Zone</label>
-            <div style={{ width: "50%", marginRight: "20px", position: "relative" }}>
-              <select
-                value={selectedZone}
-                onChange={(e) => {
-                  const selectedAddress = e.target.value;
-                  const zoneData = cityZones.find((zone) => zone.address === selectedAddress);
-
-                  if (zoneData && !zones.some((z) => z.address === zoneData.address)) {
-                    setZones([
-                      ...zones,
-                      {
-                        address: zoneData.address,
-                        latitude: zoneData.latitude,
-                        longitude: zoneData.longitude,
-                      },
-                    ]);
-                  }
-
-                  setSelectedZone("");
-                }}
-                style={{ ...inputStyle, width: "100%" }}
-              >
-                <option value="">-- Select Zone --</option>
-                {cityZones.map((zone, idx) => (
-                  <option key={idx} value={zone.address}>
-                    {zone.address}
-                  </option>
-                ))}
-              </select>
-
-              <div style={tagsContainerStyle}>
-                {zones.map((zone, index) => (
-                  <span
-                    key={index}
-                    onClick={() => handleRemoveZone(zone.address)}
-                    style={tagStyle}
-                    title={`${zone.address} (Lat: ${zone.latitude}, Long: ${zone.longitude})`}
-                  >
-                    {getShortAddress(zone.address)}
-                  </span>
-                ))}
-              </div>
+            <label style={labelStyle}>Selected Zones</label>
+            <div style={{ width: "50%", marginRight: "20px" }}>
+              {zones.length > 0 ? (
+                <div style={tagsContainerStyle}>
+                  {zones.map((zone, index) => (
+                    <span
+                      key={index}
+                      onClick={() => handleRemoveZone(zone.address)}
+                      style={tagStyle}
+                      title={`${zone.address} (Lat: ${zone.latitude}, Long: ${zone.longitude})`}
+                    >
+                      {getShortAddress(zone.address)}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <span style={{ color: "gray" }}>No zones available for this city.</span>
+              )}
             </div>
+          </div>
+        )}
+
+        {/* Store Selection (Only show if zones are selected) */}
+        {zones.length > 0 && (
+          <div style={formRowStyle}>
+            <label style={labelStyle}>Store</label>
+            <select
+              style={inputStyle}
+              value={storeId}
+              onChange={(e) => setStoreId(e.target.value)}
+            >
+              <option value="">--Select Store--</option>
+              {stores.map((store) => (
+                <option key={store._id} value={store._id}>
+                  {store.name} ({getShortAddress(store.zoneAddress)})
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
@@ -257,7 +305,6 @@ function AddBanner() {
             value={type}
             onChange={(e) => {
               setType(e.target.value);
-              // Reset category selections on type change
               setMainId("");
               setSubId("");
               setSubsubId("");
@@ -421,7 +468,6 @@ function AddBanner() {
   );
 }
 
-// ✅ Reusable styles
 const formRowStyle = {
   display: "flex",
   justifyContent: "space-around",

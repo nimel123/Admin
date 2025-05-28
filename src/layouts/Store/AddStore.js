@@ -2,14 +2,20 @@ import React, { useState } from "react";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 import './AddStore.css';
-import { Button } from "@mui/material";
+import { Button, Switch } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 function AddStore() {
     const [controller] = useMaterialUIController();
     const { miniSidenav } = controller;
     const [selectedServices, setSelectedServices] = useState([]);
-    const navigate=useNavigate()
+    const navigate = useNavigate()
+
+    const [isAuthorized, setIsAuthorized] = useState(false);
+
+    const handleSwitchChange = (event) => {
+        setIsAuthorized(event.target.checked);
+    };
 
     const services = [
         "Publish",
@@ -59,21 +65,19 @@ function AddStore() {
                             <input type="text" placeholder="Enter Store Name" />
                         </div>
                         <div className="store-input">
-                            <label>Vender Name</label>
+                            <label>Owner Name</label>
                             <input type="text" placeholder="Enter Vender Name" />
                         </div>
                     </div>
 
                     <div className="store-row">
                         <div className="store-input">
-                            <label>Select Category</label>
-                            <select>
-                                <option value="">---Select Category---</option>
-                            </select>
+                            <label>Owner Mobile</label>
+                            <input type="text" placeholder="Owner Mobile Number" />
                         </div>
                         <div className="store-input">
-                            <label>Phone Number</label>
-                            <input type="text" placeholder="Enter Phone Number" />
+                            <label>Store Phone Number</label>
+                            <input type="text" placeholder="Store Phone Number" />
                         </div>
                     </div>
 
@@ -115,6 +119,39 @@ function AddStore() {
                 </div>
             </div>
 
+            <div className="store-container">
+                <div className="store-header">Category Selection</div>
+
+                <div className="store-form" style={{ marginBottom: '30px' }}>
+                    <div className="store-row">
+
+                        <div className="store-input">
+                            <label>Authorized Store</label>
+                            <Switch
+                                checked={isAuthorized}
+                                onChange={handleSwitchChange}
+                                color="success"
+                                inputProps={{ "aria-label": "Authorized Store Toggle" }}
+                            />
+                            {/* Optional: Show status */}
+                            <p>Status: {isAuthorized ? "Authorized Store" : "Not Authorized"}</p>
+                        </div>
+
+
+                        {isAuthorized && (
+                            <div className="store-input">
+                                <label>Select Category</label>
+                                <select >
+                                    <option value="">---Select Category---</option>
+                                    <option value="cat1">Category 1</option>
+                                    <option value="cat2">Category 2</option>
+                                </select>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
             {/* Galary Section */}
             <div className="store-container">
                 <div className="store-header">Gallery</div>
@@ -143,63 +180,23 @@ function AddStore() {
                 </div>
             </div>
 
-            {/* Service Section */}
-            <div className="store-container">
-                <div className="store-header">Services</div>
-                <div className="store-form">
-                    <div className="store-input" style={{ flex: "1 1 100%" }}>
-                        <label>Select Services</label>
-                        <div className="checkbox-list">
-                            {services.map((service, index) => (
-                                <label key={index} className="checkbox-item">
-                                    <input
-                                        type="checkbox"
-                                        value={service}
-                                        onChange={handleCheckboxChange}
-                                    />
-                                    {service}
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
+           
+            <div style={{ display: 'flex', gap: '30px', alignItems: 'center', justifyContent: 'center' }}>
+                <Button
+                    variant="contained"
+                    style={{ backgroundColor: '#00c853', color: 'white', fontSize: '15px' }}
+                >
+                    SAVE
+                </Button>
 
-            {/* Delivery Charges Section */}
-            <div className="store-container">
-                <div className="store-header">Delivery Charges</div>
-                <div className="store-form">
-                    <div className="store-input" style={{ flex: "1 1 100%" }}>
-                        <label>Delivery Charge Per Km</label>
-                        <input type="number" placeholder="5" disabled />
-                    </div>
-                    <div className="store-input" style={{ flex: "1 1 100%" }}>
-                        <label>Minimum Delivery Charges</label>
-                        <input type="number" placeholder="20" disabled />
-                    </div>
-                    <div className="store-input" style={{ flex: "1 1 100%" }}>
-                        <label>Minimum Delivery Charge Within Km</label>
-                        <input type="number" placeholder="5" disabled />
-                    </div>
-                </div>
+                <Button
+                    variant="contained"
+                    style={{ backgroundColor: '#00c853', color: 'white', fontSize: '15px' }}
+                    onClick={() => navigate(-1)}
+                >
+                    BACK
+                </Button>
             </div>
-
-             <div style={{ display: 'flex', gap: '30px', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Button
-                                        variant="contained"
-                                        style={{ backgroundColor: '#00c853', color: 'white', fontSize: '15px' }}
-                                    >
-                                        SAVE
-                                    </Button>
-            
-                                    <Button
-                                        variant="contained"
-                                        style={{ backgroundColor: '#00c853', color: 'white', fontSize: '15px' }}
-                                        onClick={()=>navigate(-1)}
-                                    >
-                                        BACK
-                                    </Button>
-                                </div>
 
         </MDBox>
     );

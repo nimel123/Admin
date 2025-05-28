@@ -4,6 +4,7 @@ import { useMaterialUIController } from "context";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button, Switch } from "@mui/material";
 
+
 const headerCell = {
   padding: "14px 12px",
   border: "1px solid #ddd",
@@ -26,17 +27,34 @@ function GetSubCategories() {
   const { miniSidenav } = controller;
   const navigate = useNavigate();
   const location = useLocation();
+  const [data,setData]=useState([]);
   const category = location.state?.category;
 
   const [toggleStates, setToggleStates] = useState({});
 
   useEffect(() => {
+
     const initialToggles = {};
     category?.subcat?.forEach((item) => {
-      initialToggles[item._id] = true; // default status
+      initialToggles[item._id] = true;
     });
     setToggleStates(initialToggles);
-  }, [category]);
+
+    const getSubCate=async()=>{      
+      try{
+          const res=await fetch(`https://node-m8jb.onrender.com/getsubcat/${category._id}`)
+          if(res.status===200){
+            const result=await res.json();
+            setData(result.subcategories)
+             console.log(result.subcategories);        
+          }
+      }
+      catch(err){
+        console.log(err);       
+      }
+    }
+          getSubCate();
+  }, []);
 
   const handleToggle = (id) => {
     setToggleStates((prev) => ({
@@ -51,12 +69,17 @@ function GetSubCategories() {
     if (!confirm) return;
 
     try {
-      const res = await fetch(`https://node-m8jb.onrender.com/deletesubcategory/${id}`, {
+      const res = await fetch(`https://node-m8jb.onrender.com/delete-subcategory/${id}`, {
         method: "DELETE",
       });
       if (res.status === 200) {
         alert("Deleted successfully");
-        window.location.reload();
+          const updatedList = data.filter((item) => item._id !== id);
+      setData(updatedList);
+        
+       if(data.length===0){
+        navigate(-1)
+       }
       }
     } catch (err) {
       console.error("Delete error:", err);
@@ -108,7 +131,7 @@ function GetSubCategories() {
                 </tr>
               </thead>
               <tbody>
-                {category?.subcat?.map((subcatItem, index) => {
+                {data.map((subcatItem, index) => {
                   const subSubCount = subcatItem.subsubcat?.length || 0;
                   const totalItems = 1 + subSubCount;
 
@@ -147,6 +170,7 @@ function GetSubCategories() {
                               borderRadius: "6px",
                               cursor: "pointer",
                             }}
+                            onClick={()=>navigate('/edit-subCat',{state:subcatItem})}
                           >
                             Edit
                           </button>

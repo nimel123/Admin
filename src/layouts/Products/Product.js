@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react"; // Added useRef
+import React, { useEffect, useState, useRef } from "react";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
@@ -43,20 +43,22 @@ function Product() {
     const [unitsData, setUnitsData] = useState([]);
     const [des, setDes] = useState('');
     const [brandImage, setBrandImage] = useState(null);
-    const [brandImageError, setBrandImageError] = useState(''); 
+    const [brandImageError, setBrandImageError] = useState('');
     const brandImageInputRef = useRef(null);
 
-    // Categories
-    const [category, setCategory] = useState('');
+    // Categories (Now an array for multiple selections)
+    const [category, setCategory] = useState([]);
     const [subCategory, setSubCategory] = useState('');
     const [subSubCategory, setSubSubCategory] = useState('');
+    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false); // For custom dropdown
 
     // City and Zone
     const [city, setCity] = useState('');
-    const [zone, setZone] = useState([]);
+    const [zone, setZone] = useState([]); // Array of selected zone addresses
 
     // Attributes
     const [attribute, setAttribute] = useState([]);
+    const [filteredAttributes, setFilteredAttributes] = useState([]);
     const [attributeValue, setAttributeValue] = useState([]);
 
     // Tax
@@ -78,12 +80,14 @@ function Product() {
     const [thumbnailError, setThumbnailError] = useState('');
 
     const [zones, setZones] = useState([]);
-    const [selectedZone, setSelectedZone] = useState('');
     const [attributedata, setAttributeData] = useState('');
 
     const [colors, setColors] = useState([]);
     const [currentColor, setCurrentColor] = useState("#000000");
     const [brands, setBrands] = useState([]);
+
+    // State for custom variant dropdown
+    const [showVariantDropdown, setShowVariantDropdown] = useState(false);
 
     const maxSize = 500 * 1024; // 500KB
     const handleThumbnailChange = (e) => {
@@ -153,15 +157,7 @@ function Product() {
         );
     };
 
-    const handleZoneChange = (e) => {
-        const value = e.target.value;
-        setZone((prev) =>
-            prev.includes(value) ? prev.filter((z) => z !== value) : [...prev, value]
-        );
-    };
-
-    const handleAttributeValueChange = (e) => {
-        const variantName = e.target.value;
+    const handleAttributeValueChange = (variantName) => {
         const selectedAttr = attribute.find(attr => attr._id === attributedata);
 
         if (variantName && selectedAttr) {
@@ -179,32 +175,164 @@ function Product() {
                 }
             }
         }
+        setShowVariantDropdown(false);
     };
 
-    const handleCategoryChange = (e) => {
-        const selectedId = e.target.value;
-        setCategory(selectedId);
+    const handleDeleteVariant = async (id,variantName) => {
+        if (!window.confirm(`Are you sure you want to delete the variant "${variantName}"?`)) {
+            return;
+        }
+
+        try {
+            const result = await fetch(`http://localhost:5000/deleteVarient/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const responseBody = await result.json();
+
+            if (result.status === 200) {
+                alert('Variant Deleted Successfully');
+                const res = await fetch("https://fivlia.onrender.com/getAttributes");
+                const data = await res.json();
+                setAttribute(data);
+                setAttributeValue(prev => prev.filter(item => item.variantName !== variantName));
+                setShowVariantDropdown(false);
+            } else {
+                const errorMessage = responseBody.message || `Failed to delete variant (Status: ${result.status})`;
+                alert(errorMessage);
+            }
+        } catch (err) {
+            console.error("Error deleting variant:", err);
+            alert('Error deleting variant: ' + err.message);
+        }
+    };
+
+    const handleCategoryChange = (categoryId) => {
+        let updatedCategories;
+        if (category.includes(categoryId)) {
+            // Deselect the category
+            updatedCategories = category.filter(id => id !== categoryId);
+        } else {
+            // Select the category
+            updatedCategories = [...category, categoryId];
+        }
+
+        setCategory(updatedCategories);
         setSubCategory("");
         setSubSubCategory("");
+        setAttributeValue([]);
+        setAttributeData('');
 
-        const selectedCat = categories.find(cat => cat._id === selectedId);
-        if (selectedCat) {
-            setSubCategories(selectedCat.subcat || []);
+        // Combine subcategories and attributes from all selected categories
+        if (updatedCategories.length > 0) {
+            const selectedCats = categories.filter(cat => updatedCategories.includes(cat._id));
+            // Combine subcategories (remove duplicates by _id)
+            const allSubCats = selectedCats
+                .flatMap(cat => cat.subcat || [])
+                .filter((sub, index, self) => 
+                    index === self.findIndex(s => s._id === sub._id)
+                );
+            setSubCategories(allSubCats);
+
+            // Combine attributes (remove duplicates by Attribute_name)
+            const allAttributes = selectedCats
+                .flatMap(cat => cat.attribute || [])
+                .filter((attr, index, self) => 
+                    index === self.findIndex(a => a === attr)
+                );
+            setFilteredAttributes(allAttributes);
         } else {
             setSubCategories([]);
+            setSubsubCategories([]);
+            setFilteredAttributes([]);
         }
+
+        setShowCategoryDropdown(false); // Close dropdown after selection
+    };
+
+    const handleRemoveCategory = (categoryId) => {
+        const updatedCategories = category.filter(id => id !== categoryId);
+        setCategory(updatedCategories);
+
+        // Update subcategories and attributes based on remaining selected categories
+        if (updatedCategories.length > 0) {
+            const selectedCats = categories.filter(cat => updatedCategories.includes(cat._id));
+            const allSubCats = selectedCats
+                .flatMap(cat => cat.subcat || [])
+                .filter((sub, index, self) => 
+                    index === self.findIndex(s => s._id === sub._id)
+                );
+            setSubCategories(allSubCats);
+
+            const allAttributes = selectedCats
+                .flatMap(cat => cat.attribute || [])
+                .filter((attr, index, self) => 
+                    index === self.findIndex(a => a === attr)
+                );
+            setFilteredAttributes(allAttributes);
+        } else {
+            setSubCategories([]);
+            setSubsubCategories([]);
+            setFilteredAttributes([]);
+        }
+
+        setSubCategory("");
+        setSubSubCategory("");
+        setAttributeValue([]);
+        setAttributeData('');
     };
 
     const handleSubCategoryChange = (e) => {
         const selectedId = e.target.value;
         setSubCategory(selectedId);
         setSubSubCategory("");
+        setAttributeValue([]);
+        setAttributeData('');
 
         const selectedSub = subCategories.find(sub => sub._id === selectedId);
         if (selectedSub) {
             setSubsubCategories(selectedSub.subsubcat || []);
+            const selectedCats = categories.filter(cat => category.includes(cat._id));
+            const combinedAttributes = selectedCats.flatMap(cat => cat.attribute || []);
+            setFilteredAttributes(selectedSub.attribute?.length > 0 ? selectedSub.attribute : combinedAttributes);
         } else {
             setSubsubCategories([]);
+            const selectedCats = categories.filter(cat => category.includes(cat._id));
+            const combinedAttributes = selectedCats.flatMap(cat => cat.attribute || []);
+            setFilteredAttributes(combinedAttributes);
+        }
+    };
+
+    const handleSubSubCategoryChange = (e) => {
+        const selectedId = e.target.value;
+        setSubSubCategory(selectedId);
+        setAttributeValue([]);
+        setAttributeData('');
+
+        const selectedSubSub = subsubCategories.find(subsub => subsub._id === selectedId);
+        if (selectedSubSub) {
+            const selectedSub = subCategories.find(sub => sub._id === subCategory);
+            const selectedCats = categories.filter(cat => category.includes(cat._id));
+            const combinedAttributes = selectedCats.flatMap(cat => cat.attribute || []);
+            setFilteredAttributes(
+                selectedSubSub.attribute?.length > 0 
+                    ? selectedSubSub.attribute 
+                    : (selectedSub?.attribute?.length > 0 
+                        ? selectedSub.attribute 
+                        : combinedAttributes)
+            );
+        } else {
+            const selectedSub = subCategories.find(sub => sub._id === subCategory);
+            const selectedCats = categories.filter(cat => category.includes(cat._id));
+            const combinedAttributes = selectedCats.flatMap(cat => cat.attribute || []);
+            setFilteredAttributes(
+                selectedSub?.attribute?.length > 0 
+                    ? selectedSub.attribute 
+                    : combinedAttributes
+            );
         }
     };
 
@@ -326,7 +454,6 @@ function Product() {
                 return;
             }
 
-
             const maxSizeInBytes = 500 * 1024; // 500KB
             if (file.size > maxSizeInBytes) {
                 setBrandImageError("Image size must be less than 500KB");
@@ -334,8 +461,8 @@ function Product() {
                 return;
             }
 
-            setBrandImageError(""); 
-            setBrandImage(file); 
+            setBrandImageError("");
+            setBrandImage(file);
         }
     };
 
@@ -365,9 +492,8 @@ function Product() {
                 setDes('');
                 setBrandImage(null);
                 if (brandImageInputRef.current) {
-                    brandImageInputRef.current.value = ""; 
+                    brandImageInputRef.current.value = "";
                 }
-                // Refresh brands
                 const res = await fetch("https://fivlia.onrender.com/getBrand");
                 const data = await res.json();
                 setBrands(data);
@@ -483,10 +609,26 @@ function Product() {
 
         const selectedCity = citydata.find(item => item._id === cityId);
         if (selectedCity) {
-            setZones(selectedCity.zones || []);
+            const cityZones = selectedCity.zones || [];
+            setZones(cityZones);
+            const allZoneAddresses = cityZones.map(zone => zone.address);
+            setZone(allZoneAddresses);
         } else {
             setZones([]);
+            setZone([]);
         }
+    };
+
+    const handleRemoveZone = (zoneAddress) => {
+        setZone(prev => prev.filter(z => z !== zoneAddress));
+    };
+
+    const getDisplayZoneAddress = (zoneAddress) => {
+        const parts = zoneAddress.split(",");
+        if (parts.length <= 2) {
+            return zoneAddress;
+        }
+        return parts.slice(0, 2).join(",").trim();
     };
 
     const addColor = () => {
@@ -570,8 +712,7 @@ function Product() {
                             </div>
                             <div className="input-container">
                                 <label>Description</label>
-                                <input
-                                    type="text"
+                                <textarea
                                     placeholder="Enter Product Description"
                                     className="input-field"
                                     value={description}
@@ -727,14 +868,98 @@ function Product() {
                         <span style={{ marginLeft: '20px', fontWeight: 'bold', marginBottom: '10px' }}>Category Selection</span>
                         <div className="row-section" style={{ flexDirection: 'column' }}>
                             <label>Select Category</label>
-                            <select className="input-field" value={category} onChange={handleCategoryChange}>
-                                <option value="">--Select Category--</option>
-                                {categories.map(item => (
-                                    <option key={item._id} value={item._id}>{item.name}</option>
-                                ))}
-                            </select>
+                            <div style={{ position: 'relative' }}>
+                                <button
+                                    className="input-field"
+                                    style={{
+                                        width: '100%',
+                                        textAlign: 'left',
+                                        backgroundColor: 'white',
+                                        padding: '8px',
+                                        border: '1px solid #ccc',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer'
+                                    }}
+                                    onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                                >
+                                    {category.length > 0
+                                        ? categories
+                                            .filter(cat => category.includes(cat._id))
+                                            .map(cat => cat.name)
+                                            .join(', ') || '--Select Category--'
+                                        : '--Select Category--'}
+                                </button>
+                                {showCategoryDropdown && (
+                                    <div
+                                        style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            left: 0,
+                                            right: 0,
+                                            backgroundColor: 'white',
+                                            border: '1px solid #ccc',
+                                            borderRadius: '4px',
+                                            maxHeight: '200px',
+                                            overflowY: 'auto',
+                                            zIndex: 1000
+                                        }}
+                                    >
+                                        {categories.map(item => (
+                                            <div
+                                                key={item._id}
+                                                style={{
+                                                    padding: '8px',
+                                                    borderBottom: '1px solid #eee',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center'
+                                                }}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={category.includes(item._id)}
+                                                    onChange={() => handleCategoryChange(item._id)}
+                                                    style={{ marginRight: '8px' }}
+                                                />
+                                                <span>{item.name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
-                            {category && (
+                            {/* Display selected categories as tags */}
+                            {category.length > 0 && (
+                                <div style={{ marginTop: '10px' }}>
+                                    <label>Selected Categories</label>
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
+                                        {category.map((catId, index) => {
+                                            const cat = categories.find(c => c._id === catId);
+                                            return cat ? (
+                                                <div
+                                                    key={catId}
+                                                    style={{
+                                                        backgroundColor: "#f0f0f0",
+                                                        padding: "6px 10px",
+                                                        borderRadius: "20px",
+                                                        cursor: "pointer",
+                                                        fontSize: "14px",
+                                                        display: "inline-flex",
+                                                        alignItems: "center",
+                                                    }}
+                                                    onClick={() => handleRemoveCategory(catId)}
+                                                    title={`Click to remove ${cat.name}`}
+                                                >
+                                                    {cat.name}
+                                                    <span style={{ marginLeft: "5px", cursor: "pointer" }}>×</span>
+                                                </div>
+                                            ) : null;
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {subCategories.length > 0 && (
                                 <>
                                     <label>Select Sub-Category</label>
                                     <select className="input-field" value={subCategory} onChange={handleSubCategoryChange}>
@@ -746,12 +971,12 @@ function Product() {
                                 </>
                             )}
 
-                            {subCategory && (
+                            {subCategory && subsubCategories.length > 0 && (
                                 <>
                                     <label>Select Sub-Sub-Category</label>
-                                    <select className="input-field" value={subSubCategory} onChange={(e) => setSubSubCategory(e.target.value)}>
+                                    <select className="input-field" value={subSubCategory} onChange={handleSubSubCategoryChange}>
                                         <option value="">--Select Sub Sub-Category--</option>
-                                        {subsubCategories.map((item, index) => (
+                                        {subsubCategories.map((item) => (
                                             <option key={item._id} value={item._id}>{item.name}</option>
                                         ))}
                                     </select>
@@ -773,19 +998,38 @@ function Product() {
                                     ))}
                                 </select>
                             </div>
-
-                            <div className="input-container">
-                                <label>Select Zone</label>
-                                <select className="input-field" value={selectedZone} onChange={(e) => setSelectedZone(e.target.value)}>
-                                    <option value="">--Select Zone--</option>
-                                    {zones.map((zone, index) => (
-                                        <option key={index} value={zone.address}>
-                                            {zone.address}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                            <div className="input-container"></div>
                         </div>
+
+                        {city && zone.length > 0 && (
+                            <div className="row-section">
+                                <div className="input-container">
+                                    <label>Selected Zones</label>
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
+                                        {zone.map((zoneAddress, index) => (
+                                            <div
+                                                key={index}
+                                                style={{
+                                                    backgroundColor: "#f0f0f0",
+                                                    padding: "6px 10px",
+                                                    borderRadius: "20px",
+                                                    cursor: "pointer",
+                                                    fontSize: "14px",
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                }}
+                                                onClick={() => handleRemoveZone(zoneAddress)}
+                                                title={`Click to remove ${zoneAddress}`}
+                                            >
+                                                {getDisplayZoneAddress(zoneAddress)}
+                                                <span style={{ marginLeft: "5px", cursor: "pointer" }}>×</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="row-section">
                             <div className="input-container">
                                 <label>Select Units</label>
@@ -907,12 +1151,17 @@ function Product() {
 
                         <div className="row-section">
                             <div className="input-container">
-                                <label>Select Attribute</label>
+                                <label>Select Attribute (Filter)</label>
                                 <select className="input-field" value={attributedata} onChange={(e) => setAttributeData(e.target.value)}>
                                     <option value="">--Select Attribute--</option>
-                                    {attribute.map((item) => (
-                                        <option key={item._id} value={item._id}>{item.Attribute_name}</option>
-                                    ))}
+                                    {filteredAttributes.map((attr, index) => {
+                                        const attributeObj = attribute.find(a => a.Attribute_name === attr);
+                                        return attributeObj ? (
+                                            <option key={attributeObj._id} value={attributeObj._id}>
+                                                {attributeObj.Attribute_name}
+                                            </option>
+                                        ) : null;
+                                    })}
                                 </select>
 
                                 <h3
@@ -949,17 +1198,82 @@ function Product() {
                             </div>
 
                             <div className="input-container">
-                                <label>Select Variant</label>
-                                <select className="input-field" onChange={handleAttributeValueChange}>
-                                    <option value="">--Select Attribute Value--</option>
-                                    {attribute
-                                        .find((attr) => attr._id === attributedata)?.varient
-                                        ?.map((variant, index) => (
-                                            <option key={index} value={variant.name}>
-                                                {variant.name}
-                                            </option>
-                                        ))}
-                                </select>
+                                <label>Select Variant (Filter Variant)</label>
+                                <div style={{ position: 'relative' }}>
+                                    <button
+                                        className="input-field"
+                                        style={{
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            backgroundColor: 'white',
+                                            padding: '8px',
+                                            border: '1px solid #ccc',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer'
+                                        }}
+                                        onClick={() => setShowVariantDropdown(!showVariantDropdown)}
+                                    >
+                                        {attributeValue.length > 0 && attributedata
+                                            ? attributeValue
+                                                .filter(item => item.attributeName === selectedAttribute?.Attribute_name)
+                                                .map(item => item.variantName)
+                                                .join(', ') || '--Select Attribute Value--'
+                                            : '--Select Attribute Value--'}
+                                    </button>
+                                    {showVariantDropdown && attributedata && (
+                                        <div
+                                            style={{
+                                                position: 'absolute',
+                                                top: '100%',
+                                                left: 0,
+                                                right: 0,
+                                                backgroundColor: 'white',
+                                                border: '1px solid #ccc',
+                                                borderRadius: '4px',
+                                                maxHeight: '150px',
+                                                overflowY: 'auto',
+                                                zIndex: 1000
+                                            }}
+                                        >
+                                            {attribute
+                                                .find((attr) => attr._id === attributedata)?.varient
+                                                ?.map((variant, index) => (
+                                                    <div
+                                                        key={index}
+                                                        style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            padding: '8px',
+                                                            borderBottom: '1px solid #eee',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        <span
+                                                            onClick={() => handleAttributeValueChange(variant.name)}
+                                                            style={{ flex: 1 }}
+                                                        >
+                                                            {variant.name}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => handleDeleteVariant(variant._id, variant.name)}
+                                                            style={{
+                                                                background: 'red',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                padding: '4px 8px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '12px'
+                                                            }}
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    )}
+                                </div>
                                 <h3
                                     style={{ fontSize: '12px', cursor: 'pointer', color: 'green', marginTop: '10px', marginLeft: '5px' }}
                                     onClick={() => setShowVariantPopup(true)}
@@ -1109,30 +1423,8 @@ function Product() {
                         <span style={{ marginLeft: '20px', fontWeight: 'bold', marginBottom: '10px' }}>Product Taxes</span>
                         <div className="row-section">
                             <div className="input-container">
-                                <label>CGST</label>
+                                <label>GST</label>
                                 <select className="input-field" value={cgst} onChange={(e) => setCgst(e.target.value)}>
-                                    <option value="">--Select Tax Percentage--</option>
-                                    {taxdata.map((item) => (
-                                        <option key={item._id} value={item.value}>{item.value}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="input-container">
-                                <label>IGST</label>
-                                <select className="input-field" value={igst} onChange={(e) => setIgst(e.target.value)}>
-                                    <option value="">--Select Tax Percentage--</option>
-                                    {taxdata.map((item) => (
-                                        <option key={item._id} value={item.value}>{item.value}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="row-section">
-                            <div className="input-container">
-                                <label>SGST</label>
-                                <select className="input-field" value={sgst} onChange={(e) => setSgst(e.target.value)}>
                                     <option value="">--Select Tax Percentage--</option>
                                     {taxdata.map((item) => (
                                         <option key={item._id} value={item.value}>{item.value}</option>

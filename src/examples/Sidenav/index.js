@@ -47,7 +47,7 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
   const location = useLocation();
   const [openCollapse, setOpenCollapse] = useState("");
 
-  // Force white text color
+
   const textColor = "white";
 
   const closeSidenav = () => setMiniSidenav(dispatch, true);
@@ -88,6 +88,7 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
               icon={icon}
               active={key === location.pathname.replace("/", "") || (collapse && collapse.some(sub => sub.route === location.pathname))}
               noCollapse={noCollapse}
+              
             />
           </NavLink>
           {collapse && (

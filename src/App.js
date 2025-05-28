@@ -32,7 +32,6 @@ import brandDark from "assets/images/logo-ct-dark.png";
 import AddCategories from "layouts/Categories/AddCategories";
 import Categories from "layouts/Categories/Categories";
 import GetSubCategories from "layouts/Categories/SubCategories";
-import EditSub from "layouts/Categories/EditSubCate";
 import City from "layouts/City Management/City";
 import CityTable from "layouts/City Management/CityTable";
 import UserData from "layouts/Users/Users";
@@ -46,6 +45,14 @@ import AttributeTable from "layouts/Attribute/AttributeArray";
 import Product from "layouts/Products/Product";
 import AddStore from "layouts/Store/AddStore";
 import SubSubCat from "layouts/Categories/SubSubCat";
+import AddUnit from "layouts/Attribute/AddUnit";
+import EditCity from "layouts/City Management/EditCity";
+import EditZone from "layouts/servicearea/EditZone";
+import EditAll from "layouts/Attribute/EditForAll";
+import EditBrand from "layouts/Brand/EditBrand";
+import EditCategory from "layouts/Categories/EditCat";
+import EditSubCat from "layouts/Categories/EditSubCat";
+import EditSubSubCat from "layouts/Categories/EditSubSub";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -105,9 +112,9 @@ export default function App() {
 
   const getRoutes = (allRoutes) =>
     allRoutes.map((route) => {
-     if (route.collapse) {
-      return getRoutes(route.collapse); 
-    }
+      if (route.collapse) {
+        return getRoutes(route.collapse);
+      }
 
       if (route.route) {
         return <Route exact path={route.route} element={route.component} key={route.key} />;
@@ -163,17 +170,24 @@ export default function App() {
                 {getRoutes(routes)}
                 <Route path="/addlocation" element={<AddServiceArea />} />
                 <Route path="/addCategories" element={<AddCategories />} />
-                 <Route path="/getsubsubcat" element={<SubSubCat />} />
-                <Route path="/edit-sub" element={<EditSub />} />
+                <Route path="/getsubsubcat" element={<SubSubCat />} />
+                <Route path="/edit-sub" element={<EditCategory />} />
+                 <Route path="/edit-subCat" element={<EditSubCat />} />
+                  <Route path="/edit-subsubCat" element={<EditSubSubCat />} />
                 <Route path="*" element={<Navigate to="/dashboard" />} />
                 <Route path="/city" element={<City />} />
                 <Route path="/user-data" element={<UserData />} />
                 <Route path="/user-create" element={<CreateUser />} />
                 <Route path="/add-banner" element={<AddBanner />} />
                 <Route path="/add-brand" element={<AddBrand />} />
+                 <Route path="/edit-brand" element={<EditBrand />} />
                 <Route path="/attribute-value" element={<Attributes />} />
-                 <Route path="/add-product" element={<Product />} />
-                  <Route path="/add-store" element={<AddStore />} />
+                <Route path="/add-product" element={<Product />} />
+                <Route path="/add-store" element={<AddStore />} />
+                <Route path="/add-unit" element={<AddUnit />} />
+                <Route path="/edit-city" element={<EditCity />} />
+                <Route path="/edit-zone" element={<EditZone />} />
+                <Route path="/edit-all" element={<EditAll />} />
               </Routes>
             </MDBox>
           </>
@@ -205,15 +219,22 @@ export default function App() {
             <Route path="/getsubcate" element={<GetSubCategories />} />
             <Route path="/getsubsubcat" element={<SubSubCat />} />
             <Route path="/addlocation" element={<AddServiceArea />} />
-            <Route path="/edit-sub" element={<EditSub />} />
+            <Route path="/edit-sub" element={<EditCategory />} />
+            <Route path="/edit-subCat" element={<EditSubCat />} />
+             <Route path="/edit-subsubCat" element={<EditSubSubCat />} />
             <Route path="/city" element={<City />} />
             <Route path="/user-data" element={<UserData />} />
             <Route path="/user-create" element={<CreateUser />} />
             <Route path="/add-banner" element={<AddBanner />} />
             <Route path="/add-brand" element={<AddBrand />} />
+             <Route path="/edit-brand" element={<EditBrand />} />
             <Route path="/add-attribute" element={<Attributes />} />
-              <Route path="/add-product" element={<Product />} />
-              <Route path="/add-store" element={<AddStore />} />
+            <Route path="/add-product" element={<Product />} />
+            <Route path="/add-store" element={<AddStore />} />
+            <Route path="/add-unit" element={<AddUnit />} />
+            <Route path="/edit-city" element={<EditCity />} />
+            <Route path="/edit-zone" element={<EditZone />} />
+            <Route path="/edit-attribute" element={<EditAll />} />
             <Route path="*" element={<Navigate to="/dashboard" />} />
 
           </Routes>

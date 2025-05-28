@@ -3,6 +3,7 @@ import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { Button } from "@mui/material";
 
 function AddBrand() {
     const [controller] = useMaterialUIController();
@@ -56,14 +57,14 @@ function AddBrand() {
 
                 <h2 style={{ textAlign: "center", marginBottom: "30px", fontWeight: 'bold', color: 'green' }}>ADD NEW BRAND</h2>
 
-                {/* Category Name */}
+                {/* Brand Name */}
                 <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "20px" }}>
                     <div><label style={{ fontWeight: '500' }}>Brand Name</label></div>
                     <div style={{ width: "58%" }}>
                         <input
                             type="text"
                             value={name}
-                            placeholder="Enter Category Name"
+                            placeholder="Enter Brand Name"
                             onChange={(e) => setName(e.target.value)}
                             style={{ border: '1px solid black', backgroundColor: 'white' }}
                         />
@@ -117,6 +118,7 @@ function AddBrand() {
                     <div style={{ width: "59%", marginLeft: "45px" }}>
                         <textarea
                             placeholder="Enter Description"
+                            value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             style={{ width: "100%", height: "100px", borderRadius: '10px', padding: '5px' }}
                         />
@@ -127,21 +129,21 @@ function AddBrand() {
 
                 {/* Submit Button */}
                 <div style={{ textAlign: "center", }}>
-                    <button style={{
+                    <Button style={{
                         width: '80px', height: '40px', fontSize: "16px", marginTop: '10px',
-                        marginBottom: '20px', backgroundColor: 'green', color: 'white', borderRadius: '15px', marginRight: '50px', cursor: 'pointer'
+                        marginBottom: '20px', backgroundColor: '#00c853', color: 'white', borderRadius: '15px', marginRight: '50px', cursor: 'pointer'
                     }}
                         onClick={handleBrands}
                     >
                         SAVE
-                    </button>
-                    <button onClick={() => navigate(-1)} style={{
+                    </Button>
+                    <Button onClick={() => navigate(-1)} style={{
                         width: '80px', height: '40px', fontSize: "16px", marginTop: '10px',
-                        marginBottom: '20px', backgroundColor: 'green', color: 'white', borderRadius: '15px', cursor: 'pointer'
+                        marginBottom: '20px', backgroundColor: '#00c853', color: 'white', borderRadius: '15px', cursor: 'pointer'
                     }}
                     >
                         BACK
-                    </button>
+                    </Button>
                 </div>
             </div>
         </MDBox>

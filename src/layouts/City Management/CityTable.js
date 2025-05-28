@@ -15,35 +15,44 @@ export default function CityTable() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const headerCell = {
-  padding: "14px 12px",
-  border: "1px solid #ddd",
-  fontSize: 18,
-  fontWeight: "bold",
-  backgroundColor: "#007bff",
-  color: "white",
-};
+    padding: "14px 12px",
+    border: "1px solid #ddd",
+    fontSize: 18,
+    fontWeight: "bold",
+    backgroundColor: "#007bff",
+    color: "white",
+  };
 
-const bodyCell = {
-  padding: "12px",
-  border: "1px solid #eee",
-  fontSize: 17,
-  backgroundColor: "#fff",
-};
+  const bodyCell = {
+    padding: "12px",
+    border: "1px solid #eee",
+    fontSize: 17,
+    backgroundColor: "#fff",
+  };
 
   useEffect(() => {
     const getCity = async () => {
       try {
         const result = await fetch("https://fivlia.onrender.com/getCity");
         const data = await result.json();
+        console.log(data);
+
 
         if (Array.isArray(data)) {
-          const citiesWithStatus = data.map((city) => ({
+          const citiesWithDetails = data.map((city) => ({
             id: city._id,
             name: city.city,
             state: city.state,
             status: Boolean(city.status),
+            latitude: city.latitude,
+            longitude: city.longitude,
+            fullAddress: city.fullAddress,
+            createdAt: city.createdAt,
+            updatedAt: city.updatedAt,
           }));
-          setCities(citiesWithStatus);
+          setCities(citiesWithDetails);
+
+
         } else {
           console.error("Expected array but got:", data);
         }
@@ -117,23 +126,23 @@ const bodyCell = {
     alert(`Edit city: ${city.name}`);
   };
 
-  const handleDelete = async (id) => {
-    try {
-      if (!window.confirm("Are you sure you want to delete?")) return;
+  // const handleDelete = async (id) => {
+  //   try {
+  //     if (!window.confirm("Are you sure you want to delete?")) return;
 
-      const result = await fetch(
-        `https://node-m8jb.onrender.com/deleteCity/${id}`,
-        { method: "DELETE" }
-      );
+  //     const result = await fetch(
+  //       `https://node-m8jb.onrender.com/deleteCity/${id}`,
+  //       { method: "DELETE" }
+  //     );
 
-      if (result.status === 200) {
-        setCities((prev) => prev.filter((loc) => loc.id !== id));
-        alert("City deleted successfully.");
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  //     if (result.status === 200) {
+  //       setCities((prev) => prev.filter((loc) => loc.id !== id));
+  //       alert("City deleted successfully.");
+  //     }
+  //   } catch (err) {
+  //     console.log(err);
+  //   }
+  // };
 
   return (
     <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "30px" }}>
@@ -209,39 +218,39 @@ const bodyCell = {
               fontFamily: '"Urbanist", sans-serif',
               fontSize: "17px",
               border: "1px solid #007BFF",
-              
+
             }}
           >
             <thead>
               <tr style={{ backgroundColor: "#007BFF", color: "white" }}>
-                <th style={{...headerCell, padding: "14px", width: "10%" }}>Sr No</th>
-                <th style={{...headerCell, padding: "14px" }}>City</th>
-                <th style={{...headerCell, padding: "14px", width: "30%" }}>State</th>
-                <th style={{...headerCell, padding: "14px", width: "15%" }}>Status</th>
-                <th style={{...headerCell, padding: "14px", width: "20%" }}>Action</th>
+                <th style={{ ...headerCell, padding: "14px", width: "10%" }}>Sr No</th>
+                <th style={{ ...headerCell, padding: "14px" }}>City</th>
+                <th style={{ ...headerCell, padding: "14px", width: "30%" }}>State</th>
+                <th style={{ ...headerCell, padding: "14px", width: "15%" }}>Status</th>
+                <th style={{ ...headerCell, padding: "14px", width: "20%" }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {currentCities.length > 0 ? (
                 currentCities.map((city, index) => (
                   <tr key={city.id}>
-                    <td style={{...bodyCell, textAlign: "center", padding: "14px" }}>
+                    <td style={{ ...bodyCell, textAlign: "center", padding: "14px" }}>
                       {startIndex + index + 1}
                     </td>
-                    <td style={{...bodyCell, padding: "14px" }}>{city.name}</td>
-                    <td style={{ ...bodyCell,padding: "14px" }}>{city.state}</td>
-                    <td style={{...bodyCell, textAlign: "center", padding: "14px" }}>
+                    <td style={{ ...bodyCell, padding: "14px" }}>{city.name}</td>
+                    <td style={{ ...bodyCell, padding: "14px" }}>{city.state}</td>
+                    <td style={{ ...bodyCell, textAlign: "center", padding: "14px" }}>
                       <Switch
-                        key={`${city.id}-${city.status}`} 
+                        key={`${city.id}-${city.status}`}
                         checked={city.status}
                         onChange={() => toggleStatus(city.id)}
                         color="success"
                         inputProps={{ "aria-label": "controlled" }}
                       />
                     </td>
-                    <td style={{...bodyCell, textAlign: "center", padding: "14px" }}>
+                    <td style={{ ...bodyCell, textAlign: "center", padding: "14px" }}>
                       <button
-                        onClick={() => handleEdit(city)}
+                        onClick={() => navigate('/edit-city', { state: city })}
                         style={{
                           backgroundColor: "#007BFF",
                           color: "white",
@@ -254,7 +263,7 @@ const bodyCell = {
                       >
                         Edit
                       </button>
-                      <button
+                      {/* <button
                         onClick={() => handleDelete(city.id)}
                         style={{
                           backgroundColor: "#dc3545",
@@ -266,7 +275,7 @@ const bodyCell = {
                         }}
                       >
                         Delete
-                      </button>
+                      </button> */}
                     </td>
                   </tr>
                 ))

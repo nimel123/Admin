@@ -4,6 +4,7 @@ import { useMaterialUIController } from "context";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Switch } from "@mui/material";
 
+
 const headerCell = {
   padding: "14px 12px",
   border: "1px solid #ddd",
@@ -26,6 +27,7 @@ function SubSubCat() {
   const { miniSidenav } = controller;
   const navigate = useNavigate();
   const location = useLocation();
+  const [data,setData]=useState([]);
   const subcategory = location.state?.subcat;
   console.log(subcategory);
   
@@ -38,7 +40,21 @@ function SubSubCat() {
       initialToggles[item._id] = true;
     });
     setToggleStates(initialToggles);
-  }, [subcategory]);
+
+    const GetSubSub=async()=>{
+      try{
+          const res=await fetch(`https://node-m8jb.onrender.com/getsubsubcat/${subcategory._id}`)
+          if(res.status===200){
+            const result=await res.json();
+            setData(result.subsubcategories)
+          }
+      }
+      catch(err){
+        console.log(err);      
+      }
+    }
+    GetSubSub()
+  }, []);
 
   const handleToggle = (id) => {
     setToggleStates((prev) => ({
@@ -53,12 +69,19 @@ function SubSubCat() {
     if (!confirm) return;
 
     try {
-      const res = await fetch(`https://node-m8jb.onrender.com/deletesubsubcategory/${id}`, {
+      const res = await fetch(`https://node-m8jb.onrender.com/deletesubsubcat/${id}`, {
         method: "DELETE",
       });
       if (res.status === 200) {
         alert("Deleted successfully");
-        window.location.reload();
+        const updatedList = data.filter((item) => item._id !== id);
+      setData(updatedList);
+
+      // If no sub-subcategories left, go back
+      if (updatedList.length === 0) {
+        navigate(-1);
+      }
+        
       }
     } catch (err) {
       console.error("Delete error:", err);
@@ -110,7 +133,8 @@ function SubSubCat() {
                 </tr>
               </thead>
               <tbody>
-                {subcategory?.subsubcat?.map((subsub, index) => (
+                
+                {data.map((subsub, index) => (
                   <tr key={subsub._id}>
                     <td style={{ ...bodyCell, textAlign: "center" }}>{index + 1}</td>
                     <td style={{ ...bodyCell }}>
@@ -146,6 +170,7 @@ function SubSubCat() {
                             borderRadius: "6px",
                             cursor: "pointer",
                           }}
+                          onClick={()=>navigate('/edit-subsubCat',{state:subsub})}
                         >
                           Edit
                         </button>
