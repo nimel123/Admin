@@ -9,6 +9,7 @@ function AddBanner() {
   const { miniSidenav } = controller;
   const navigate = useNavigate();
 
+  const [id,setId]=useState('');
   const [name, setName] = useState("");
   const [image, setImage] = useState(null);
   const [zones, setZones] = useState([]);
@@ -145,11 +146,12 @@ function AddBanner() {
     formData.append("mainCategory", mainId);
     formData.append("subcategory", subId);
     formData.append("subSubCategory", subsubId);
-    formData.append("storeId", storeId || ""); // Optional storeId field
+    formData.append("storeId", storeId || ""); 
     formData.append("zones", JSON.stringify(zones));
 
+
     try {
-      const response = await fetch("https://fivlia.onrender.com/banner", {
+      const response = await fetch(`https://fivlia.onrender.com/banner`, {
         method: "POST",
         body: formData,
       });
@@ -261,14 +263,33 @@ function AddBanner() {
               {zones.length > 0 ? (
                 <div style={tagsContainerStyle}>
                   {zones.map((zone, index) => (
-                    <span
+                    <div
                       key={index}
-                      onClick={() => handleRemoveZone(zone.address)}
-                      style={tagStyle}
+                      style={{
+                        ...tagStyle,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
                       title={`${zone.address} (Lat: ${zone.latitude}, Long: ${zone.longitude})`}
                     >
                       {getShortAddress(zone.address)}
-                    </span>
+                      <button
+                        onClick={() => handleRemoveZone(zone.address)}
+                        style={{
+                          marginLeft: "8px",
+                          border: "none",
+                          backgroundColor: "transparent",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                          fontSize: "20px",
+                          lineHeight: "1",
+                          color: "red",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -496,12 +517,13 @@ const tagsContainerStyle = {
 };
 
 const tagStyle = {
-  backgroundColor: "#f0f0f0",
+  backgroundColor: "white",
   padding: "6px 10px",
   borderRadius: "20px",
   cursor: "pointer",
   fontSize: "14px",
   color: "black",
+   boxShadow: "0 5px 5px rgba(0, 0, 0, 0.2)",
 };
 
 export default AddBanner;

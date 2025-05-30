@@ -38,8 +38,17 @@ import StoreList from "layouts/Store/Store";
 import UnitsTable from "layouts/Attribute/Units";
 import VarientTabel from "layouts/Attribute/Varient";
 import Setting from "Setting/Setting";
+import LoginPage from "Login/Login";
 
-const routes = [
+const isLoggedIn = () => {
+  const username = localStorage.getItem("username");
+  const password = localStorage.getItem("password");
+  return username === "admin" && password === "admin";
+};
+
+
+const routes = 
+[
   {
     type: "collapse",
     name: "Dashboard",
@@ -52,7 +61,7 @@ const routes = [
     type: "collapse",
     name: "City Management",
     key: "city-management",
-    icon: <Icon fontSize="small">location_city</Icon>, // Updated icon for clarity
+    icon: <Icon fontSize="small">location_city</Icon>, 
     route: "/citytable",
     component: <CityTable />,
   },
@@ -148,14 +157,22 @@ const routes = [
     route:"/setting",
     component:<Setting />
   },
-  {
-    type: "collapse",
-    name: "UserData",
-    key: "userdata",
-    icon: <Icon fontSize="small">diversity_3</Icon>,
-    route: "/user-data",
-    component: <UserData />,
-  },
+  //  {
+  //   type:"collapse",
+  //   name:"Login",
+  //   key:"log-in",
+  //   icon:<Icon fontSize="small">store</Icon>,
+  //   route:"/login",
+  //   component:<LoginPage />
+  // },
+  // {
+  //   type: "collapse",
+  //   name: "UserData",
+  //   key: "userdata",
+  //   icon: <Icon fontSize="small">diversity_3</Icon>,
+  //   route: "/user-data",
+  //   component: <UserData />,
+  // },
   // {
   //   type: "collapse",
   //   name: "Tables",
@@ -164,14 +181,14 @@ const routes = [
   //   route: "/tables",
   //   component: <Tables />,
   // },
-  {
-    type: "collapse",
-    name: "Billing",
-    key: "billing",
-    icon: <Icon fontSize="small">receipt_long</Icon>,
-    route: "/billing",
-    component: <Billing />,
-  },
+  // {
+  //   type: "collapse",
+  //   name: "Billing",
+  //   key: "billing",
+  //   icon: <Icon fontSize="small">receipt_long</Icon>,
+  //   route: "/billing",
+  //   component: <Billing />,
+  // },
   // {
   //   type: "collapse",
   //   name: "RTL",
@@ -180,38 +197,31 @@ const routes = [
   //   route: "/rtl",
   //   component: <RTL />,
   // },
-  {
-    type: "collapse",
-    name: "Notifications",
-    key: "notifications",
-    icon: <Icon fontSize="small">notifications</Icon>,
-    route: "/notifications",
-    component: <Notifications />,
-  },
-  {
-    type: "collapse",
-    name: "Profile",
-    key: "profile",
-    icon: <Icon fontSize="small">person</Icon>,
-    route: "/profile",
-    component: <Profile />,
-  },
-  {
-    type: "collapse",
-    name: "Sign In",
-    key: "sign-in",
-    icon: <Icon fontSize="small">login</Icon>,
-    route: "/authentication/sign-in",
-    component: <SignIn />,
-  },
-  {
-    type: "collapse",
-    name: "Sign Up",
-    key: "sign-up",
-    icon: <Icon fontSize="small">assignment</Icon>,
-    route: "/authentication/sign-up",
-    component: <SignUp />,
-  },
+  // {
+  //   type: "collapse",
+  //   name: "Notifications",
+  //   key: "notifications",
+  //   icon: <Icon fontSize="small">notifications</Icon>,
+  //   route: "/notifications",
+  //   component: <Notifications />,
+  // },
+  // {
+  //   type: "collapse",
+  //   name: "Profile",
+  //   key: "profile",
+  //   icon: <Icon fontSize="small">person</Icon>,
+  //   route: "/profile",
+  //   component: <Profile />,
+  // },
+
+  // {
+  //   type: "collapse",
+  //   name: "Sign Up",
+  //   key: "sign-up",
+  //   icon: <Icon fontSize="small">assignment</Icon>,
+  //   route: "/authentication/sign-up",
+  //   component: <SignUp />,
+  // },
 ];
 
 export default routes;

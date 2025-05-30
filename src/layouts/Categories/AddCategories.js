@@ -300,19 +300,20 @@ const AddCategories = () => {
         {attributeArray.length > 0 && (
           <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "30px" }}>
             <div><label style={{ fontWeight: '500' }}>Selected Attributes</label></div>
-            <div style={{ backgroundColor: 'white', width: "60%" }}>
+            <div style={{ backgroundColor: '', width: "60%",border:'1px solid black',minHeight:'60px',borderRadius:'10px' }}>
               {attributeArray.map((zone, index) => (
                 <div
                   key={index}
                   style={{
-                    backgroundColor: "#f0f0f0",
+                    backgroundColor: "white",
                     padding: "6px 10px",
                     borderRadius: "20px",
                     cursor: "pointer",
                     fontSize: "14px",
                     display: "inline-flex",
                     alignItems: "center",
-                    margin: "5px"
+                    margin: "5px",
+                    boxShadow: "0 5px 5px rgba(0, 0, 0, 0.2)",
                   }}
                   title={zone}
                 >
@@ -325,9 +326,10 @@ const AddCategories = () => {
                       backgroundColor: "transparent",
                       cursor: "pointer",
                       fontWeight: "bold",
-                      fontSize: "16px",
+                      fontSize: "20px",
                       lineHeight: "1",
-                      color: "#888",
+                      color: "red",
+                      
                     }}
                   >
                     ×

@@ -119,11 +119,30 @@ function BannerManagement() {
     const goToNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
 
     const handleDeleteBanner = async (bannerId) => {
-        if (window.confirm("Are you sure you want to delete this banner?")) {
-            setBanners((prev) => prev.filter((banner) => banner.bannerId !== bannerId));
-            // TODO: Make API call to delete banner on backend
+    const confirmDelete = window.confirm("Are you sure you want to delete this banner?");
+    if (!confirmDelete) return; // agar user cancel kare toh delete na ho
+
+    try {
+        const result = await fetch(`http://localhost:5000/bannerdelete/${bannerId}`, {
+            method: 'DELETE',
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+
+        if (result.status === 200) {
+            alert('Banner Deleted Successfully');
+            // delete hone ke baad list update karo
+            setBanners(prev => prev.filter(b => b._id !== bannerId));
+        } else {
+            alert('Try again later');
         }
-    };
+    } catch (err) {
+        console.log(err);
+        alert("Something went wrong");
+    }
+};
+
 
     return (
         <MDBox
@@ -308,6 +327,7 @@ function BannerManagement() {
                                                     border: "none",
                                                     cursor: "pointer",
                                                 }}
+                                                onClick={()=>handleDeleteBanner(item._id)}
                                             >
                                                 Delete
                                             </button>

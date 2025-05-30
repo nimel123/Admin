@@ -33,12 +33,46 @@ function AttributeTable() {
         const res = await fetch("https://fivlia.onrender.com/getAttributes");
         const data = await res.json();
         setAttribute(data);
+        console.log(data);
+
       } catch (err) {
         console.error("Error fetching locations:", err);
       }
     };
     fetchAttribute();
   }, []);
+
+
+  const handleRemoveVariant = async (variantId) => {
+     const confirmDelete = window.confirm("Are you sure you want to delete this Varient?");
+      if (!confirmDelete) return;
+  try {
+    // Make DELETE request to backend
+    const res = await fetch(`http://localhost:5000/deleteVarient/${variantId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (res.status===200) {
+      alert('Success')
+      setAttribute(prevAttributes =>
+        prevAttributes.map(attr => ({
+          ...attr,
+          varient: attr.varient.filter(v => v._id !== variantId)
+        }))
+      );
+      
+    }
+
+   
+   
+  } catch (error) {
+    console.error("Error deleting variant:", error);
+    alert("Failed to delete variant. Please try again.");
+  }
+};
 
   return (
     <MDBox
@@ -105,6 +139,7 @@ function AttributeTable() {
                 <tr>
                   <th style={headerCell}>Sr. No</th>
                   <th style={headerCell}>Item Attribute Name</th>
+                  <th style={headerCell}>Item Varinets Value</th>
                   <th style={{ ...headerCell, textAlign: "center" }}>Action</th>
                 </tr>
               </thead>
@@ -112,7 +147,52 @@ function AttributeTable() {
                 {attribute.map((item, index) => (
                   <tr key={item._id}>
                     <td style={bodyCell}>{index + 1}</td>
-                     <td style={bodyCell}>{item.Attribute_name}</td>
+                    <td style={bodyCell}>{item.Attribute_name}</td>
+                    <td style={bodyCell}>
+                      {item.varient && item.varient.length > 0 ? (
+                        item.varient.map((v, i) => (
+                          <span
+                            key={i}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              backgroundColor: "#e0f7fa",
+                              color: "#00796b",
+                              padding: "4px 8px",
+                              borderRadius: "12px",
+                              marginRight: "6px",
+                              marginBottom: "4px",
+                              fontSize: "14px",
+                              userSelect: "none",
+                            }}
+                          >
+                            {v.name}
+                            <button
+                              onClick={() => handleRemoveVariant(v._id)}
+                              style={{
+                                marginLeft: 6,
+                                background: "transparent",
+                                border: "none",
+                                color: "#00796b",
+                                fontWeight: "bold",
+                                cursor: "pointer",
+                                fontSize: "16px",
+                                lineHeight: 1,
+                                padding: 0,
+                              }}
+                              aria-label={`Remove variant ${v.name}`}
+                              type="button"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))
+                      ) : (
+                        <span style={{ color: "#aaa" }}>—</span>
+                      )}
+
+                    </td>
+
                     <td style={bodyCell}>
                       <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
                         <button
@@ -125,7 +205,7 @@ function AttributeTable() {
                             cursor: "pointer",
                             marginRight: "10px",
                           }}
-                          onClick={()=>navigate('/edit-attribute',{state:item})}
+                          onClick={() => navigate('/edit-attribute', { state: item })}
                         >
                           Edit
                         </button>
@@ -134,6 +214,7 @@ function AttributeTable() {
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
 

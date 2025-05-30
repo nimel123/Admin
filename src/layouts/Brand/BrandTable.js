@@ -35,7 +35,7 @@ function BrandTable() {
       try {
         const res = await fetch("https://fivlia.onrender.com/getBrand");
         const data = await res.json();
-        setBrands(data || []);
+        setBrands(data);
       } catch (err) {
         console.error("Error fetching brands:", err);
       }

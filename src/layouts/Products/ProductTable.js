@@ -314,7 +314,6 @@ function ProductTable() {
                 <th style={headerCell}>Price</th>
                 <th style={headerCell}>Category</th>
                  <th style={headerCell}>Public</th>
-                <th style={headerCell}>Stock</th>
                 <th style={headerCell}>Action</th>
               </tr>
             </thead>
@@ -348,7 +347,6 @@ function ProductTable() {
                       color="primary"
                     />
                   </td>
-                  <td style={bodyCell}>{item.stock}</td>
                   <td style={bodyCell}>
                     <IconButton onClick={(e) => handleMenuOpen(e, index)}>
                       <MoreVertIcon />

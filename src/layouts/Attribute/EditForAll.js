@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 import { useNavigate,useLocation } from "react-router-dom";
@@ -8,6 +8,7 @@ import { Button } from "@mui/material";
 function EditAll() {
     const location=useLocation()
     const data=location.state;
+
     console.log(data);
     
     const [controller] = useMaterialUIController();
@@ -15,6 +16,11 @@ function EditAll() {
     const navigate = useNavigate();
     const [name, setName] = useState('');
 
+    useEffect(()=>{
+        setName(data.Attribute_name)
+        console.log(data._id);
+        
+    },[])
 
     const SaveValue=async()=>{
         try{
@@ -22,18 +28,16 @@ function EditAll() {
                 alert('Invalid Name')
                 return;
             }
-            const result=await fetch('https://fivlia.onrender.com/unit',{
-                method:'POST',
+            const result=await fetch(`http://localhost:5000/update-attribute/${data._id}`,{
+                method:'PUT',
                 body:JSON.stringify({
-                    unitname:name
+                    Attribute_name:name
                 }),
-                headers:{
-                    'Content-Type':'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             })
 
             if(result.status===200){
-                alert('Unit Success')
+                alert('Updated Success')
                 navigate(-1)
             }
         }
@@ -58,7 +62,7 @@ function EditAll() {
                     </div>
                     <div style={{ display: "flex", justifyContent: 'center', alignItems: 'center', gap: '30px', marginTop: '40px' }}>
                         <Button style={{ backgroundColor: "#00c853", color: "white", width: '100px', height: '35px', borderRadius: '15px', fontSize: '15px', }}
-                        
+                         onClick={SaveValue}
                         >
                             SAVE
                         </Button>

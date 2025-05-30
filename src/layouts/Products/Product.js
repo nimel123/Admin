@@ -4,7 +4,7 @@ import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
 import "./Product.css";
 import ColorNamer from "color-namer";
-import { Button } from "@mui/material";
+import { Button, Switch } from "@mui/material";
 
 function Product() {
     const [controller] = useMaterialUIController();
@@ -85,6 +85,7 @@ function Product() {
     const [colors, setColors] = useState([]);
     const [currentColor, setCurrentColor] = useState("#000000");
     const [brands, setBrands] = useState([]);
+    const [isFeatured, setIsFeatured] = useState(false);
 
     // State for custom variant dropdown
     const [showVariantDropdown, setShowVariantDropdown] = useState(false);
@@ -178,7 +179,7 @@ function Product() {
         setShowVariantDropdown(false);
     };
 
-    const handleDeleteVariant = async (id,variantName) => {
+    const handleDeleteVariant = async (id, variantName) => {
         if (!window.confirm(`Are you sure you want to delete the variant "${variantName}"?`)) {
             return;
         }
@@ -232,7 +233,7 @@ function Product() {
             // Combine subcategories (remove duplicates by _id)
             const allSubCats = selectedCats
                 .flatMap(cat => cat.subcat || [])
-                .filter((sub, index, self) => 
+                .filter((sub, index, self) =>
                     index === self.findIndex(s => s._id === sub._id)
                 );
             setSubCategories(allSubCats);
@@ -240,7 +241,7 @@ function Product() {
             // Combine attributes (remove duplicates by Attribute_name)
             const allAttributes = selectedCats
                 .flatMap(cat => cat.attribute || [])
-                .filter((attr, index, self) => 
+                .filter((attr, index, self) =>
                     index === self.findIndex(a => a === attr)
                 );
             setFilteredAttributes(allAttributes);
@@ -262,14 +263,14 @@ function Product() {
             const selectedCats = categories.filter(cat => updatedCategories.includes(cat._id));
             const allSubCats = selectedCats
                 .flatMap(cat => cat.subcat || [])
-                .filter((sub, index, self) => 
+                .filter((sub, index, self) =>
                     index === self.findIndex(s => s._id === sub._id)
                 );
             setSubCategories(allSubCats);
 
             const allAttributes = selectedCats
                 .flatMap(cat => cat.attribute || [])
-                .filter((attr, index, self) => 
+                .filter((attr, index, self) =>
                     index === self.findIndex(a => a === attr)
                 );
             setFilteredAttributes(allAttributes);
@@ -318,10 +319,10 @@ function Product() {
             const selectedCats = categories.filter(cat => category.includes(cat._id));
             const combinedAttributes = selectedCats.flatMap(cat => cat.attribute || []);
             setFilteredAttributes(
-                selectedSubSub.attribute?.length > 0 
-                    ? selectedSubSub.attribute 
-                    : (selectedSub?.attribute?.length > 0 
-                        ? selectedSub.attribute 
+                selectedSubSub.attribute?.length > 0
+                    ? selectedSubSub.attribute
+                    : (selectedSub?.attribute?.length > 0
+                        ? selectedSub.attribute
                         : combinedAttributes)
             );
         } else {
@@ -329,8 +330,8 @@ function Product() {
             const selectedCats = categories.filter(cat => category.includes(cat._id));
             const combinedAttributes = selectedCats.flatMap(cat => cat.attribute || []);
             setFilteredAttributes(
-                selectedSub?.attribute?.length > 0 
-                    ? selectedSub.attribute 
+                selectedSub?.attribute?.length > 0
+                    ? selectedSub.attribute
                     : combinedAttributes
             );
         }
@@ -683,6 +684,10 @@ function Product() {
     const selectedAttribute = attribute.find(attr => attr._id === attributedata);
     const isColorAttribute = selectedAttribute?.Attribute_name?.toLowerCase() === 'color';
 
+
+    const handleFeatureToggle = (event) => {
+        setIsFeatured(event.target.checked);
+    };
     return (
         <MDBox
             p={2}
@@ -700,7 +705,7 @@ function Product() {
                         <span style={{ marginLeft: '20px', fontWeight: 'bold', marginBottom: '20px' }}>Basic Information</span>
                         <div className="row-section">
                             <div className="input-container">
-                                <label>Product Name</label>
+                                <label>Product Name <span style={{marginLeft:'5px',marginTop:'10px'}}> *</span></label>
                                 <input
                                     type="text"
                                     placeholder="Enter Product Name"
@@ -711,7 +716,7 @@ function Product() {
                                 />
                             </div>
                             <div className="input-container">
-                                <label>Description</label>
+                                <label>Description   <span style={{marginLeft:'5px',marginTop:'10px'}}> *</span></label>
                                 <textarea
                                     placeholder="Enter Product Description"
                                     className="input-field"
@@ -724,7 +729,7 @@ function Product() {
 
                         <div className="row-section">
                             <div className="input-container">
-                                <label>Product SKU</label>
+                                <label>Product SKU   <span style={{marginLeft:'5px',marginTop:'10px'}}> *</span></label>
                                 <input
                                     type="text"
                                     placeholder="Enter Product SKU"
@@ -749,7 +754,7 @@ function Product() {
 
                         <div className="row-section">
                             <div className="input-container">
-                                <label>Product MRP</label>
+                                <label>Product MRP   <span style={{marginLeft:'5px',marginTop:'10px'}}> *</span></label>
                                 <input
                                     type="text"
                                     placeholder="Enter Product MRP"
@@ -760,7 +765,7 @@ function Product() {
                                 />
                             </div>
                             <div className="input-container">
-                                <label>Selling Price</label>
+                                <label>Selling Price   <span style={{marginLeft:'5px',marginTop:'10px'}}> *</span></label>
                                 <input
                                     type="text"
                                     placeholder="Enter Product Selling Price"
@@ -771,6 +776,20 @@ function Product() {
                                 />
                             </div>
                         </div>
+
+                        <div className="row-section">
+                            <div className="input-container">
+                                <label>Feature Product</label>
+                                <Switch
+                                    checked={isFeatured}
+                                    onChange={handleFeatureToggle}
+                                    color="primary"
+                                />
+                                <div style={{ fontWeight: "bold", color: isFeatured ? "green" : "gray" }}>
+                                    {isFeatured ? "✅ Featured Product" : "❌ Not Featured Product"}
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Image Upload */}
@@ -779,7 +798,7 @@ function Product() {
                         <div className="row-section">
                             <div style={{ display: 'flex', flexDirection: 'row' }}>
                                 <div style={{ width: '93%' }}>
-                                    <label>Product Thumbnail</label>
+                                    <label>Product Thumbnail   <span style={{marginLeft:'5px',marginTop:'10px'}}> *</span></label>
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -816,7 +835,7 @@ function Product() {
                         <div className="row-section">
                             <div style={{ display: 'flex', flexDirection: 'row' }}>
                                 <div>
-                                    <label>Product Images</label>
+                                    <label>Product Images   <span style={{marginLeft:'5px',marginTop:'10px'}}> *</span></label>
                                     <input
                                         type="file"
                                         multiple
@@ -867,7 +886,7 @@ function Product() {
                     <div className="background" id="category-section">
                         <span style={{ marginLeft: '20px', fontWeight: 'bold', marginBottom: '10px' }}>Category Selection</span>
                         <div className="row-section" style={{ flexDirection: 'column' }}>
-                            <label>Select Category</label>
+                            <label>Select Category  <span style={{marginLeft:'5px',marginTop:'10px'}}> *</span></label>
                             <div style={{ position: 'relative' }}>
                                 <button
                                     className="input-field"
@@ -990,7 +1009,7 @@ function Product() {
                         <span style={{ marginLeft: '20px', fontWeight: 'bold', marginBottom: '10px' }}>City & Attribute</span>
                         <div className="row-section">
                             <div className="input-container">
-                                <label>Select City</label>
+                                <label>Select City  <span style={{marginLeft:'5px',marginTop:'10px'}}> *</span></label>
                                 <select className="input-field" value={city} onChange={handleCityChange}>
                                     <option value="">--Select City--</option>
                                     {citydata.map((item) => (
@@ -1005,12 +1024,13 @@ function Product() {
                             <div className="row-section">
                                 <div className="input-container">
                                     <label>Selected Zones</label>
-                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" ,border:'1px solid black',minHeight:'40px'}}>
                                         {zone.map((zoneAddress, index) => (
                                             <div
                                                 key={index}
                                                 style={{
-                                                    backgroundColor: "#f0f0f0",
+                                                    backgroundColor: "white",
+                                                     boxShadow: "0 5px 5px rgba(0, 0, 0, 0.2)",
                                                     padding: "6px 10px",
                                                     borderRadius: "20px",
                                                     cursor: "pointer",
@@ -1032,7 +1052,7 @@ function Product() {
 
                         <div className="row-section">
                             <div className="input-container">
-                                <label>Select Units</label>
+                                <label>Select Units  <span style={{marginLeft:'5px',marginTop:'10px'}}> *</span></label>
                                 <select className="input-field">
                                     <option value="">--Select Units--</option>
                                     {unitsData.map((item) => (
@@ -1151,7 +1171,7 @@ function Product() {
 
                         <div className="row-section">
                             <div className="input-container">
-                                <label>Select Attribute (Filter)</label>
+                                <label>Select Attribute (Filter)  <span style={{marginLeft:'5px',marginTop:'10px'}}> *</span></label>
                                 <select className="input-field" value={attributedata} onChange={(e) => setAttributeData(e.target.value)}>
                                     <option value="">--Select Attribute--</option>
                                     {filteredAttributes.map((attr, index) => {
@@ -1198,7 +1218,7 @@ function Product() {
                             </div>
 
                             <div className="input-container">
-                                <label>Select Variant (Filter Variant)</label>
+                                <label>Select Variant (Filter Variant)  <span style={{marginLeft:'5px',marginTop:'10px'}}> *</span></label>
                                 <div style={{ position: 'relative' }}>
                                     <button
                                         className="input-field"
@@ -1423,7 +1443,7 @@ function Product() {
                         <span style={{ marginLeft: '20px', fontWeight: 'bold', marginBottom: '10px' }}>Product Taxes</span>
                         <div className="row-section">
                             <div className="input-container">
-                                <label>GST</label>
+                                <label>GST  <span style={{marginLeft:'5px',marginTop:'10px'}}> *</span></label>
                                 <select className="input-field" value={cgst} onChange={(e) => setCgst(e.target.value)}>
                                     <option value="">--Select Tax Percentage--</option>
                                     {taxdata.map((item) => (
