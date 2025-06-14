@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from "react";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@mui/material";
 
-function AddBanner() {
+function EditBanner() {
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [id, setId] = useState("");
   const [name, setName] = useState("");
-  const [image, setImage] = useState(null); // URL for preview
-  const [imageFile, setImageFile] = useState(null); // actual File object
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null)
   const [zones, setZones] = useState([]);
   const [locations, setLocations] = useState([]);
   const [main, setMain] = useState([]);
@@ -23,10 +24,63 @@ function AddBanner() {
   const [subId, setSubId] = useState("");
   const [subsubId, setSubsubId] = useState("");
   const [selectedCityId, setSelectedCityId] = useState("");
-  const [imageError, setImageError] = useState("");
 
- 
+  // Load initial data from location.state and fetch locations & categories
   useEffect(() => {
+    const data = location.state;
+    if (data) {
+      console.log(data);
+      
+      setId(data._id);
+      setName(data.title);
+      setSelectedCityId(data.city?._id || "");
+      if (Array.isArray(data.zones)) {
+        setZones(
+          data.zones.map((z) => ({
+            address: z.address,
+            latitude: z.latitude,
+            longitude: z.longitude,
+          }))
+        );
+      }
+      setType(data.type2 || "");
+
+      if (data.mainCategory && data.mainCategory._id) {
+        setMainId(data.mainCategory._id);
+      } else {
+        setMainId("");
+      }
+
+      if (data.subCategory && data.subCategory._id) {
+        setSubId(data.subCategory._id);
+      } else {
+        setSubId("");
+      }
+
+      if (data.subSubCategory && data.subSubCategory._id) {
+        setSubsubId(data.subSubCategory._id);
+      } else {
+        setSubsubId("");
+      }
+
+      if (data.storeId) {
+        setStoreId(data.storeId);
+      } else {
+        setStoreId("");
+      }
+
+      if (data.image) {
+        setImage(data.image);
+        console.log(data.image);
+        
+        setImagePreview(data.image);
+
+      } else {
+        setImage(null);
+        setImagePreview(null)
+      }
+    }
+
     const fetchLocations = async () => {
       try {
         const res = await fetch("https://node-m8jb.onrender.com/getlocations");
@@ -49,14 +103,17 @@ function AddBanner() {
 
     fetchLocations();
     fetchCategories();
-  }, []);
-
-  const selectedCity = locations.find((loc) => loc._id === selectedCityId);
-  const cityZones = selectedCity ? selectedCity.zones : [];
+  }, [location.state]);
 
   useEffect(() => {
-    if (selectedCityId && cityZones.length > 0) {
-      const allZones = cityZones.map((zone) => ({
+    if (!selectedCityId) {
+      setZones([]);
+      return;
+    }
+
+    const selectedCity = locations.find((loc) => loc._id === selectedCityId);
+    if (selectedCity && Array.isArray(selectedCity.zones)) {
+      const allZones = selectedCity.zones.map((zone) => ({
         address: zone.address,
         latitude: zone.latitude,
         longitude: zone.longitude,
@@ -65,90 +122,122 @@ function AddBanner() {
     } else {
       setZones([]);
     }
-  }, [selectedCityId, cityZones]);
+  }, [selectedCityId, locations]);
 
-  // Image validation and preview
-  const ImagePreview = (e) => {
-    setImageError(""); // Reset error
-    const file = e.target.files[0];
-    if (!file) return;
+  // Fetch stores when zones change
+  useEffect(() => {
+    const fetchStores = async () => {
+      if (zones.length === 0) {
+        setStores([]);
+        setStoreId("");
+        return;
+      }
 
-    // Check file size (under 500kb = 500 * 1024 bytes)
-    if (file.size > 500 * 1024) {
-      setImage(null);
-      setImageFile(null);
-      setImageError("Image size must be under 500 KB.");
-      return;
-    }
+      try {
+        const zoneAddresses = zones.map((zone) => zone.address);
+        const res = await fetch("https://node-m8jb.onrender.com/getStoresByZone", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ zoneAddresses }),
+        });
+        const data = await res.json();
+        const fetchedStores = data.result || [];
 
-    // Check image dimensions
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    img.onload = () => {
-      if (img.width > 1280 || img.height > 540) {
-        setImage(null);
-        setImageFile(null);
-        setImageError("Max 1280x540 px allowed."); 
-      } else {
-        setImage(URL.createObjectURL(file));
-        setImageFile(file);
-        setImageError("");
+        // Remove duplicates based on store ID
+        const uniqueStores = Array.from(
+          new Map(fetchedStores.map((store) => [store._id, store])).values()
+        );
+
+        setStores(uniqueStores);
+
+        // Reset storeId if not in new stores list
+        if (storeId && !uniqueStores.some((store) => store._id === storeId)) {
+          setStoreId("");
+        }
+      } catch (err) {
+        console.error("Error fetching stores:", err);
+        setStores([]);
+        setStoreId("");
       }
     };
+
+    fetchStores();
+  }, [zones, storeId]);
+
+  // Image preview handler
+  const ImagePreview = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
   };
 
+  // Remove zone handler
   const handleRemoveZone = (addressToRemove) => {
     setZones(zones.filter((zone) => zone.address !== addressToRemove));
   };
 
+  // Shorten address for display
   const getShortAddress = (address) => {
     if (typeof address !== "string") return "";
     const parts = address.split(",");
     return parts.length > 1 ? `${parts[0]},${parts[1]}` : address;
   };
 
+  // Handle banner save
   const handleBanner = async () => {
-    if (!name || !imageFile || !type || !selectedCityId || zones.length === 0) {
-      alert("Please fill all required fields.");
-      return;
-    }
-    if (imageError) {
-      alert(`Please fix image errors: ${imageError}`);
-      return;
-    }
+  if (!name || !type || !selectedCityId || zones.length === 0) {
+    alert("Please fill all required fields.");
+    return;
+  }
 
-    const formData = new FormData();
-    formData.append("title", name);
-    const selectedCity = locations.find((loc) => loc._id === selectedCityId);
-    formData.append("city", selectedCity._id);
+  // Get the file input element and selected file
+  const imageFile = document.querySelector('input[type="file"]').files[0];
+
+  // If no new image file selected and no existing image, alert
+  if (!imageFile && !image) {
+    alert("Please select an image file.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("title", name);
+  formData.append('city',selectedCityId)
+  formData.append("type", type);
+  formData.append("mainCategory", mainId);
+  formData.append("subcategory", subId);
+  formData.append("subSubCategory", subsubId);
+  formData.append("storeId", storeId || "");
+  formData.append("zones", JSON.stringify(zones));
+
+  // If new image selected, append the new file
+  if (imageFile) {
     formData.append("image", imageFile);
-    formData.append("type2", type);
-    formData.append("mainCategory", mainId);
-    formData.append("subCategory", subId);
-    formData.append("subSubCategory", subsubId);
-    formData.append("storeId", storeId || "");
-    formData.append("zones", JSON.stringify(zones));
+  } else if (image && typeof image === "string") {
+    formData.append("existingImage", image);
+  }
 
-    try {
-      const response = await fetch(`https://fivlia.onrender.com/banner`, {
-        method: "POST",
-        body: formData,
-      });
+  try {
+    const response = await fetch(`https://fivlia.onrender.com/admin/banner/${id}/status`, {
+      method: "PATCH",
+      body: formData,
+    });
 
-      const result = await response.json();
+    const result = await response.json();
 
-      if (response.ok) {
-        alert("✅ Banner Added Successfully!");
-        navigate(-1);
-      } else {
-        console.error("Response error:", result);
-        alert("Something went wrong: " + (result.message || "Server Error"));
-      }
-    } catch (error) {
-      console.error("Network or Server Error:", error);
-      alert("Server Error. Please try again.");
+    if (response.ok) {
+      alert("✅ Banner Updated Successfully!");
+      navigate(-1);
+    } else {
+      console.error("Response error:", result);
+      alert("Something went wrong: " + (result.message || "Server Error"));
     }
-  };
+  } catch (error) {
+    console.error("Network or Server Error:", error);
+    alert("Server Error. Please try again.");
+  }
+};
 
   return (
     <MDBox
@@ -175,7 +264,7 @@ function AddBanner() {
             marginBottom: "50px",
           }}
         >
-          ADD NEW BANNER
+          UPDATE BANNER
         </h2>
 
         {/* Name */}
@@ -192,11 +281,8 @@ function AddBanner() {
 
         {/* Image */}
         <div style={formRowStyle}>
-          <div style={{display:'flex',flexDirection:'column'}}>
-          <label style={{...labelStyle,marginLeft:'30px'}}>Image </label>
-          <span style={{fontSize:'10px',marginLeft:"30px"}}>(Image must be 1280x540)</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", width: "53%" }}>
+          <label style={labelStyle}>Image</label>
+          <div style={{ display: "flex", alignItems: "center", width: "50%" }}>
             <input
               type="file"
               onChange={ImagePreview}
@@ -217,9 +303,6 @@ function AddBanner() {
             )}
           </div>
         </div>
-           {imageError && (
-          <div style={{ marginLeft:'110px',color: "red", marginBottom: "15px",fontSize:"12px" }}>{imageError}</div>
-        )}
 
         {/* City */}
         <div style={formRowStyle}>
@@ -241,7 +324,7 @@ function AddBanner() {
         </div>
 
         {/* Display Selected Zones */}
-        {selectedCity && (
+        {selectedCityId && (
           <div style={formRowStyle}>
             <label style={labelStyle}>Selected Zones</label>
             <div style={{ width: "50%", marginRight: "20px" }}>
@@ -278,7 +361,9 @@ function AddBanner() {
                   ))}
                 </div>
               ) : (
-                <span style={{ color: "gray" }}>No zones available for this city.</span>
+                <span style={{ color: "gray" }}>
+                  No zones available for this city.
+                </span>
               )}
             </div>
           </div>
@@ -372,11 +457,13 @@ function AddBanner() {
                   onChange={(e) => setSubId(e.target.value)}
                 >
                   <option value="">--Select Sub Category--</option>
-                  {(main.find((cat) => cat._id === mainId)?.subcat || []).map((sub) => (
-                    <option key={sub._id} value={sub._id}>
-                      {sub.name}
-                    </option>
-                  ))}
+                  {(main.find((cat) => cat._id === mainId)?.subcat || []).map(
+                    (sub) => (
+                      <option key={sub._id} value={sub._id}>
+                        {sub.name}
+                      </option>
+                    )
+                  )}
                 </select>
               </div>
             )}
@@ -413,11 +500,13 @@ function AddBanner() {
                   onChange={(e) => setSubId(e.target.value)}
                 >
                   <option value="">--Select Sub Category--</option>
-                  {(main.find((cat) => cat._id === mainId)?.subcat || []).map((sub) => (
-                    <option key={sub._id} value={sub._id}>
-                      {sub.name}
-                    </option>
-                  ))}
+                  {(main.find((cat) => cat._id === mainId)?.subcat || []).map(
+                    (sub) => (
+                      <option key={sub._id} value={sub._id}>
+                        {sub.name}
+                      </option>
+                    )
+                  )}
                 </select>
               </div>
             )}
@@ -431,8 +520,10 @@ function AddBanner() {
                   onChange={(e) => setSubsubId(e.target.value)}
                 >
                   <option value="">--Select Sub Sub Category--</option>
-                  {(main.find((cat) => cat._id === mainId)
-                    ?.subcat.find((sub) => sub._id === subId)?.subsubcat || []
+                  {(
+                    main
+                      .find((cat) => cat._id === mainId)
+                      ?.subcat.find((sub) => sub._id === subId)?.subsubcat || []
                   ).map((subsub) => (
                     <option key={subsub._id} value={subsub._id}>
                       {subsub.name}
@@ -511,4 +602,4 @@ const tagStyle = {
   boxShadow: "0 5px 5px rgba(0, 0, 0, 0.2)",
 };
 
-export default AddBanner;
+export default EditBanner;

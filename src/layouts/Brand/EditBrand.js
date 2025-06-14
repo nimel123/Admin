@@ -5,6 +5,7 @@ import { useNavigate,useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "@mui/material";
 
+
 function EditBrand() {
     const [controller] = useMaterialUIController();
     const { miniSidenav } = controller;
@@ -31,27 +32,28 @@ function EditBrand() {
     setId(branddetails._id)
    },[])
 
-    // const handleBrands = async () => {
-    //     try {
-    //         const formData = new FormData();
-    //         formData.append("brandName", name);
-    //         formData.append("description", description);
-    //         formData.append("image", document.querySelector('input[type="file"]').files[0]);
+    const handleBrand = async () => {
+        try {
+            const formData = new FormData();
+            formData.append("brandName", name);
+            formData.append("description", description);
+            formData.append("image", document.querySelector('input[type="file"]').files[0]);
 
-    //         const result = await fetch('https://fivlia.onrender.com/brand', {
-    //             method: "POST",
-    //             body: formData,
-    //         });
+            const result = await fetch(`https://fivlia.onrender.com/editBrand/${id}`, {
+                method: "PUT",
+                body: formData,
+            });
 
-    //         if (result.status === 200) {
-    //             alert('Brand Created Successfully');
-    //         } else {
-    //             alert('Something went wrong');
-    //         }
-    //     } catch (err) {
-    //         console.error(err);
-    //     }
-    // };
+            if (result.status === 200) {
+                alert('Brand Updated Successfully');
+                navigate(-1)
+            } else {
+                alert('Something went wrong');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     return (
         <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "20px" }}>
@@ -142,7 +144,7 @@ function EditBrand() {
                         width: '80px', height: '40px', fontSize: "16px", marginTop: '10px',
                         marginBottom: '20px', backgroundColor: '#00c853', color: 'white', borderRadius: '15px', marginRight: '50px', cursor: 'pointer'
                     }}
-                       
+                       onClick={handleBrand} 
                     >
                         SAVE
                     </Button>

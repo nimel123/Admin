@@ -48,12 +48,7 @@ function Categories() {
     getMainCategory();
   }, []);
 
-const handleToggle = (id) => {
-  const updated = categories.map((cat) =>
-    cat._id === id ? { ...cat, status: !cat.status } : cat
-  );
-  setMainCategories(updated); 
-};
+
 
   const filteredCategories = categories.filter((item) => {
     const search = searchTerm.toLowerCase();
@@ -100,6 +95,37 @@ const handleToggle = (id) => {
       console.log(err);
     }
   };
+
+  const handleToggle = async (id) => {
+    const category = categories.find((cat) => cat._id === id);
+    const updatedStatus = !category.status;
+
+    const updated = categories.map((cat) =>
+      cat._id === id ? { ...cat, status: updatedStatus } : cat
+    );
+    setMainCategories(updated);
+
+    try {
+      const res = await fetch(`https://fivlia.onrender.com/editCat/${id}`, {
+        method: "PUT", 
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: updatedStatus,
+        }),
+      });
+
+      if (res.status === 200) {
+        console.log("Status updated successfully");
+      } else {
+        console.error("Failed to update status");
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+    }
+  };
+
 
   return (
     <MDBox
@@ -161,9 +187,9 @@ const handleToggle = (id) => {
             <div style={{ marginBottom: 10 }}>
               <span style={{ fontSize: 16 }}>Show Entries</span>&nbsp;
               <select value={entriesToShow} onChange={handleEntriesChange}>
-                <option value={5}>5</option>
-                <option value={10}>10</option>
                 <option value={20}>20</option>
+                <option value={30}>30</option>
+                <option value={50}>50</option>
               </select>
             </div>
             <div style={{ marginBottom: 8, display: "flex", flexDirection: "column" }}>
@@ -237,8 +263,8 @@ const handleToggle = (id) => {
                         const subCatCount = item.subcat ? item.subcat.length : 0;
                         const subSubCatCount = item.subcat
                           ? item.subcat.reduce((total, subcat) => {
-                              return total + (subcat.subsubcat ? subcat.subsubcat.length : 0);
-                            }, 0)
+                            return total + (subcat.subsubcat ? subcat.subsubcat.length : 0);
+                          }, 0)
                           : 0;
                         return subCatCount + subSubCatCount;
                       })()}
@@ -249,6 +275,18 @@ const handleToggle = (id) => {
                         onChange={() => handleToggle(item._id)}
                         color="success"
                         inputProps={{ "aria-label": "status toggle" }}
+                        sx={{
+                          "& .MuiSwitch-switchBase.Mui-checked": {
+                            color: "green",
+                          },
+                          "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                            backgroundColor: "green !important",
+                          },
+                          "& .MuiSwitch-track": {
+                            backgroundColor: "red",
+                            opacity: 1,
+                          },
+                        }}
                       />
                     </td>
                     <td style={{ ...bodyCell, textAlign: "center" }}>
@@ -263,7 +301,7 @@ const handleToggle = (id) => {
                             cursor: "pointer",
                             marginRight: "10px",
                           }}
-                          onClick={()=>navigate('/edit-sub',{state:item})}
+                          onClick={() => navigate('/edit-sub', { state: item })}
                         >
                           Edit
                         </button>

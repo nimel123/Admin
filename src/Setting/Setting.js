@@ -5,11 +5,25 @@ import { useMaterialUIController } from "context";
 import { Button, Switch } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
+const deliveryStatuses = [
+    "Pending",
+    "Confirmed",
+    "Packed",
+    "Dispatched",
+    "In Transit",
+    "Out for Delivery",
+    "Delivered",
+    "Cancelled",
+    "Returned",
+    "Delivery Failed",
+];
+
 function Setting() {
     const [controller] = useMaterialUIController();
     const { miniSidenav } = controller;
     const [selectedServices, setSelectedServices] = useState([]);
     const navigate = useNavigate()
+    const [selectedStaus,setSelectedStatus]=useState('')
 
     const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -83,11 +97,11 @@ function Setting() {
                     <div className="store-row">
                         <div className="store-input">
                             <label>Platform Fee</label>
-                            <input type="text" placeholder="Enter Latitude" />
+                            <input type="text" placeholder="Enter Platform Fee" />
                         </div>
                         <div className="store-input">
                             <label>GST Certificate Number</label>
-                            <input type="text" placeholder="Enter Longitude" />
+                            <input type="text" placeholder="Enter Gst Number" />
                         </div>
                     </div>
 
@@ -108,20 +122,35 @@ function Setting() {
                 <div className="store-header">Delivery Charges</div>
                 <div className="store-form">
                     <div className="store-input" style={{ flex: "1 1 100%" }}>
-                        <label>Delivery Charge Per Km</label>
+                        <label>Delivery Charge</label>
                         <input type="number" placeholder="5" />
                     </div>
-                    <div className="store-input" style={{ flex: "1 1 100%" }}>
-                        <label>Minimum Delivery Charges</label>
-                        <input type="number" placeholder="20" />
-                    </div>
-                    <div className="store-input" style={{ flex: "1 1 100%" }}>
-                        <label>Minimum Delivery Charge Within Km</label>
-                        <input type="number" placeholder="5" />
-                    </div>
+
                 </div>
             </div>
 
+            <div className="store-container">
+                <div className="store-header">Delivery Status</div>
+                <div className="store-form">
+                    <div className="store-input" style={{ flex: "1 1 100%" }}>
+                        <label>Set Delivery Status </label>
+                        <select
+                            id="deliveryStatus"
+                            value={selectedStaus}
+                            onChange={(e)=>setSelectedStatus(e.target.value)}
+                            style={{ padding: "8px", width: "100%", marginTop: "10px" }}
+                        >
+                            <option value="">-- Select Status --</option>
+                            {deliveryStatuses.map((status) => (
+                                <option key={status} value={status}>
+                                    {status}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                </div>
+            </div>
 
 
             <div style={{ display: 'flex', gap: '30px', alignItems: 'center', justifyContent: 'center' }}>

@@ -48,7 +48,7 @@ function AttributeTable() {
       if (!confirmDelete) return;
   try {
     // Make DELETE request to backend
-    const res = await fetch(`http://localhost:5000/deleteVarient/${variantId}`, {
+    const res = await fetch(`https://node-m8jb.onrender.com/deleteVarient/${variantId}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -117,7 +117,7 @@ function AttributeTable() {
                   color: "white",
                   letterSpacing: "1px",
                 }}
-                onClick={() => navigate("/add-attribute")}
+                onClick={() => navigate("/attribute-value")}
               >
                 + Add Attribute
               </Button>
@@ -139,7 +139,7 @@ function AttributeTable() {
                 <tr>
                   <th style={headerCell}>Sr. No</th>
                   <th style={headerCell}>Item Attribute Name</th>
-                  <th style={headerCell}>Item Varinets Value</th>
+                  <th style={headerCell}>Item Varients Value</th>
                   <th style={{ ...headerCell, textAlign: "center" }}>Action</th>
                 </tr>
               </thead>
@@ -205,7 +205,7 @@ function AttributeTable() {
                             cursor: "pointer",
                             marginRight: "10px",
                           }}
-                          onClick={() => navigate('/edit-attribute', { state: item })}
+                          onClick={() => navigate('/edit-all', { state: item })}
                         >
                           Edit
                         </button>

@@ -196,7 +196,7 @@ function BrandTable() {
                     <td style={bodyCell}>{startIndex + index + 1}</td>
                     <td style={bodyCell}>{item.brandName}</td>
                     <td style={{...bodyCell,textAlign:'center'}}>
-                      <img src={item.brandLogo} alt="logo" width='100' height="100" style={{ borderRadius: "100%" }} />
+                      <img src={item.brandLogo} alt="logo" width='70' height="70" style={{ borderRadius: "100%" }} />
                     </td>
                     <td style={bodyCell}>
                       <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>

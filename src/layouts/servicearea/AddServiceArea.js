@@ -1,9 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { TextField, Slider, Button, Autocomplete } from "@mui/material";
-import { GoogleMap, Marker, Circle, useJsApiLoader } from "@react-google-maps/api";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  TextField,
+  Slider,
+  Button,
+} from "@mui/material";
+import {
+  GoogleMap,
+  Marker,
+  Circle,
+  Autocomplete as GooglePlacesAutocomplete,
+  useJsApiLoader,
+} from "@react-google-maps/api";
 import { useNavigate } from "react-router-dom";
-import ZoneInfo from '../../assets/images/zone_info.gif';
-
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 
@@ -26,24 +34,12 @@ function AddServiceArea() {
   const [markerPosition, setMarkerPosition] = useState({ lat: 29.1492, lng: 75.7217 });
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
-  const [zoneOptions, setZoneOptions] = useState([]);
-  const [stores, setStores] = useState([]); // State for stores
-  const [storeId, setStoreId] = useState(""); // Selected store ID
+  const [title,setTitle]=useState('')
 
-  // Dummy store data based on city
-  const dummyStoresByCity = {
-    "city1_id": [
-      { _id: "store1", name: "City 1 Store A", zoneAddress: "Downtown, City 1" },
-      { _id: "store2", name: "City 1 Store B", zoneAddress: "Uptown, City 1" },
-    ],
-    "city2_id": [
-      { _id: "store3", name: "City 2 Store A", zoneAddress: "Central, City 2" },
-      { _id: "store4", name: "City 2 Store B", zoneAddress: "Westside, City 2" },
-    ],
-  };
+  const autocompleteRef = useRef(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: "AIzaSyDnXzpb-5ImxSpoTdmOWlAqBcjtnfw4QLU",
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries,
   });
 
@@ -69,63 +65,7 @@ function AddServiceArea() {
     fetchCities();
   }, []);
 
-  // Populate stores based on the selected city (using dummy data)
-  useEffect(() => {
-    if (city?._id) {
-      const cityStores = dummyStoresByCity[city._id] || [];
-      setStores(cityStores);
-      setStoreId(""); // Reset selected store when city changes
-    } else {
-      setStores([]);
-      setStoreId("");
-    }
-  }, [city]);
-
   const handleRangeChange = (_, newValue) => setRange(newValue);
-
-  const handleZoneSearch = async (query) => {
-    if (query.length < 3) return;
-
-    try {
-      const fullQuery = `${query}, ${city?.city || ""}`;
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}&limit=10`;
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      setZoneOptions(
-        data.map((loc) => ({
-          label: loc.display_name,
-          lat: parseFloat(loc.lat),
-          lng: parseFloat(loc.lon),
-        }))
-      );
-    } catch (err) {
-      console.error("Zone search failed:", err);
-      alert("Failed to fetch zone suggestions.");
-    }
-  };
-
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      if (areaTitle) {
-        handleZoneSearch(areaTitle);
-      } else {
-        setZoneOptions([]);
-      }
-    }, 500);
-    return () => clearTimeout(delayDebounce);
-  }, [areaTitle, city]);
-
-  const handleZoneSelect = (event, newValue) => {
-    if (newValue && newValue.lat && newValue.lng) {
-      const coords = { lat: newValue.lat, lng: newValue.lng };
-      setMarkerPosition(coords);
-      setLatitude(coords.lat);
-      setLongitude(coords.lng);
-      setAreaTitle(newValue.label);
-    }
-  };
 
   const handleCityChange = (event) => {
     const selectedCity = cities.find((c) => c._id === event.target.value);
@@ -136,15 +76,7 @@ function AddServiceArea() {
       setLatitude(coords.lat);
       setLongitude(coords.lng);
       setAreaTitle("");
-      setZoneOptions([]);
     }
-  };
-
-  // Shorten zone address for store display
-  const getShortAddress = (address) => {
-    if (typeof address !== "string") return "";
-    const parts = address.split(",");
-    return parts.length > 1 ? `${parts[0]},${parts[1]}` : address;
   };
 
   const handleSave = async () => {
@@ -157,13 +89,18 @@ function AddServiceArea() {
         alert("Please enter/select a zone");
         return;
       }
+      if(!title){
+        alert('Invalid Title')
+        return
+      }
+
       const payload = {
         city: city.city,
+        zoneTitle:title,
         address: areaTitle,
         latitude,
         longitude,
         range: range * 1000,
-        storeId: storeId || "",
       };
 
       const result = await fetch("https://node-m8jb.onrender.com/addLocation", {
@@ -193,6 +130,7 @@ function AddServiceArea() {
       <div style={{ padding: "20px", maxWidth: "80%", margin: "0 auto", fontFamily: "Arial" }}>
         <h2 style={{ textAlign: "center", color: "green", marginBottom: "40px" }}>ADD NEW ZONE</h2>
 
+        {/* City Dropdown */}
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "30px" }}>
           <label>City</label>
           <select style={{ width: "70%" }} onChange={handleCityChange} value={city?._id || ""}>
@@ -204,42 +142,65 @@ function AddServiceArea() {
           </select>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "30px" }}>
-          <label>Zone</label>
-          <Autocomplete
-            freeSolo
-            options={zoneOptions}
-            getOptionLabel={(option) => option.label || ""}
-            onInputChange={(e, newInputValue) => setAreaTitle(newInputValue)}
-            onChange={handleZoneSelect}
-            renderInput={(params) => <TextField {...params} placeholder="Enter Zone" fullWidth />}
-            style={{ width: "70%" }}
-            inputValue={areaTitle}
-          />
+         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "30px" }}>
+          <label>Zone Title</label>
+           <input type="text" style={{ width: "70%" }} placeholder="Enter Zone Title" 
+           onChange={(e)=>setTitle(e.target.value)}
+           />
         </div>
 
-        {/* Introduction on the left, Map on the right */}
+        {/* Google Places Autocomplete */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "30px" }}>
+          <label>Zone</label>
+          <div style={{ width: "70%" }}>
+            <GooglePlacesAutocomplete
+              onLoad={(autocomplete) => {
+                autocompleteRef.current = autocomplete;
+              }}
+              onPlaceChanged={() => {
+                const place = autocompleteRef.current.getPlace();
+                if (place.geometry) {
+                  const lat = place.geometry.location.lat();
+                  const lng = place.geometry.location.lng();
+                  setAreaTitle(place.formatted_address);
+                  setLatitude(lat);
+                  setLongitude(lng);
+                  setMarkerPosition({ lat, lng });
+                }
+              }}
+            >
+              <TextField
+                fullWidth
+                placeholder="Search for a location"
+                value={areaTitle}
+                onChange={(e) => setAreaTitle(e.target.value)}
+              />
+            </GooglePlacesAutocomplete>
+          </div>
+        </div>
+
+        {/* Map and Steps Section */}
         <div style={{ display: "flex", flexDirection: "row", gap: "30px", marginBottom: "30px" }}>
-          {/* Introduction Section with Steps */}
+          {/* Steps */}
           <div style={{ flex: "1", padding: "20px", border: "1px solid #ccc", borderRadius: "10px" }}>
             <h3 style={{ color: "#333", marginBottom: "15px" }}>Steps to Add a New Service Area</h3>
             <ul style={{ paddingLeft: "20px", fontSize: "14px", lineHeight: "1.5", color: "#555" }}>
               <li style={{ marginBottom: "10px" }}>
-                <strong>Step 1:</strong> Select a city for the service area from the dropdown.
+                <strong>Step 1:</strong> Select a city for the service area.
               </li>
               <li style={{ marginBottom: "10px" }}>
-                <strong>Step 2:</strong> Search for a zone in the search box and view its location on the map.
+                <strong>Step 2:</strong> Search and select a zone from suggestions.
               </li>
               <li style={{ marginBottom: "10px" }}>
-                <strong>Step 3:</strong> Set the range for the service area using the slider.
+                <strong>Step 3:</strong> Adjust the range using the slider.
               </li>
               <li>
-                <strong>Step 4:</strong> Click Save Service Area to add the zone to your system.
+                <strong>Step 4:</strong> Click Save to add the zone.
               </li>
             </ul>
           </div>
 
-          {/* Map Section */}
+          {/* Map */}
           <div
             style={{
               flex: "2",
@@ -248,7 +209,30 @@ function AddServiceArea() {
               borderRadius: "10px",
             }}
           >
-            <GoogleMap mapContainerStyle={mapContainerStyle} center={markerPosition} zoom={13}>
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              center={markerPosition}
+              zoom={13}
+              onClick={(e) => {
+                const lat = e.latLng.lat();
+                const lng = e.latLng.lng();
+
+                setLatitude(lat);
+                setLongitude(lng);
+                setMarkerPosition({ lat, lng });
+
+                
+                const geocoder = new window.google.maps.Geocoder();
+                geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+                  if (status === "OK" && results[0]) {
+                    setAreaTitle(results[0].formatted_address);
+                  } else {
+                    setAreaTitle("");
+                    alert("Address not found");
+                  }
+                });
+              }}
+            >
               <Marker position={markerPosition} />
               <Circle
                 center={markerPosition}
@@ -258,38 +242,15 @@ function AddServiceArea() {
                   strokeOpacity: 0.8,
                   strokeWeight: 2,
                   fillColor: "red",
-                  fillOpacity: "0.2",
+                  fillOpacity: 0.2,
                 }}
               />
             </GoogleMap>
+
           </div>
         </div>
 
-        {/* Store Selection
-        {areaTitle && (
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "30px" }}>
-            <label>Store</label>
-            {stores.length > 0 ? (
-              <select
-                style={{ width: "70%" }}
-                value={storeId}
-                onChange={(e) => setStoreId(e.target.value)}
-              >
-                <option value="">--Select Store--</option>
-                {stores.map((store) => (
-                  <option key={store._id} value={store._id}>
-                    {store.name} ({getShortAddress(store.zoneAddress)})
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span style={{ color: "gray", width: "70%" }}>
-                No stores available for this city.
-              </span>
-            )}
-          </div>
-        )} */}
-
+        {/* Range Slider */}
         <label>Select Range</label>
         <Slider
           value={range}

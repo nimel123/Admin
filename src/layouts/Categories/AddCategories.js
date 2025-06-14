@@ -17,6 +17,10 @@ const AddCategories = () => {
   const [subCategories, setSubCategories] = useState([]);
   const [attribute, setAttribute] = useState([]);
   const [attributeArray, setAttributeArray] = useState([]);
+  const [filterType, setFilterType] = useState('');
+  const [filterData, setFilterData] = useState([]);
+  const [selectedFilters, setSelectedFilters] = useState([]);
+
   const navigate = useNavigate();
 
   const [controller] = useMaterialUIController();
@@ -54,15 +58,41 @@ const AddCategories = () => {
     fetchAttribute();
   }, []);
 
-  // Automatically set all attributes when type is selected
+useEffect(() => {
+  if (type === "Main Category") {
+    const allAttributeNames = attribute.map(item => item.Attribute_name);
+    setAttributeArray(allAttributeNames);
+  } else {
+    setAttributeArray([]);
+  }
+}, [type, attribute]);
+
+useEffect(() => {
+  if (type === "Main Category") {
+    const filterNames = filterData.map(item => item.Filter_name);
+    setSelectedFilters(filterNames);
+  } else {
+    setSelectedFilters([]);
+  }
+}, [type, filterData]);
+
+
+
   useEffect(() => {
-    if (type) {
-      const allAttributeNames = attribute.map(item => item.Attribute_name);
-      setAttributeArray(allAttributeNames);
-    } else {
-      setAttributeArray([]);
+    const getFilter = async () => {
+      try {
+        const result = await fetch('https://fivlia.onrender.com/getFilter');
+        const data = await result.json();
+        if (data) {
+          setFilterData(data)
+        }
+      }
+      catch (err) {
+        console.log(err);
+      }
     }
-  }, [type, attribute]);
+    getFilter();
+  }, [])
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -101,6 +131,13 @@ const AddCategories = () => {
       formData.append("subCategoryId", subCategory);
     }
     formData.append("attribute", JSON.stringify(attributeArray || []));
+
+
+    const selectedFilterObjects = filterData
+      .filter(fd => selectedFilters.includes(fd.Filter_name)) // match selected names
+      .map(fd => ({ _id: fd._id })); // only send filter_id
+
+    formData.append("filter", JSON.stringify(selectedFilterObjects));
 
     // Main Category Add
     if (type === "Main Category") {
@@ -171,6 +208,11 @@ const AddCategories = () => {
   const handleTagRemove = (tagToRemove) => {
     setAttributeArray(attributeArray.filter(tag => tag !== tagToRemove));
   };
+
+  const handleFilterRemove = (filterToRemove) => {
+    setSelectedFilters(selectedFilters.filter(filter => filter !== filterToRemove));
+  };
+
 
   return (
     <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "20px" }}>
@@ -250,7 +292,7 @@ const AddCategories = () => {
           <div><label style={{ fontWeight: '500' }}>Type</label></div>
           <div style={{ width: "60%" }}>
             <select value={type} onChange={(e) => setType(e.target.value)} style={{ marginLeft: "30px", backgroundColor: 'white', border: '1px solid black' }}>
-              <option value="">-- Select an option --</option>
+              <option value="">-- Select Type Of Category --</option>
               <option value="Main Category">Main Category</option>
               <option value="Sub Category">Sub Category</option>
               <option value="Sub Sub-Category">Sub Sub-Category</option>
@@ -296,30 +338,38 @@ const AddCategories = () => {
           </div>
         )}
 
-        {/* Display Selected Attributes as Tags */}
-        {attributeArray.length > 0 && (
-          <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "30px" }}>
-            <div><label style={{ fontWeight: '500' }}>Selected Attributes</label></div>
-            <div style={{ backgroundColor: '', width: "60%",border:'1px solid black',minHeight:'60px',borderRadius:'10px' }}>
-              {attributeArray.map((zone, index) => (
+        {type === "Main Category" && selectedFilters.length > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "30px", marginLeft: '15px' }}>
+            <div><label style={{ fontWeight: '500' }}>Selected Filters</label></div>
+            <div style={{
+              backgroundColor: '',
+              width: "61%",
+              border: '1px solid black',
+              minHeight: '45px',
+              borderRadius: '10px',
+              marginLeft: '5px'
+            }}>
+              {selectedFilters.map((filter, index) => (
                 <div
                   key={index}
                   style={{
                     backgroundColor: "white",
-                    padding: "6px 10px",
-                    borderRadius: "20px",
+                    paddingRight: "5px",
+                    paddingLeft: "5px",
+                    borderRadius: "7px",
                     cursor: "pointer",
-                    fontSize: "14px",
+                    fontSize: "12px",
                     display: "inline-flex",
                     alignItems: "center",
                     margin: "5px",
                     boxShadow: "0 5px 5px rgba(0, 0, 0, 0.2)",
+                    marginLeft: '5px'
                   }}
-                  title={zone}
+                  title={filter}
                 >
-                  {zone}
+                  {filter}
                   <button
-                    onClick={() => handleTagRemove(zone)}
+                    onClick={() => handleFilterRemove(filter)}
                     style={{
                       marginLeft: "8px",
                       border: "none",
@@ -329,7 +379,6 @@ const AddCategories = () => {
                       fontSize: "20px",
                       lineHeight: "1",
                       color: "red",
-                      
                     }}
                   >
                     ×
@@ -339,6 +388,61 @@ const AddCategories = () => {
             </div>
           </div>
         )}
+
+
+
+
+        {type === "Main Category" ? (
+          attributeArray.length > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "30px" }}>
+              <div><label style={{ fontWeight: '500' }}>Selected Attributes</label></div>
+              <div style={{
+                backgroundColor: '',
+                width: "60%",
+                border: '1px solid black',
+                minHeight: '45px',
+                borderRadius: '10px'
+              }}>
+                {attributeArray.map((zone, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      backgroundColor: "white",
+                      paddingLeft: '5px',
+                      paddingRight: '5px',
+                      borderRadius: "7px",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      margin: "5px",
+                      boxShadow: "0 5px 5px rgba(0, 0, 0, 0.2)",
+                    }}
+                    title={zone}
+                  >
+                    {zone}
+                    <button
+                      onClick={() => handleTagRemove(zone)}
+                      style={{
+                        marginLeft: "5px",
+                        border: "none",
+                        backgroundColor: "transparent",
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                        fontSize: "20px",
+                        lineHeight: "1",
+                        color: "red",
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        ) : null}
+
 
         {/* Submit Button */}
         <div style={{ textAlign: "center" }}>

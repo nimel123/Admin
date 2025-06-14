@@ -68,9 +68,28 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
   };
 
   const renderRoutes = routes.map(({ type, name, icon, title, noCollapse, key, href, route, collapse }) => {
-    let returnValue;
+  let returnValue;
 
-    if (type === "collapse") {
+  if (type === "collapse") {
+    // New logout item handling
+    if (key === "log-out") {
+      returnValue = (
+        <MDBox key={key} sx={{ cursor: "pointer" }}>
+          <SidenavCollapse
+            name={name}
+            icon={icon}
+            noCollapse={noCollapse}
+            onClick={() => {
+               if (window.confirm("Are you sure you want to log out?")) {
+            localStorage.removeItem("username");
+            localStorage.removeItem("password");
+            window.location.href = "/login";
+          }
+            }}
+          />
+        </MDBox>
+      );
+    } else {
       returnValue = href ? (
         <Link href={href} key={key} target="_blank" rel="noreferrer" sx={{ textDecoration: "none" }}>
           <SidenavCollapse
@@ -88,7 +107,6 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
               icon={icon}
               active={key === location.pathname.replace("/", "") || (collapse && collapse.some(sub => sub.route === location.pathname))}
               noCollapse={noCollapse}
-              
             />
           </NavLink>
           {collapse && (
@@ -149,37 +167,39 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
           )}
         </MDBox>
       );
-    } else if (type === "title") {
-      returnValue = (
-        <MDTypography
-          key={key}
-          color={textColor}
-          display="block"
-          variant="caption"
-          fontWeight="bold"
-          textTransform="uppercase"
-          pl={3}
-          mt={2}
-          mb={1}
-          ml={1}
-        >
-          {title}
-        </MDTypography>
-      );
-    } else if (type === "divider") {
-      returnValue = (
-        <Divider
-          key={key}
-          light={
-            (!darkMode && !whiteSidenav && !transparentSidenav) ||
-            (darkMode && !transparentSidenav && whiteSidenav)
-          }
-        />
-      );
     }
+  } else if (type === "title") {
+    returnValue = (
+      <MDTypography
+        key={key}
+        color={textColor}
+        display="block"
+        variant="caption"
+        fontWeight="bold"
+        textTransform="uppercase"
+        pl={3}
+        mt={2}
+        mb={1}
+        ml={1}
+      >
+        {title}
+      </MDTypography>
+    );
+  } else if (type === "divider") {
+    returnValue = (
+      <Divider
+        key={key}
+        light={
+          (!darkMode && !whiteSidenav && !transparentSidenav) ||
+          (darkMode && !transparentSidenav && whiteSidenav)
+        }
+      />
+    );
+  }
 
-    return returnValue;
-  });
+  return returnValue;
+});
+
 
   return (
     <SidenavRoot

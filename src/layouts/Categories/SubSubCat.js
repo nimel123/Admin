@@ -157,6 +157,18 @@ function SubSubCat() {
                         checked={toggleStates[subsub._id] || false}
                         onChange={() => handleToggle(subsub._id)}
                         color="primary"
+                        sx={{
+                          "& .MuiSwitch-switchBase.Mui-checked": {
+                            color: "green",
+                          },
+                          "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                            backgroundColor: "green !important",
+                          },
+                          "& .MuiSwitch-track": {
+                            backgroundColor: "red",
+                            opacity: 1,
+                          },
+                        }}
                       />
                     </td>
                     <td style={{ ...bodyCell, textAlign: "center" }}>

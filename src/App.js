@@ -11,18 +11,14 @@ import theme from "assets/theme";
 import themeRTL from "assets/theme/theme-rtl";
 import AddServiceArea from "layouts/servicearea/AddServiceArea";
 
-
 import themeDark from "assets/theme-dark";
 import themeDarkRTL from "assets/theme-dark/theme-rtl";
-
 
 import rtlPlugin from "stylis-plugin-rtl";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 
-
-import routes from "routes";
-
+import routes, { StoreRoutes } from "routes";
 
 import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "context";
 
@@ -53,6 +49,22 @@ import EditBrand from "layouts/Brand/EditBrand";
 import EditCategory from "layouts/Categories/EditCat";
 import EditSubCat from "layouts/Categories/EditSubCat";
 import EditSubSubCat from "layouts/Categories/EditSubSub";
+import PrivateRoute from "Login/PrivateRoute";
+import LoginPage from "Login/Login";
+import StoreTabel from "layouts/Store/StoreTable";
+import Addtax from "layouts/Attribute/AddTax";
+import EditTax from "layouts/Attribute/EditTax";
+import Editunit from "layouts/Attribute/EditUnit";
+import EditProduct from "layouts/Products/EditProduct";
+import EditBanner from "layouts/Banner/EditBanner";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import StoreLogin from "layouts/Store/StoreLogin";
+import Filter from "layouts/Attribute/Filter";
+import AddFilter from "layouts/Attribute/AddFilter";
+import EditFilter from "layouts/Attribute/EditFilter";
+
+
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -69,6 +81,9 @@ export default function App() {
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
+
+  const [isStoreUser, setIsStoreUser] = useState(false);
+
 
   // Cache for the rtl
   useMemo(() => {
@@ -110,6 +125,16 @@ export default function App() {
     document.scrollingElement.scrollTop = 0;
   }, [pathname]);
 
+  useEffect(() => {
+    const userType = localStorage.getItem("userType");
+    if (userType === "store") {
+      setIsStoreUser(true);
+    } else {
+      setIsStoreUser(false);
+    }
+  }, []);
+
+
   const getRoutes = (allRoutes) =>
     allRoutes.map((route) => {
       if (route.collapse) {
@@ -123,6 +148,8 @@ export default function App() {
       return null;
     });
 
+
+  const activeRoutes = isStoreUser ? StoreRoutes : routes;
   const configsButton = (
     <MDBox
       display="flex"
@@ -151,7 +178,7 @@ export default function App() {
     <CacheProvider value={rtlCache}>
       <ThemeProvider theme={darkMode ? themeDarkRTL : themeRTL}>
         <CssBaseline />
-        {layout === "dashboard" && (
+        {layout === "dashboard" && pathname !== "/login" && (
           <>
             <Sidenav
               color={sidenavColor}
@@ -161,44 +188,69 @@ export default function App() {
               onMouseEnter={handleOnMouseEnter}
               onMouseLeave={handleOnMouseLeave}
             />
+            {/* <Sidenav
+              color={sidenavColor}
+              brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
+              brandName="Fivlia Dashboard"
+              routes={activeRoutes}
+              onMouseEnter={handleOnMouseEnter}
+              onMouseLeave={handleOnMouseLeave}
+            /> */}
             <Configurator />
             {configsButton}
-
-            {/* 👇 Dashboard layout content with Routes */}
             <MDBox ml={miniSidenav ? "80px" : "250px"} p={2}>
               <Routes>
-                {getRoutes(routes)}
-                <Route path="/addlocation" element={<AddServiceArea />} />
-                <Route path="/addCategories" element={<AddCategories />} />
-                <Route path="/getsubsubcat" element={<SubSubCat />} />
-                <Route path="/edit-sub" element={<EditCategory />} />
-                 <Route path="/edit-subCat" element={<EditSubCat />} />
+                <Route element={<PrivateRoute />}>
+                  {getRoutes(routes)}
+                  <Route path="/addCategories" element={<AddCategories />} />
+                  <Route path="/addlocation" element={<AddServiceArea />} />
+                  <Route path="/getsubsubcat" element={<SubSubCat />} />
+                  <Route path="/getsubcate" element={<GetSubCategories />} />
+                  <Route path="/edit-sub" element={<EditCategory />} />
+                  <Route path="/edit-subCat" element={<EditSubCat />} />
                   <Route path="/edit-subsubCat" element={<EditSubSubCat />} />
-                <Route path="*" element={<Navigate to="/dashboard" />} />
-                <Route path="/city" element={<City />} />
-                <Route path="/user-data" element={<UserData />} />
-                <Route path="/user-create" element={<CreateUser />} />
-                <Route path="/add-banner" element={<AddBanner />} />
-                <Route path="/add-brand" element={<AddBrand />} />
-                 <Route path="/edit-brand" element={<EditBrand />} />
-                <Route path="/attribute-value" element={<Attributes />} />
-                <Route path="/add-product" element={<Product />} />
-                <Route path="/add-store" element={<AddStore />} />
-                <Route path="/add-unit" element={<AddUnit />} />
-                <Route path="/edit-city" element={<EditCity />} />
-                <Route path="/edit-zone" element={<EditZone />} />
-                <Route path="/edit-all" element={<EditAll />} />
+                  <Route path="/city" element={<City />} />
+                  <Route path="/user-data" element={<UserData />} />
+                  <Route path="/user-create" element={<CreateUser />} />
+                  <Route path="/add-banner" element={<AddBanner />} />
+                  <Route path="/add-brand" element={<AddBrand />} />
+                  <Route path="/edit-brand" element={<EditBrand />} />
+                  <Route path="/attribute-value" element={<Attributes />} />
+                  <Route path="/add-product" element={<Product />} />
+                  <Route path="/add-store" element={<AddStore />} />
+                  <Route path="/add-unit" element={<AddUnit />} />
+                  <Route path="/edit-unit" element={<Editunit />} />
+                  <Route path="/edit-city" element={<EditCity />} />
+                  <Route path="/edit-zone" element={<EditZone />} />
+                  <Route path="/edit-all" element={<EditAll />} />
+                  <Route path="/create-store" element={<AddStore />} />
+                  <Route path="/add-tax" element={<Addtax />} />
+                  <Route path="/edit-tax" element={<EditTax />} />
+                  <Route path="/edit-product" element={<EditProduct />} />
+                  <Route path="/edit-banner" element={<EditBanner />} />
+                  <Route path="/add-filter" element={<AddFilter />} />
+                  <Route path="/edit-filter" element={<EditFilter />} />
+                  <Route path="/store-login" element={<StoreLogin />} />
+
+                  <Route path="*" element={<Navigate to="/dashboard" />} />
+                </Route>
               </Routes>
             </MDBox>
           </>
         )}
+        {pathname === "/login" && (
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+          </Routes>
+        )}
         {layout === "vr" && <Configurator />}
+        <ToastContainer position="top-right" autoClose={3000} />
       </ThemeProvider>
     </CacheProvider>
   ) : (
     <ThemeProvider theme={darkMode ? themeDark : theme}>
       <CssBaseline />
-      {layout === "dashboard" && (
+      {layout === "dashboard" && pathname !== "/login" && (
         <>
           <Sidenav
             color={sidenavColor}
@@ -208,40 +260,60 @@ export default function App() {
             onMouseEnter={handleOnMouseEnter}
             onMouseLeave={handleOnMouseLeave}
           />
+          {/* <Sidenav
+              color={sidenavColor}
+              brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
+              brandName="Fivlia Dashboard"
+              routes={activeRoutes}
+              onMouseEnter={handleOnMouseEnter}
+              onMouseLeave={handleOnMouseLeave}
+            /> */}
           <Configurator />
           {configsButton}
-
-          {/* 👇 Dashboard layout content with Routes */}
-
           <Routes>
-            {getRoutes(routes)}
-            <Route path="/addCategories" element={<AddCategories />} />
-            <Route path="/getsubcate" element={<GetSubCategories />} />
-            <Route path="/getsubsubcat" element={<SubSubCat />} />
-            <Route path="/addlocation" element={<AddServiceArea />} />
-            <Route path="/edit-sub" element={<EditCategory />} />
-            <Route path="/edit-subCat" element={<EditSubCat />} />
-             <Route path="/edit-subsubCat" element={<EditSubSubCat />} />
-            <Route path="/city" element={<City />} />
-            <Route path="/user-data" element={<UserData />} />
-            <Route path="/user-create" element={<CreateUser />} />
-            <Route path="/add-banner" element={<AddBanner />} />
-            <Route path="/add-brand" element={<AddBrand />} />
-             <Route path="/edit-brand" element={<EditBrand />} />
-            <Route path="/add-attribute" element={<Attributes />} />
-            <Route path="/add-product" element={<Product />} />
-            <Route path="/add-store" element={<AddStore />} />
-            <Route path="/add-unit" element={<AddUnit />} />
-            <Route path="/edit-city" element={<EditCity />} />
-            <Route path="/edit-zone" element={<EditZone />} />
-            <Route path="/edit-attribute" element={<EditAll />} />
-            <Route path="*" element={<Navigate to="/dashboard" />} />
-
+            <Route element={<PrivateRoute />}>
+              {getRoutes(routes)}
+              <Route path="/addCategories" element={<AddCategories />} />
+              <Route path="/addlocation" element={<AddServiceArea />} />
+              <Route path="/getsubcate" element={<GetSubCategories />} />
+              <Route path="/getsubsubcat" element={<SubSubCat />} />
+              <Route path="/edit-sub" element={<EditCategory />} />
+              <Route path="/edit-subCat" element={<EditSubCat />} />
+              <Route path="/edit-subsubCat" element={<EditSubSubCat />} />
+              <Route path="/city" element={<City />} />
+              <Route path="/user-data" element={<UserData />} />
+              <Route path="/user-create" element={<CreateUser />} />
+              <Route path="/add-banner" element={<AddBanner />} />
+              <Route path="/add-brand" element={<AddBrand />} />
+              <Route path="/edit-brand" element={<EditBrand />} />
+              <Route path="/attribute-value" element={<Attributes />} />
+              <Route path="/add-product" element={<Product />} />
+              <Route path="/add-store" element={<AddStore />} />
+              <Route path="/add-unit" element={<AddUnit />} />
+              <Route path="/edit-unit" element={<Editunit />} />
+              <Route path="/edit-city" element={<EditCity />} />
+              <Route path="/edit-zone" element={<EditZone />} />
+              <Route path="/edit-all" element={<EditAll />} />
+              <Route path="/add-tax" element={<Addtax />} />
+              <Route path="/edit-tax" element={<EditTax />} />
+              <Route path="/create-store" element={<AddStore />} />
+              <Route path="/edit-product" element={<EditProduct />} />
+              <Route path="/edit-banner" element={<EditBanner />} />
+              <Route path="/add-filter" element={<AddFilter />} />
+              <Route path="/edit-filter" element={<EditFilter />} />
+              <Route path="/store-login" element={<StoreLogin />} />
+              <Route path="*" element={<Navigate to="/dashboard" />} />
+            </Route>
           </Routes>
-
         </>
       )}
+      {pathname === "/login" && (
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+        </Routes>
+      )}
       {layout === "vr" && <Configurator />}
+      <ToastContainer position="top-right" autoClose={3000} />
     </ThemeProvider>
   );
 }

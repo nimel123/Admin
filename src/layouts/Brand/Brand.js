@@ -36,6 +36,7 @@ function AddBrand() {
 
             if (result.status === 200) {
                 alert('Brand Created Successfully');
+                navigate(-1)
             } else {
                 alert('Something went wrong');
             }

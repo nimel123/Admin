@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@mui/material";
+import { Button, Chip } from "@mui/material";
 
 const headerCell = {
   padding: "14px 12px",
@@ -20,25 +20,48 @@ const bodyCell = {
   backgroundColor: "#fff",
 };
 
-function UnitsTable() {
+function Filter() {
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
   const navigate = useNavigate();
 
-  const [units, setUnits] = useState([]);
+  const [filterdata, setFilterData] = useState([]);
 
   useEffect(() => {
-    const fetchUnits = async () => {
+    const fetchFilters = async () => {
       try {
-        const res = await fetch("https://fivlia.onrender.com/getUnit");
+        const res = await fetch("https://fivlia.onrender.com/getFilter");
         const data = await res.json();
-        setUnits(data.Result);
+        setFilterData(data);
       } catch (err) {
-        console.error("Error fetching locations:", err);
+        console.error("Error fetching Filters:", err);
       }
     };
-    fetchUnits();
+    fetchFilters();
   }, []);
+
+
+  const handleRemoveFilterValue=async(id,name)=>{
+    const confirmDelete = window.confirm("Are you sure you want to delete this Varient?");
+      if (!confirmDelete) return;
+    try{
+        const result=await fetch(`https://fivlia.onrender.com/deleteFilterVal/${id}`,{
+          method:"DELETE",
+          headers:{
+            'Content-Type':"application/json"
+          }
+        })
+        if(result.status===200){
+          alert('Value Deleted Successfully')
+           const res = await fetch("https://fivlia.onrender.com/getFilter");
+        const data = await res.json();
+        setFilterData(data);
+        }
+    }
+    catch(err){
+      console.log(err);    
+    }
+  }
 
   return (
     <MDBox
@@ -69,9 +92,9 @@ function UnitsTable() {
             }}
           >
             <div>
-              <span style={{ fontWeight: "bold", fontSize: 26 }}>Units Lists</span>
+              <span style={{ fontWeight: "bold", fontSize: 26 }}>Filter Type Lists</span>
               <br />
-              <span style={{ fontSize: 17 }}>View and manage all units</span>
+              <span style={{ fontSize: 17 }}>View and manage all filters</span>
             </div>
             <div>
               <Button
@@ -79,18 +102,18 @@ function UnitsTable() {
                   backgroundColor: "#00c853",
                   height: 50,
                   width: 170,
-                  fontSize: 15,
+                  fontSize: 12,
                   color: "white",
                   letterSpacing: "1px",
                 }}
-                onClick={() => navigate("/add-unit")}
+                onClick={() => navigate("/add-filter")}
               >
-                + Add Unit
+                + Add Filter
               </Button>
             </div>
           </div>
 
-          {/* Table and pagination remain unchanged */}
+         
           <div style={{ overflowX: "auto" }}>
             <table
               style={{
@@ -104,15 +127,42 @@ function UnitsTable() {
               <thead>
                 <tr>
                   <th style={headerCell}>Sr. No</th>
-                  <th style={headerCell}>Item Units Name</th>
+                  <th style={headerCell}>Filter Type</th>
+                  <th style={headerCell}>Filter Value</th>
                   <th style={{ ...headerCell, textAlign: "center" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {units.map((item, index) => (
+                {filterdata.map((item, index) => (
                   <tr key={item._id}>
-                    <td style={bodyCell}>{index + 1}</td>
-                     <td style={bodyCell}>{item.unitname}</td>
+                    <td style={{ ...bodyCell, textAlign: 'center' }}>{index + 1}</td>
+                    <td style={bodyCell}>{item.Filter_name}</td>
+                    <td style={bodyCell}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                        {item.Filter && item.Filter.length > 0 ? (
+                          item.Filter.map((filterItem, idx) => (
+                            <Chip
+                              key={idx}
+                              label={filterItem.name}
+                               onDelete={() => handleRemoveFilterValue(filterItem._id,filterItem.name)}
+                              style={{
+                                backgroundColor: "#e0f7fa",
+                                color: "#00796b",
+                                fontWeight: "bold",
+                                fontSize: "14px",
+                                borderRadius: "16px",
+                              }}
+                              deleteIcon={
+                                <span style={{ fontSize: "16px", color: "red", cursor: "pointer",marginRight:'10px' }}>×</span>
+                              }
+                            />
+                          ))
+                        ) : (
+                          <span style={{ color: "#aaa" }}>—</span>
+                        )}
+                      </div>
+                    </td>
+
                     <td style={bodyCell}>
                       <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
                         <button
@@ -125,7 +175,7 @@ function UnitsTable() {
                             cursor: "pointer",
                             marginRight: "10px",
                           }}
-                          onClick={()=>navigate('/edit-unit',{state:item})}
+                          onClick={() => navigate('/edit-filter', { state: item })}
                         >
                           Edit
                         </button>
@@ -153,4 +203,4 @@ function UnitsTable() {
   );
 }
 
-export default UnitsTable;
+export default Filter;

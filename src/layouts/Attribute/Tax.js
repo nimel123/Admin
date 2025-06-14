@@ -40,6 +40,25 @@ function Tax() {
     fetchAttribute();
   }, []);
 
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this tax?");
+    if (!confirmDelete) return;
+    try {
+      const result = await fetch(`https://node-m8jb.onrender.com/deleteTax/${id}`, {
+        method: "DELETE"
+      })
+      if (result.status === 200) {
+        alert('Tax Deleted Successfully')
+        const res = await fetch("https://node-m8jb.onrender.com/getTax");
+        const data = await res.json();
+        setAttribute(data.result);
+      }
+    }
+    catch (err) {
+      console.log(err);
+    }
+  }
+
   return (
     <MDBox
       p={2}
@@ -83,7 +102,7 @@ function Tax() {
                   color: "white",
                   letterSpacing: "1px",
                 }}
-                onClick={() => navigate("")}
+                onClick={() => navigate("/add-tax")}
               >
                 + Add Tax
               </Button>
@@ -112,7 +131,7 @@ function Tax() {
                 {attribute.map((item, index) => (
                   <tr key={item._id}>
                     <td style={bodyCell}>{index + 1}</td>
-                     <td style={bodyCell}>{item.value}</td>
+                    <td style={bodyCell}>{item.value}</td>
                     <td style={bodyCell}>
                       <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
                         <button
@@ -125,8 +144,23 @@ function Tax() {
                             cursor: "pointer",
                             marginRight: "10px",
                           }}
+                          onClick={()=>navigate('/edit-tax',{state:item})}
                         >
                           Edit
+                        </button>
+                        <button
+                          style={{
+                            backgroundColor: "#007BFF",
+                            color: "white",
+                            border: "none",
+                            padding: "8px 16px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            marginRight: "10px",
+                          }}
+                          onClick={() => handleDelete(item._id)}
+                        >
+                          Delete
                         </button>
                       </div>
                     </td>

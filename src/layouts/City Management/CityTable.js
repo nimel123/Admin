@@ -244,8 +244,19 @@ export default function CityTable() {
                         key={`${city.id}-${city.status}`}
                         checked={city.status}
                         onChange={() => toggleStatus(city.id)}
-                        color="success"
-                        inputProps={{ "aria-label": "controlled" }}
+                         inputProps={{ "aria-label": "controlled" }}
+                        sx={{
+                          "& .MuiSwitch-switchBase.Mui-checked": {
+                            color: "green",
+                          },
+                          "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                            backgroundColor: "green !important",
+                          },
+                          "& .MuiSwitch-track": {
+                            backgroundColor: "red",
+                            opacity: 1,
+                          },
+                        }}
                       />
                     </td>
                     <td style={{ ...bodyCell, textAlign: "center", padding: "14px" }}>

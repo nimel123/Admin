@@ -21,7 +21,7 @@ function Attributes() {
             const result=await fetch('https://fivlia.onrender.com/addAtribute',{
                 method:'POST',
                 body:JSON.stringify({
-                    name:name
+                    Attribute_name:name
                 }),
                 headers:{
                     'Content-Type':'application/json'

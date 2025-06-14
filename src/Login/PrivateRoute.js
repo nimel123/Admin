@@ -5,10 +5,10 @@ const PrivateRoute = () => {
   const username = localStorage.getItem("username");
   const password = localStorage.getItem("password");
 
-  // Check if user is logged in (for demo, just check if username and password exist)
-  const isAuthenticated = username === "admin" && password === "admin";
+  
+  const isAuthenticated = username === "fivlia" && password === "fivlia@123";
 
-  // If authenticated, render child routes, else redirect to login page
+ 
   return isAuthenticated ? <Outlet /> : <Navigate to="/login" />;
 };
 

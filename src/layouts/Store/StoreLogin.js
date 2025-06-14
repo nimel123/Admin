@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import "./LoginPage.css";
-import logo from './fivlialogo.png'
+import "../../Login/LoginPage.css";
+import logo from '../../Login/fivlialogo.png'
 
-function LoginPage() {
+function StoreLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -13,11 +13,12 @@ function LoginPage() {
   const handleLogin = (e) => {
     e.preventDefault();
     if (username === "fivlia" && password === "fivlia@123") {
-      localStorage.setItem("username", username);
-      localStorage.setItem("password", password);
+      localStorage.setItem("userType", "store");
       alert("Login successful");
       navigate("/dashboard");
-    } else {
+    }
+     else
+     {
       alert("Invalid credentials");
     }
   };
@@ -54,4 +55,4 @@ function LoginPage() {
   );
 }
 
-export default LoginPage;
+export default StoreLogin;

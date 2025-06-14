@@ -37,18 +37,18 @@ function Table() {
         const res = await fetch("https://fivlia.onrender.com/getAllZone");
         const data = await res.json();
 
-      console.log(data);
-      
-       const allZones = (data || []).flatMap(cityObj => {
-  if (!Array.isArray(cityObj.zones) || cityObj.zones.length === 0) return [];
+        console.log(data);
 
-  const cityName = Array.isArray(cityObj.city) ? cityObj.city[0] : cityObj.city;
+        const allZones = (data || []).flatMap(cityObj => {
+          if (!Array.isArray(cityObj.zones) || cityObj.zones.length === 0) return [];
 
-  return cityObj.zones.map(zone => ({
-    ...zone,
-    city: cityName
-  }));
-});
+          const cityName = Array.isArray(cityObj.city) ? cityObj.city[0] : cityObj.city;
+
+          return cityObj.zones.map(zone => ({
+            ...zone,
+            city: cityName
+          }));
+        });
 
 
         setLocations(allZones);
@@ -60,7 +60,7 @@ function Table() {
     fetchLocations();
   }, []);
 
-  
+
   const distinctCities = ["All Cities", ...new Set(locations.map((loc) => loc.city))];
 
   const filteredLocations = locations.filter((item) => {
@@ -125,40 +125,40 @@ function Table() {
 
   //   }
   // }
-const updateZone = async (id, updatedFields) => {
-  try {
-    const res = await fetch(`https://fivlia.onrender.com/updateZoneStatus/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updatedFields),
-    });
+  const updateZone = async (id, updatedFields) => {
+    try {
+      const res = await fetch(`https://fivlia.onrender.com/updateZoneStatus/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedFields),
+      });
 
-    if (res.ok) {
-      const result = await res.json();
-      setLocations((prev) =>
-        prev.map((zone) =>
-          zone._id === id ? { ...zone, ...updatedFields } : zone
-        )
-      );
-    } else {
-      alert("Failed to update zone");
+      if (res.ok) {
+        const result = await res.json();
+        setLocations((prev) =>
+          prev.map((zone) =>
+            zone._id === id ? { ...zone, ...updatedFields } : zone
+          )
+        );
+      } else {
+        alert("Failed to update zone");
+      }
+    } catch (error) {
+      console.error("Error updating zone:", error);
     }
-  } catch (error) {
-    console.error("Error updating zone:", error);
-  }
-};
+  };
 
-// Toggle zone status
-const handleToggleStatus = (id, newStatus, currentCOD) => {
-  updateZone(id, { status: newStatus, cashOnDelivery: currentCOD });
-};
+  // Toggle zone status
+  const handleToggleStatus = (id, newStatus, currentCOD) => {
+    updateZone(id, { status: newStatus, cashOnDelivery: currentCOD });
+  };
 
-// Toggle cash on delivery
-const handleToggleCashOnDelivery = (id, currentStatus, newCOD) => {
-  updateZone(id, { status: currentStatus, cashOnDelivery: newCOD });
-};
+  // Toggle cash on delivery
+  const handleToggleCashOnDelivery = (id, currentStatus, newCOD) => {
+    updateZone(id, { status: currentStatus, cashOnDelivery: newCOD });
+  };
 
 
 
@@ -284,35 +284,61 @@ const handleToggleCashOnDelivery = (id, currentStatus, newCOD) => {
               <thead>
                 <tr>
                   <th style={headerCell}>Sr. No</th>
-                  <th style={headerCell}>Zone Name</th>
+                  <th style={{ ...headerCell, width: "12%" }}>Zone Title</th>
+                  <th style={headerCell}>Zone Address</th>
                   <th style={headerCell}>Cash Delivery</th>
                   <th style={headerCell}>Status</th>
                   <th style={headerCell}>Range</th>
                   <th style={headerCell}>City</th>
-                  <th style={{ ...headerCell, width: "20%", textAlign: "center" }}>Action</th>
+                  <th style={{ ...headerCell, width: "12%", textAlign: "center" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {currentLocations.map((item, index) => (  
+                {currentLocations.map((item, index) => (
                   <tr key={item._id}>
-                    <td style={{...bodyCell,textAlign:'center'}}>{startIndex + index + 1}</td>
+                    <td style={{ ...bodyCell, textAlign: 'center' }}>{startIndex + index + 1}</td>
+                    <td style={{ ...bodyCell, textAlign: 'center' }}>{item.zoneTitle}</td>
                     <td style={bodyCell}>{item.address.split(",").slice(0, 2).join(",")}</td>
-                <td style={{ ...bodyCell, width: '150px', textAlign: 'center' }}>
-                <Switch
-                  checked={item.cashOnDelivery}
-                  color="success"
-                  inputProps={{ "aria-label": "controlled" }}
-                  onChange={() => handleToggleCashOnDelivery(item._id, item.status, !item.cashOnDelivery)}
-                />
-              </td>
-              <td style={{ ...bodyCell, textAlign: 'center' }}>
-                <Switch
-                  checked={item.status}
-                  color="success"
-                  inputProps={{ "aria-label": "controlled" }}
-                  onChange={() => handleToggleStatus(item._id, !item.status, item.cashOnDelivery)}
-                />
-              </td>
+                    <td style={{ ...bodyCell, width: '150px', textAlign: 'center' }}>
+                      <Switch
+                        checked={item.cashOnDelivery}
+                        color="success"
+                        inputProps={{ "aria-label": "controlled" }}
+                        onChange={() => handleToggleCashOnDelivery(item._id, item.status, !item.cashOnDelivery)}
+                        sx={{
+                          "& .MuiSwitch-switchBase.Mui-checked": {
+                            color: "green",
+                          },
+                          "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                            backgroundColor: "green !important",
+                          },
+                          "& .MuiSwitch-track": {
+                            backgroundColor: "red",
+                            opacity: 1,
+                          },
+                        }}
+                      />
+                    </td>
+                    <td style={{ ...bodyCell, textAlign: 'center' }}>
+                      <Switch
+                        checked={item.status}
+                        onChange={() => handleToggleStatus(item._id, !item.status, item.cashOnDelivery)}
+                        inputProps={{ "aria-label": "controlled" }}
+                        sx={{
+                          "& .MuiSwitch-switchBase.Mui-checked": {
+                            color: "green",
+                          },
+                          "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                            backgroundColor: "green !important",
+                          },
+                          "& .MuiSwitch-track": {
+                            backgroundColor: "red",
+                            opacity: 1,
+                          },
+                        }}
+                      />
+
+                    </td>
 
                     <td style={bodyCell}>
                       {item.range >= 1000
