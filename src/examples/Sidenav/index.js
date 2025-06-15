@@ -69,26 +69,48 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
 
   const renderRoutes = routes.map(({ type, name, icon, title, noCollapse, key, href, route, collapse }) => {
   let returnValue;
+     
+
+   
 
   if (type === "collapse") {
-    // New logout item handling
-    if (key === "log-out") {
-      returnValue = (
-        <MDBox key={key} sx={{ cursor: "pointer" }}>
-          <SidenavCollapse
-            name={name}
-            icon={icon}
-            noCollapse={noCollapse}
-            onClick={() => {
-               if (window.confirm("Are you sure you want to log out?")) {
-            localStorage.removeItem("username");
-            localStorage.removeItem("password");
-            window.location.href = "/login";
-          }
-            }}
-          />
-        </MDBox>
-      );
+  if (key === "log-out") {
+    // Admin logout
+    returnValue = (
+      <MDBox key={key} sx={{ cursor: "pointer" }}>
+        <SidenavCollapse
+          name={name}
+          icon={icon}
+          noCollapse={noCollapse}
+          onClick={() => {
+            if (window.confirm("Are you sure you want to log out as admin?")) {
+              localStorage.removeItem("username");
+              localStorage.removeItem("password");
+             localStorage.clear();
+              window.location.href = "/login";
+            }
+          }}
+        />
+      </MDBox>
+    );
+  } else if (key === "logout") {
+    // Store logout
+    returnValue = (
+      <MDBox key={key} sx={{ cursor: "pointer" }}>
+        <SidenavCollapse
+          name={name}
+          icon={icon}
+          noCollapse={noCollapse}
+          onClick={() => {
+            if (window.confirm("Are you sure you want to log out from store?")) {
+              localStorage.removeItem("userType");
+              localStorage.removeItem("storeId")
+              window.location.href = "/dashboard";
+            }
+          }}
+        />
+      </MDBox>
+    );
     } else {
       returnValue = href ? (
         <Link href={href} key={key} target="_blank" rel="noreferrer" sx={{ textDecoration: "none" }}>

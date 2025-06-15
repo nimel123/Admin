@@ -63,6 +63,10 @@ import StoreLogin from "layouts/Store/StoreLogin";
 import Filter from "layouts/Attribute/Filter";
 import AddFilter from "layouts/Attribute/AddFilter";
 import EditFilter from "layouts/Attribute/EditFilter";
+import DashBoard from "layouts/Store/StoreRoutes/DashBoard";
+import StoreCategories from "layouts/Store/StoreRoutes/Categories";
+import StoreProduct from "layouts/Store/StoreRoutes/StoreProduct";
+import AddStoreCat from "layouts/Store/StoreRoutes/AddCatStore";
 
 
 
@@ -188,14 +192,14 @@ export default function App() {
               onMouseEnter={handleOnMouseEnter}
               onMouseLeave={handleOnMouseLeave}
             />
-            {/* <Sidenav
+            <Sidenav
               color={sidenavColor}
               brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
               brandName="Fivlia Dashboard"
               routes={activeRoutes}
               onMouseEnter={handleOnMouseEnter}
               onMouseLeave={handleOnMouseLeave}
-            /> */}
+            />
             <Configurator />
             {configsButton}
             <MDBox ml={miniSidenav ? "80px" : "250px"} p={2}>
@@ -233,6 +237,14 @@ export default function App() {
                   <Route path="/store-login" element={<StoreLogin />} />
 
                   <Route path="*" element={<Navigate to="/dashboard" />} />
+
+
+
+                   {/* Store Routes */}
+              <Route path="/dashboard1" element={<DashBoard />} />
+              <Route path="/storecat" element={<StoreCategories />} />
+              <Route path="/storeproduct" element={<StoreProduct />} />
+              <Route path="/addstorecat" element={<AddStoreCat />} />
                 </Route>
               </Routes>
             </MDBox>
@@ -260,14 +272,14 @@ export default function App() {
             onMouseEnter={handleOnMouseEnter}
             onMouseLeave={handleOnMouseLeave}
           />
-          {/* <Sidenav
+          <Sidenav
               color={sidenavColor}
               brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
               brandName="Fivlia Dashboard"
               routes={activeRoutes}
               onMouseEnter={handleOnMouseEnter}
               onMouseLeave={handleOnMouseLeave}
-            /> */}
+            />
           <Configurator />
           {configsButton}
           <Routes>
@@ -303,6 +315,14 @@ export default function App() {
               <Route path="/edit-filter" element={<EditFilter />} />
               <Route path="/store-login" element={<StoreLogin />} />
               <Route path="*" element={<Navigate to="/dashboard" />} />
+
+
+
+              {/* Store Routes */}
+              <Route path="/dashboard1" element={<DashBoard />} />
+              <Route path="/storecat" element={<StoreCategories />} />
+              <Route path="/storeproduct" element={<StoreProduct />} />
+               <Route path="/addstorecat" element={<AddStoreCat />} />
             </Route>
           </Routes>
         </>

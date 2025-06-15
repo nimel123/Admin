@@ -45,6 +45,9 @@ import DeliveryStatusDropdown from "layouts/Attribute/Delievery";
 import { Collapse } from "@mui/material";
 import def from "ajv/dist/vocabularies/applicator/additionalItems";
 import Filter from "layouts/Attribute/Filter";
+import DashBoard from "layouts/Store/StoreRoutes/DashBoard";
+import StoreCategories from "layouts/Store/StoreRoutes/Categories";
+import StoreProduct from "layouts/Store/StoreRoutes/StoreProduct";
 
 const isLoggedIn = () => {
   const username = localStorage.getItem("username");
@@ -145,7 +148,7 @@ const routes =
           component: <Tax />,
           icon: <Icon fontSize="small">account_balance</Icon>,
         },
-         {
+        {
           name: "Filter Type",
           key: "filter-type",
           route: "/filter-type",
@@ -184,7 +187,6 @@ const routes =
       key: "log-out",
       icon: <Icon fontSize="small">logout</Icon>,
       route: "#",
-
     }
 
 
@@ -252,21 +254,36 @@ const routes =
 const StoreRoutes = [
   {
     type: "collapse",
+    name: "Dashboard",
+    key: "dashboard1",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/dashboard1",
+    component: < DashBoard />,
+  },
+  {
+    type: "collapse",
     name: "Categories",
     key: "categories",
     icon: <Icon fontSize="small">assignment</Icon>,
-    route: "/categories",
-    component: <Categories />,
+    route: "/storecat",
+    component: <StoreCategories />,
   },
    {
     type: "collapse",
-    name: "dashboard",
-    key: "dashboard",
+    name: "Products",
+    key: "products",
     icon: <Icon fontSize="small">assignment</Icon>,
-    route: "/dashboard",
-    component: <Dashboard />,
+    route: "/storeproduct",
+    component: <StoreProduct />,
+  },
+  {
+    type: "collapse",
+    name: "Log-Out",
+    key: "logout",
+    icon: <Icon fontSize="small">logout</Icon>,
+    route: "#",
   }
 ]
 
 export default routes;
-export {StoreRoutes};
+export { StoreRoutes };

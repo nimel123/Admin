@@ -283,7 +283,7 @@ function StoreTabel() {
                         <MenuItem
                           onClick={() => {
                             handleActionClose();
-                            navigate('/store-login')
+                            navigate('/store-login',{state:store._id})
                           }}
                         >
                           Login

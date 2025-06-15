@@ -45,33 +45,8 @@ function StoreList() {
             }}
         >
             <div style={{ padding: '20px' }}>
-                <div style={{
-                    display: "flex", gap: "20px", flexWrap: "wrap", padding: '20px', justifyContent: 'center',
-                    alignItems: 'center', backgroundColor: 'white', borderRadius: '20px'
-                }}>
-                    {stats.map((item, i) => (
-                        <div
-                            key={i}
-                            style={{
-                                backgroundColor: item.bgColor,
-                                borderRadius: "16px",
-                                padding: "20px",
-                                width: "250px",
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
-                            }}
-                        >
-                            <div>
-                                <div style={{ fontSize: "24px", fontWeight: "bold" }}>{item.count}</div>
-                                <div style={{ fontSize: "16px", marginTop: "4px" }}>{item.label}</div>
-                            </div>
-                            <div style={{ fontSize: "40px" }}>{item.icon}</div>
-                        </div>
-                    ))}
-                </div>
-                {/* Header */}
+
+                 {/* Header */}
                 <div
                     style={{
                         display: "flex",
@@ -107,6 +82,33 @@ function StoreList() {
                     </div>
                 </div>
 
+                <div style={{
+                    display: "flex", gap: "20px", flexWrap: "wrap", padding: '20px', justifyContent: 'center',
+                    alignItems: 'center', backgroundColor: 'white', borderRadius: '20px'
+                }}>
+                    {stats.map((item, i) => (
+                        <div
+                            key={i}
+                            style={{
+                                backgroundColor: item.bgColor,
+                                borderRadius: "16px",
+                                padding: "20px",
+                                width: "250px",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+                            }}
+                        >
+                            <div>
+                                <div style={{ fontSize: "24px", fontWeight: "bold" }}>{item.count}</div>
+                                <div style={{ fontSize: "16px", marginTop: "4px" }}>{item.label}</div>
+                            </div>
+                            <div style={{ fontSize: "40px" }}>{item.icon}</div>
+                        </div>
+                    ))}
+                </div>
+               
             </div>
         </MDBox>
     );
