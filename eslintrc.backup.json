@@ -13,7 +13,7 @@
   },
   "plugins": ["react", "prettier"],
   "rules": {
-    "prettier/prettier": "off",  // 👈 Turned OFF Prettier warnings
+    "prettier/prettier": "off",
     "react/display-name": "off",
     "default-param-last": "off",
     "react/react-in-jsx-scope": "off",

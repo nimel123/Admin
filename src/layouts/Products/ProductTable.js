@@ -51,10 +51,10 @@ function ProductTable() {
   useEffect(() => {
     const getProduct = async () => {
       try {
-        const result = await fetch("https://fivlia.onrender.com/getProducts");
+        const result = await fetch("https://fivlia.onrender.com/adminProducts");
         if (result.status === 200) {
           const res = await result.json();
-          const products = res.products || [];
+          const products = res.Product || [];
           setData(products);
           console.log(products);
           

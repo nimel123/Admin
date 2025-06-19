@@ -32,6 +32,7 @@ import BrandTable from "layouts/Brand/BrandTable";
 import AttributeTable from "layouts/Attribute/AttributeArray";
 import Tax from "layouts/Attribute/Tax";
 import Product from "layouts/Products/Product";
+import Stock from "layouts/Store/StoreRoutes/Stock";
 import ProductTable from "layouts/Products/ProductTable";
 import CreateStore from "layouts/Store/Store";
 import StoreList from "layouts/Store/Store";
@@ -275,6 +276,14 @@ const StoreRoutes = [
     icon: <Icon fontSize="small">assignment</Icon>,
     route: "/storeproduct",
     component: <StoreProduct />,
+  },
+   {
+    type: "collapse",
+    name: "Stock",
+    key: "stock",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/stock",
+    component: <Stock />,
   },
   {
     type: "collapse",

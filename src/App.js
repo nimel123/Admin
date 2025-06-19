@@ -65,6 +65,7 @@ import AddFilter from "layouts/Attribute/AddFilter";
 import EditFilter from "layouts/Attribute/EditFilter";
 import DashBoard from "layouts/Store/StoreRoutes/DashBoard";
 import StoreCategories from "layouts/Store/StoreRoutes/Categories";
+import Stock from "layouts/Store/StoreRoutes/Stock"
 import StoreProduct from "layouts/Store/StoreRoutes/StoreProduct";
 import AddStoreCat from "layouts/Store/StoreRoutes/AddCatStore";
 
@@ -322,6 +323,7 @@ export default function App() {
               <Route path="/dashboard1" element={<DashBoard />} />
               <Route path="/storecat" element={<StoreCategories />} />
               <Route path="/storeproduct" element={<StoreProduct />} />
+                  <Route path="/stock" element={<Stock />} />
                <Route path="/addstorecat" element={<AddStoreCat />} />
             </Route>
           </Routes>

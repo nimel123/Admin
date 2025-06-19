@@ -172,13 +172,13 @@ const Categories = () => {
                   </TableCell>
 
                   {/* PUBLIC */}
-                  <TableCell sx={{ width: '10%', border: '1px solid #ddd' }}>
+                  {/* <TableCell sx={{ width: '10%', border: '1px solid #ddd' }}>
                     <Switch
                       checked={item.publish}
                       onChange={() => handlePublishToggle(item._id, item.publish)}
                       color="primary"
                     />
-                  </TableCell>
+                  </TableCell> */}
 
                   {/* ACTION */}
                   <TableCell sx={{ width: '15%', border: '1px solid #ddd' }}>
