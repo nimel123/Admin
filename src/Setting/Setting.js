@@ -129,30 +129,6 @@ function Setting() {
                 </div>
             </div>
 
-            <div className="store-container">
-                <div className="store-header">Delivery Status</div>
-                <div className="store-form">
-                    <div className="store-input" style={{ flex: "1 1 100%" }}>
-                        <label>Set Delivery Status </label>
-                        <select
-                            id="deliveryStatus"
-                            value={selectedStaus}
-                            onChange={(e)=>setSelectedStatus(e.target.value)}
-                            style={{ padding: "8px", width: "100%", marginTop: "10px" }}
-                        >
-                            <option value="">-- Select Status --</option>
-                            {deliveryStatuses.map((status) => (
-                                <option key={status} value={status}>
-                                    {status}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                </div>
-            </div>
-
-
             <div style={{ display: 'flex', gap: '30px', alignItems: 'center', justifyContent: 'center' }}>
                 <Button
                     variant="contained"

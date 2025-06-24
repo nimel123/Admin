@@ -47,6 +47,10 @@ import { Collapse } from "@mui/material";
 import def from "ajv/dist/vocabularies/applicator/additionalItems";
 import Filter from "layouts/Attribute/Filter";
 import DashBoard from "layouts/Store/StoreRoutes/DashBoard";
+import Drivers from "layouts/Drivers/Drivers"
+import DeliveryStatus from "layouts/DeliveryStatus/DeliveryStatus"
+import Orders from "layouts/Orders/Order"
+import StoreOrder from "layouts/Store/StoreRoutes/StoreOrder"
 import StoreCategories from "layouts/Store/StoreRoutes/Categories";
 import StoreProduct from "layouts/Store/StoreRoutes/StoreProduct";
 
@@ -175,6 +179,30 @@ const routes =
       component: <StoreTabel />
     },
     {
+    type: "collapse",
+    name: "Drivers",
+    key: "drivers",
+    icon: <Icon fontSize="small">drive_eta</Icon>,
+    route: "drivers",
+    component: <Drivers />
+  },
+  {
+    type: "collapse",
+    name: "DeliveryStatus",
+    key: "deliveryStatus",
+    icon: <Icon fontSize="small">track_changes</Icon>,
+    route: "deliveryStatus",
+    component: <DeliveryStatus />
+  },
+  {
+    type: "collapse",
+    name: "Orders",
+    key: "orders",
+    icon: <Icon fontSize="small">shopping_cart</Icon>,
+    route: "orders",
+    component: <Orders />
+  },
+  {
       type: "collapse",
       name: "Setting",
       key: "setting",
@@ -285,14 +313,21 @@ const StoreRoutes = [
     route: "/stock",
     component: <Stock />,
   },
+   {
+    type: "collapse",
+    name: "Orders",
+    key: "orders",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/store-orders",
+    component: <StoreOrder />,
+  },
   {
     type: "collapse",
     name: "Log-Out",
     key: "logout",
     icon: <Icon fontSize="small">logout</Icon>,
     route: "#",
-  }
+  },
 ]
-
 export default routes;
 export { StoreRoutes };

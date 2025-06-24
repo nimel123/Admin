@@ -62,8 +62,13 @@ import "react-toastify/dist/ReactToastify.css";
 import StoreLogin from "layouts/Store/StoreLogin";
 import Filter from "layouts/Attribute/Filter";
 import AddFilter from "layouts/Attribute/AddFilter";
+import AddDriver from "layouts/Drivers/AddDriver"
 import EditFilter from "layouts/Attribute/EditFilter";
 import DashBoard from "layouts/Store/StoreRoutes/DashBoard";
+import Drivers from "layouts/Drivers/Drivers"
+import DeliveryStatus from "layouts/DeliveryStatus/DeliveryStatus"
+import Orders from "layouts/Orders/Order"
+import StoreOrder from "layouts/Store/StoreRoutes/StoreOrder"
 import StoreCategories from "layouts/Store/StoreRoutes/Categories";
 import Stock from "layouts/Store/StoreRoutes/Stock"
 import StoreProduct from "layouts/Store/StoreRoutes/StoreProduct";
@@ -311,20 +316,23 @@ export default function App() {
               <Route path="/edit-tax" element={<EditTax />} />
               <Route path="/create-store" element={<AddStore />} />
               <Route path="/edit-product" element={<EditProduct />} />
+              <Route path="/add-driver" element={<AddDriver />} />
+              <Route path="/drivers" element={<Drivers />} />
+              <Route path="/deliveryStatus" element={<DeliveryStatus />} />
+              <Route path="/orders" element={<Orders />} />
               <Route path="/edit-banner" element={<EditBanner />} />
               <Route path="/add-filter" element={<AddFilter />} />
               <Route path="/edit-filter" element={<EditFilter />} />
               <Route path="/store-login" element={<StoreLogin />} />
               <Route path="*" element={<Navigate to="/dashboard" />} />
 
-
-
               {/* Store Routes */}
               <Route path="/dashboard1" element={<DashBoard />} />
               <Route path="/storecat" element={<StoreCategories />} />
               <Route path="/storeproduct" element={<StoreProduct />} />
-                  <Route path="/stock" element={<Stock />} />
-               <Route path="/addstorecat" element={<AddStoreCat />} />
+              <Route path="/stock" element={<Stock />} />
+              <Route path="/addstorecat" element={<AddStoreCat />} />
+              <Route path="/store-orders" element={<StoreOrder />} />
             </Route>
           </Routes>
         </>
