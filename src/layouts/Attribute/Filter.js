@@ -40,28 +40,54 @@ function Filter() {
     fetchFilters();
   }, []);
 
-
-  const handleRemoveFilterValue=async(id,name)=>{
-    const confirmDelete = window.confirm("Are you sure you want to delete this Varient?");
-      if (!confirmDelete) return;
-    try{
-        const result=await fetch(`https://fivlia.onrender.com/deleteFilterVal/${id}`,{
-          method:"DELETE",
-          headers:{
-            'Content-Type':"application/json"
-          }
-        })
-        if(result.status===200){
-          alert('Value Deleted Successfully')
-           const res = await fetch("https://fivlia.onrender.com/getFilter");
+  const handleRemoveFilterValue = async (id, name) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this Variant?");
+    if (!confirmDelete) return;
+    try {
+      const result = await fetch(`https://fivlia.onrender.com/deleteFilterVal/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (result.status === 200) {
+        alert("Value Deleted Successfully");
+        const res = await fetch("https://fivlia.onrender.com/getFilter");
         const data = await res.json();
         setFilterData(data);
-        }
+      } else {
+        alert("Failed to delete filter value");
+      }
+    } catch (err) {
+      console.error("Error deleting filter value:", err);
+      alert("Failed to delete filter value. Please try again.");
     }
-    catch(err){
-      console.log(err);    
+  };
+
+  const handleDeleteFilter = async (filterId) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this Filter?");
+    if (!confirmDelete) return;
+    try {
+      const res = await fetch(`https://fivlia.onrender.com/deleteFilter/${filterId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (res.status === 200) {
+        alert("Filter deleted successfully");
+        setFilterData((prevFilters) =>
+          prevFilters.filter((filter) => filter._id !== filterId)
+        );
+      } else {
+        alert("Failed to delete filter");
+      }
+    } catch (error) {
+      console.error("Error deleting filter:", error);
+      alert("Failed to delete filter. Please try again.");
     }
-  }
+  };
 
   return (
     <MDBox
@@ -113,7 +139,6 @@ function Filter() {
             </div>
           </div>
 
-         
           <div style={{ overflowX: "auto" }}>
             <table
               style={{
@@ -135,7 +160,7 @@ function Filter() {
               <tbody>
                 {filterdata.map((item, index) => (
                   <tr key={item._id}>
-                    <td style={{ ...bodyCell, textAlign: 'center' }}>{index + 1}</td>
+                    <td style={{ ...bodyCell, textAlign: "center" }}>{index + 1}</td>
                     <td style={bodyCell}>{item.Filter_name}</td>
                     <td style={bodyCell}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -144,7 +169,7 @@ function Filter() {
                             <Chip
                               key={idx}
                               label={filterItem.name}
-                               onDelete={() => handleRemoveFilterValue(filterItem._id,filterItem.name)}
+                              onDelete={() => handleRemoveFilterValue(filterItem._id, filterItem.name)}
                               style={{
                                 backgroundColor: "#e0f7fa",
                                 color: "#00796b",
@@ -153,7 +178,9 @@ function Filter() {
                                 borderRadius: "16px",
                               }}
                               deleteIcon={
-                                <span style={{ fontSize: "16px", color: "red", cursor: "pointer",marginRight:'10px' }}>×</span>
+                                <span style={{ fontSize: "16px", color: "red", cursor: "pointer", marginRight: "10px" }}>
+                                  ×
+                                </span>
                               }
                             />
                           ))
@@ -162,22 +189,33 @@ function Filter() {
                         )}
                       </div>
                     </td>
-
                     <td style={bodyCell}>
-                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
                         <button
                           style={{
-                            backgroundColor: "#007BFF",
+                            backgroundColor: "#007bff",
                             color: "white",
                             border: "none",
                             padding: "8px 16px",
                             borderRadius: "6px",
                             cursor: "pointer",
-                            marginRight: "10px",
                           }}
-                          onClick={() => navigate('/edit-filter', { state: item })}
+                          onClick={() => navigate("/edit-filter", { state: item })}
                         >
                           Edit
+                        </button>
+                        <button
+                          style={{
+                            backgroundColor: "#d32f2f",
+                            color: "white",
+                            border: "none",
+                            padding: "8px 16px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => handleDeleteFilter(item._id)}
+                        >
+                          Delete
                         </button>
                       </div>
                     </td>

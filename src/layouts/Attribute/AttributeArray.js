@@ -34,45 +34,65 @@ function AttributeTable() {
         const data = await res.json();
         setAttribute(data);
         console.log(data);
-
       } catch (err) {
-        console.error("Error fetching locations:", err);
+        console.error("Error fetching attributes:", err);
       }
     };
     fetchAttribute();
   }, []);
 
-
   const handleRemoveVariant = async (variantId) => {
-     const confirmDelete = window.confirm("Are you sure you want to delete this Varient?");
-      if (!confirmDelete) return;
-  try {
-    // Make DELETE request to backend
-    const res = await fetch(`https://node-m8jb.onrender.com/deleteVarient/${variantId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const confirmDelete = window.confirm("Are you sure you want to delete this Variant?");
+    if (!confirmDelete) return;
+    try {
+      const res = await fetch(`https://node-m8jb.onrender.com/deleteVarient/${variantId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (res.status===200) {
-      alert('Success')
-      setAttribute(prevAttributes =>
-        prevAttributes.map(attr => ({
-          ...attr,
-          varient: attr.varient.filter(v => v._id !== variantId)
-        }))
-      );
-      
+      if (res.status === 200) {
+        alert("Variant deleted successfully");
+        setAttribute((prevAttributes) =>
+          prevAttributes.map((attr) => ({
+            ...attr,
+            varient: attr.varient.filter((v) => v._id !== variantId),
+          }))
+        );
+      } else {
+        alert("Failed to delete variant");
+      }
+    } catch (error) {
+      console.error("Error deleting variant:", error);
+      alert("Failed to delete variant. Please try again.");
     }
+  };
 
-   
-   
-  } catch (error) {
-    console.error("Error deleting variant:", error);
-    alert("Failed to delete variant. Please try again.");
-  }
-};
+  const handleDeleteAttribute = async (attributeId) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this Attribute?");
+    if (!confirmDelete) return;
+    try {
+      const res = await fetch(`https://fivlia.onrender.com/deleteAttribute/${attributeId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (res.status === 200) {
+        alert("Attribute deleted successfully");
+        setAttribute((prevAttributes) =>
+          prevAttributes.filter((attr) => attr._id !== attributeId)
+        );
+      } else {
+        alert("Failed to delete attribute");
+      }
+    } catch (error) {
+      console.error("Error deleting attribute:", error);
+      alert("Failed to delete attribute. Please try again.");
+    }
+  };
 
   return (
     <MDBox
@@ -124,7 +144,7 @@ function AttributeTable() {
             </div>
           </div>
 
-          {/* Table and pagination remain unchanged */}
+          {/* Table */}
           <div style={{ overflowX: "auto" }}>
             <table
               style={{
@@ -139,7 +159,7 @@ function AttributeTable() {
                 <tr>
                   <th style={headerCell}>Sr. No</th>
                   <th style={headerCell}>Item Attribute Name</th>
-                  <th style={headerCell}>Item Varients Value</th>
+                  <th style={headerCell}>Item Variants Value</th>
                   <th style={{ ...headerCell, textAlign: "center" }}>Action</th>
                 </tr>
               </thead>
@@ -190,31 +210,40 @@ function AttributeTable() {
                       ) : (
                         <span style={{ color: "#aaa" }}>—</span>
                       )}
-
                     </td>
-
                     <td style={bodyCell}>
-                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
                         <button
                           style={{
-                            backgroundColor: "#007BFF",
+                            backgroundColor: "#007bff",
                             color: "white",
                             border: "none",
                             padding: "8px 16px",
                             borderRadius: "6px",
                             cursor: "pointer",
-                            marginRight: "10px",
                           }}
-                          onClick={() => navigate('/edit-all', { state: item })}
+                          onClick={() => navigate("/edit-all", { state: item })}
                         >
                           Edit
                         </button>
+                        <button
+                          style={{
+                            backgroundColor: "#d32f2f",
+                            color: "white",
+                            border: "none",
+                            padding: "8px 16px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => handleDeleteAttribute(item._id)}
+                        >
+                          Delete
+                        </button>
                       </div>
                     </td>
-                  </tr>
+                    </tr>
                 ))}
               </tbody>
-
             </table>
           </div>
 

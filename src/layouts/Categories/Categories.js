@@ -26,7 +26,7 @@ function Categories() {
   const { miniSidenav } = controller;
   const navigate = useNavigate();
 
-  const [entriesToShow, setEntriesToShow] = useState(10);
+  const [entriesToShow, setEntriesToShow] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [categories, setMainCategories] = useState([]);
