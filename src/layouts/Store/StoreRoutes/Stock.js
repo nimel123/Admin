@@ -423,7 +423,6 @@ function StockManagement() {
         }
       } catch (err) {
         console.error("Stock update failed:", err);
-        setError("Failed to update stock. Please try again.");
       }
     }
 

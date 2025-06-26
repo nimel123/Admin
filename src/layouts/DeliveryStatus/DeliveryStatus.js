@@ -57,6 +57,7 @@ export default function StatusManagement() {
             statusCode: s.statusCode || "",
             statusTitle: s.statusTitle || "",
             isActive: s.status || false,
+            image: s.image || "",
           })));
         } else {
           throw new Error(data.message || "Failed to fetch statuses");
@@ -289,6 +290,7 @@ export default function StatusManagement() {
           <thead>
             <tr>
               <th style={headerCell}>Sr No</th>
+              <th style={headerCell}>Image</th>
               <th style={headerCell}>Status Code</th>
               <th style={headerCell}>Status Title</th>
               <th style={headerCell}>Status</th>
@@ -306,6 +308,17 @@ export default function StatusManagement() {
                   }}
                 >
                   <td style={bodyCell}>{startIndex + index + 1}</td>
+                  <td style={bodyCell}>
+                  {status.image ? (
+                    <img
+                      src={status.image}
+                      alt={status.statusTitle}
+                      style={{ width: 40, height: 40, borderRadius: "6px", objectFit: "cover" }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: 12, color: "#999" }}>No image</span>
+                  )}
+                </td>
                   <td style={bodyCell}>{status.statusCode}</td>
                   <td style={bodyCell}>{status.statusTitle}</td>
                   <td style={bodyCell}>

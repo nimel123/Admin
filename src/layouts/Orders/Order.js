@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
 import Modal from "@mui/material/Modal";
-import { FaSortUp, FaSortDown, FaMapMarkerAlt, FaUser } from "react-icons/fa";
+import { FaSortUp, FaSortDown, FaMapMarkerAlt, FaUser, FaPhoneAlt } from "react-icons/fa";
 import { CSVLink } from "react-csv";
 
 const Orders = () => {
@@ -24,7 +24,6 @@ const Orders = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [selectedItem, setSelectedItem] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [driverUpdating, setDriverUpdating] = useState(false);
@@ -89,6 +88,7 @@ const Orders = () => {
       if (driversData.Driver && Array.isArray(driversData.Driver)) {
         const mappedDrivers = driversData.Driver.map((d) => ({
           id: d._id,
+          driverId: d.driverId,
           name: d.driverName || "Unknown",
         }));
         setDrivers(mappedDrivers);
@@ -97,25 +97,6 @@ const Orders = () => {
         console.error("Invalid drivers data format:", driversData);
         setError((prev) => prev + (prev ? ", " : "") + "Failed to load drivers: Invalid data format");
       }
-
-      const variantPromises = ordersData.orders?.flatMap((order) =>
-        order.items.map((item) =>
-          fetch(`https://fivlia.onrender.com/variants?productId=${item.productId.$oid || item.productId}`)
-            .then((res) => res.json())
-            .then((data) => ({ productId: item.productId.$oid || item.productId, variants: data.variants || [] }))
-            .catch((err) => {
-              console.error(`Error fetching variants for product ${item.productId.$oid || item.productId}:`, err);
-              return { productId: item.productId.$oid || item.productId, variants: [] };
-            })
-        )
-      ) || [];
-      const variantResults = await Promise.all(variantPromises);
-      const variantMap = variantResults.reduce((acc, { productId, variants }) => ({
-        ...acc,
-        [productId]: variants,
-      }), {});
-      setVariants(variantMap);
-      console.log("Variants map:", variantMap);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Failed to load data. Please try again.");
@@ -156,60 +137,59 @@ const Orders = () => {
     );
   };
 
-  const handleStatusUpdate = async (orderId, newStatus) => {
+  const handleOrderUpdate = async (id, status, driverId) => {
     setStatusUpdating(true);
-    try {
-      const res = await fetch(`https://fivlia.onrender.com/orders/${orderId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderStatus: newStatus }),
-      });
-      if (res.ok) {
-        setOrders((prev) =>
-          prev.map((order) => (order._id === orderId ? { ...order, orderStatus: newStatus } : order))
-        );
-        setSelectedOrder((prev) => (prev?._id === orderId ? { ...prev, orderStatus: newStatus } : prev));
-      } else {
-        setError("Failed to update status");
-      }
-    } catch (err) {
-      setError("Error updating status");
-    } finally {
-      setStatusUpdating(false);
-    }
-  };
-
-  const handleDriverAssign = async (orderId, driverId) => {
     setDriverUpdating(true);
     try {
-      const res = await fetch(`https://fivlia.onrender.com/orders/${orderId}/assignDriver`, {
-        method: "PATCH",
+      const body = {};
+      if (status) body.status = status;
+      if (driverId) body.driverId = driverId;
+      const res = await fetch(`https://fivlia.onrender.com/orderStatus/${id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ driverId }),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
+        const updatedOrder = await res.json();
         setOrders((prev) =>
-          prev.map((order) => (order._id === orderId ? { ...order, driverId } : order))
+          prev.map((order) =>
+            order._id === id
+              ? {
+                  ...order,
+                  orderStatus: updatedOrder.update.orderStatus || order.orderStatus,
+                  driver: updatedOrder.update.driver || order.driver,
+                }
+              : order
+          )
         );
-        setSelectedOrder((prev) => (prev?._id === orderId ? { ...prev, driverId } : prev));
+        setSelectedOrder((prev) =>
+          prev?._id === id
+            ? {
+                ...prev,
+                orderStatus: updatedOrder.update.orderStatus || prev.orderStatus,
+                driver: updatedOrder.update.driver || prev.driver,
+              }
+            : prev
+        );
       } else {
-        setError("Failed to assign driver");
+        setError("Failed to update order");
       }
     } catch (err) {
-      setError("Error assigning driver");
+      setError("Error updating order");
     } finally {
+      setStatusUpdating(false);
       setDriverUpdating(false);
     }
   };
 
-  const handleInvoiceDownload = async (orderId) => {
+  const handleInvoiceDownload = async (id) => {
     try {
       const response = await fetch("https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf");
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `invoice_${orderId}.pdf`;
+      link.download = `invoice_${id}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -223,7 +203,7 @@ const Orders = () => {
   const filteredOrders = orders.filter((order) => {
     const search = searchTerm.toLowerCase();
     const matchesSearch =
-      (order._id && order._id.toLowerCase().includes(search)) ||
+      (order.orderId && order.orderId.toLowerCase().includes(search)) ||
       (order.items?.[0]?.name && order.items[0].name.toLowerCase().includes(search)) ||
       (order.addressId?.fullAddress || "").toLowerCase().includes(search) ||
       (order.orderStatus && order.orderStatus.toLowerCase().includes(search)) ||
@@ -244,12 +224,12 @@ const Orders = () => {
 
   const csvData = filteredOrders.map((order, index) => ({
     No: startIndex + index + 1,
-    OrderID: order._id,
+    OrderID: order.orderId,
     Item: order.items?.[0]?.name || "-",
     Address: order.addressId?.fullAddress || "-",
-    Driver: drivers.find((d) => d.id === String(order.driverId))?.name || "-",
+    Driver: order.driver?.name || drivers.find((d) => d.id === String(order.driver?.driverId || order.driverId))?.name || "-",
     Store: order.storeId?.storeName || "-",
-    PaymentStatus: order.cashOnDelivery ? "Cash" : "Online",
+    PaymentStatus: order.cashOnDelivery ? "Cash" : `Online (${order.paymentStatus || "-"})`,
     Status: order.orderStatus || "-",
   }));
 
@@ -260,99 +240,136 @@ const Orders = () => {
           @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;700&display=swap');
           .order-container {
             font-family: 'Urbanist', sans-serif;
-            padding: 16px;
+            padding: 24px;
+            background: #f5f7fa;
+            min-height: 100vh;
           }
           .order-box {
             background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+            max-width: 1400px;
+            margin: 0 auto;
           }
           .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 32px;
             flex-wrap: wrap;
-            gap: 16px;
+            gap: 20px;
+          }
+          .header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #344767;
+          }
+          .header p {
+            font-size: 16px;
+            color: #7b809a;
+            margin-top: 8px;
           }
           .controls-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 16px;
             align-items: center;
+            margin-bottom: 24px;
           }
           .control-item {
             display: flex;
             align-items: center;
             gap: 12px;
             flex: 1;
-            min-width: 140px;
+            min-width: 160px;
+            max-width: 240px;
           }
           .control-item label {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
             color: #344767;
             white-space: nowrap;
           }
           .control-item select, .control-item input {
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #d2d6da;
             font-size: 14px;
             width: 100%;
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            background: #fff;
           }
           .control-item select:focus, .control-item input:focus {
             border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
           }
           .search-input {
-            border-radius: 20px;
-            padding-left: 16px;
+            border-radius: 24px;
+            padding-left: 20px;
           }
           .table-container {
             overflow-x: auto;
             position: relative;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
           }
           .orders-table {
             width: 100%;
             border-collapse: collapse;
             background: white;
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
           }
           .header-cell {
-            padding: 12px;
-            font-size: 14px;
+            padding: 16px;
+            font-size: 15px;
             font-weight: 600;
             background: #007bff;
             color: white;
             text-align: left;
             cursor: pointer;
             user-select: none;
+            transition: background 0.3s;
           }
           .header-cell:hover {
             background: #0056b3;
           }
           .body-cell {
-            padding: 12px;
-            font-size: 12px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 16px;
+            font-size: 14px;
+            border-bottom: 1px solid #f0f2f5;
             color: #344767;
+            transition: background 0.2s;
+          }
+          .orders-table tr:hover .body-cell {
+            background: #f8f9fa;
+          }
+          .order-details-cell {
+            min-width: 220px;
+            overflow-wrap: break-word;
+          }
+          .address-cell {
+            min-width: 180px;
+            overflow-wrap: break-word;
+          }
+          .store-cell {
+            min-width: 200px;
+            overflow-wrap: break-word;
           }
           .order-id {
             background: #007bff;
             color: white;
-            padding: 6px 12px;
-            border-radius: 12px;
+            padding: 8px 16px;
+            border-radius: 16px;
             display: inline-block;
-            font-size: 12px;
-            max-width: 120px;
+            font-size: 13px;
+            max-width: 140px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            transition: transform 0.2s, background 0.2s;
+            transition: transform 0.3s, background 0.3s;
             cursor: pointer;
           }
           .order-id:hover {
@@ -363,30 +380,38 @@ const Orders = () => {
             color: #007bff;
             cursor: pointer;
             text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
           }
           .item-link:hover {
             color: #0056b3;
             text-decoration: underline;
           }
           .view-button, .download-button {
-            padding: 6px 12px;
-            border-radius: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
             border: none;
             background: #007bff;
             color: white;
             cursor: pointer;
-            font-size: 12px;
-            transition: background 0.2s;
+            font-size: 13px;
+            transition: background 0.3s, transform 0.2s;
           }
           .view-button:hover, .download-button:hover {
             background: #0056b3;
+            transform: translateY(-1px);
           }
           .status-select, .driver-select {
-            padding: 6px;
-            border-radius: 6px;
-            border: 1px solid #e0e0e0;
-            font-size: 12px;
-            width: 120px;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #d2d6da;
+            font-size: 13px;
+            width: 140px;
+            transition: border-color 0.3s;
+          }
+          .status-select:focus, .driver-select:focus {
+            border-color: #007bff;
+            outline: none;
           }
           .payment-cash {
             color: #007bff;
@@ -398,25 +423,32 @@ const Orders = () => {
           }
           .transaction-id {
             display: block;
-            font-size: 10px;
-            color: #7b809a;
+            font-size: 12px;
+            color: #007bff;
+            font-weight: 600;
+            margin-top: 4px;
           }
           .pagination {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 20px;
+            margin-top: 24px;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 16px;
           }
           .pagination button {
-            padding: 8px 16px;
-            border-radius: 8px;
+            padding: 10px 20px;
+            border-radius: 10px;
             border: none;
             background: #007bff;
             color: white;
             cursor: pointer;
             font-size: 14px;
+            transition: background 0.3s, transform 0.2s;
+          }
+          .pagination button:hover:not(:disabled) {
+            background: #0056b3;
+            transform: translateY(-1px);
           }
           .pagination button:disabled {
             background: #e0e0e0;
@@ -424,106 +456,129 @@ const Orders = () => {
           }
           .modal-content {
             background: white;
-            padding: 24px;
-            border-radius: 12px;
-            max-width: 800px;
-            margin: 40px auto;
-            position: relative;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            overflow-x: auto;
-          }
-          .address-modal-content {
-            background: white;
-            padding: 24px;
+            padding: 32px;
             border-radius: 16px;
-            max-width: 500px;
-            margin: 40px auto;
+            max-width: 900px;
+            width: 90%;
+            margin: 48px auto;
             position: relative;
-            box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
             overflow: hidden;
-            font-family: 'Urbanist', sans-serif;
           }
-          .modal-close {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            cursor: pointer;
-            color: #344767;
-            font-size: 18px;
-            transition: color 0.2s;
-          }
-          .modal-close:hover {
-            color: #007bff;
+          .modal-table-container {
+            overflow-y: auto;
+            max-height: 400px;
+            margin-bottom: 24px;
+            -webkit-overflow-scrolling: touch;
           }
           .modal-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 16px;
           }
           .modal-table th, .modal-table td {
-            padding: 8px;
-            border: 1px solid #e0e0e0;
-            font-size: 12px;
+            padding: 16px;
+            border: 1px solid #d2d6da;
+            font-size: 14px;
             text-align: left;
+            vertical-align: middle;
           }
           .modal-table th {
             background: #007bff;
             color: white;
             font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
           }
           .modal-table td img {
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             object-fit: cover;
-            border-radius: 4px;
+            border-radius: 6px;
             vertical-align: middle;
-            margin-right: 8px;
+            margin-right: 12px;
+          }
+          .modal-table tbody tr:hover {
+            background: #f8f9fa;
           }
           .modal-table tfoot td {
             font-weight: 600;
             background: #f8f9fa;
+            position: sticky;
+            bottom: 0;
+            z-index: 1;
+          }
+          .address-modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            max-width: 600px;
+            margin: 48px auto;
+            position: relative;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            overflow: hidden;
+            font-family: 'Urbanist', sans-serif;
+          }
+          .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            color: #344767;
+            font-size: 20px;
+            transition: color 0.3s;
+          }
+          .modal-close:hover {
+            color: #007bff;
           }
           .address-card {
             background: #f8f9fa;
             border-radius: 12px;
-            padding: 16px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            border: 1px solid #e0e0e0;
+            gap: 16px;
+            border: 1px solid #d2d6da;
           }
           .address-field {
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 14px;
+            gap: 16px;
+            font-size: 15px;
             color: #344767;
           }
           .address-field-icon {
             color: #007bff;
-            font-size: 18px;
+            font-size: 20px;
+            flex-shrink: 0;
           }
           .address-field-label {
             font-weight: 600;
-            width: 100px;
+            width: 120px;
             flex-shrink: 0;
           }
           .address-field-value {
             flex: 1;
             word-break: break-word;
+            font-size: 14px;
           }
           .refresh-button, .export-button {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 16px;
-            border-radius: 8px;
+            padding: 10px 20px;
+            border-radius: 10px;
             border: none;
             background: #007bff;
             color: white;
             cursor: pointer;
             font-size: 14px;
             text-decoration: none;
+            transition: background 0.3s, transform 0.2s;
+          }
+          .refresh-button:hover, .export-button:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
           }
           .loading-overlay {
             position: absolute;
@@ -531,65 +586,95 @@ const Orders = () => {
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.85);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 10;
-            border-radius: 8px;
+            border-radius: 12px;
           }
-          @keyframes bg {
+          @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
           }
+          .error-message {
+            color: #dc3545;
+            font-size: 14px;
+            margin-bottom: 16px;
+            text-align: center;
+          }
           @media (max-width: 768px) {
+            .order-container {
+              padding: 16px;
+            }
+            .order-box {
+              padding: 20px;
+            }
             .controls-container {
               flex-direction: column;
+              gap: 12px;
             }
             .control-item {
-              width: 98%;
+              width: 100%;
+              max-width: none;
             }
             .modal-content, .address-modal-content {
-              margin: 20px;
-              max-width: 90%;
+              margin: 24px;
+              max-width: 95%;
+              padding: 20px;
             }
-            .orders-table, .modal-table {
-              font-size: 12px;
+            .modal-table-container {
+              max-height: 300px;
             }
-            .header-cell, .body-cell, .modal-table th, .modal-table td {
-              padding: 8px;
+            .modal-table th, .modal-table td {
+              padding: 12px;
+              font-size: 13px;
+            }
+            .modal-table td img {
+              width: 40px;
+              height: 40px;
+            }
+            .orders-table {
+              font-size: 13px;
+            }
+            .header-cell, .body-cell {
+              padding: 12px;
             }
             .status-select, .driver-select {
-              width: 100px;
-              font-size: 10px;
+              width: 120px;
+              font-size: 12px;
             }
             .address-field {
               flex-direction: column;
               align-items: flex-start;
-              gap: 8px;
+              gap: 10px;
             }
             .address-field-label {
               width: auto;
+            }
+            .order-details-cell, .address-cell, .store-cell {
+              min-width: 140px;
             }
           }
         `}
       </style>
       <MDBox
-        p={2}
+        p={3}
         style={{
-          marginLeft: miniSidenav ? "80px" : "250px",
+          marginLeft: miniSidenav ? "90px" : "280px",
           transition: "margin-left 0.3s ease",
           position: "relative",
         }}
       >
         <div className="order-container">
           <div className="order-box">
+            {error && <div className="error-message">{error}</div>}
             <div className="header">
               <div>
-                <h2 style={{ fontWeight: 700, fontSize: "24px", color: "#344767" }}>Orders Management</h2>
-                <p style={{ fontSize: "14px", color: "#7b809a" }}>View and manage all orders</p>
+                <h2 style={{ fontWeight: 700, fontSize: "28px", color: "#344767" }}>Orders Management</h2>
+                <p style={{ fontSize: "16px", color: "#7b809a", marginTop: "8px" }}>View and manage all orders</p>
               </div>
-              <div style={{ display: "flex", gap: "12px" }}>
+              <div style={{ display: "flex", gap: "16px" }}>
                 <button className="refresh-button" onClick={fetchData} disabled={loading}>
                   Refresh
                 </button>
@@ -642,7 +727,7 @@ const Orders = () => {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                  placeholder="Search"
+                  placeholder="Search by Order ID, Item, Address, Status..."
                   className="search-input"
                 />
               </div>
@@ -651,37 +736,37 @@ const Orders = () => {
             <div className="table-container">
               {loading && (
                 <div className="loading-overlay">
-                  <div style={{ border: "4px solid #f3f3f3", borderTop: "4px solid #007bff", borderRadius: "50%", width: "24px", height: "24px", animation: "bg 1s linear infinite" }}></div>
+                  <div style={{ border: "5px solid #f3f3f3", borderTop: "5px solid #007bff", borderRadius: "50%", width: "32px", height: "32px", animation: "spin 1s linear infinite" }}></div>
                 </div>
               )}
               <table className="orders-table">
                 <thead>
                   <tr>
-                    <th className="header-cell" onClick={() => handleSort("index")}>
+                    <th className="header-cell" onClick={() => handleSort("index")} style={{ width: "80px" }}>
                       Sr No {sortConfig.key === "index" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
                     </th>
-                    <th className="header-cell" onClick={() => handleSort("_id")}>
-                      Order ID {sortConfig.key === "_id" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
+                    <th className="header-cell" onClick={() => handleSort("orderId")} style={{ width: "120px" }}>
+                      Order ID {sortConfig.key === "orderId" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
                     </th>
-                    <th className="header-cell" onClick={() => handleSort("items[0].name")}>
+                    <th className="header-cell" onClick={() => handleSort("items[0].name")} style={{ width: "220px" }}>
                       Order Details {sortConfig.key === "items[0].name" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
                     </th>
-                    <th className="header-cell" onClick={() => handleSort("addressId.fullAddress")}>
-                      Address {sortConfig.key === "addressId.fullAddress" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
+                    <th className="header-cell" onClick={() => handleSort("addressId.fullAddress")} style={{ width: "200px" }}>
+                      Fullname/Address {sortConfig.key === "addressId.fullAddress" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
                     </th>
-                    <th className="header-cell">
+                    <th className="header-cell" style={{ width: "160px" }}>
                       Driver
                     </th>
-                    <th className="header-cell" onClick={() => handleSort("storeId.storeName")}>
+                    <th className="header-cell" onClick={() => handleSort("storeId.storeName")} style={{ width: "200px" }}>
                       Store {sortConfig.key === "storeId.storeName" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
                     </th>
-                    <th className="header-cell">
+                    <th className="header-cell" style={{ width: "120px" }}>
                       Invoice
                     </th>
-                    <th className="header-cell">
+                    <th className="header-cell" style={{ width: "160px" }}>
                       Payment Status
                     </th>
-                    <th className="header-cell" onClick={() => handleSort("orderStatus")}>
+                    <th className="header-cell" onClick={() => handleSort("orderStatus")} style={{ width: "140px" }}>
                       Status {sortConfig.key === "orderStatus" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
                     </th>
                   </tr>
@@ -695,38 +780,42 @@ const Orders = () => {
                         (v) => (v._id?.$oid || v._id) === (order.items?.[0]?.varientId?.$oid || order.items?.[0]?.varientId)
                       );
                       return (
-                        <tr key={order._id}>
+                        <tr key={order.orderId}>
                           <td className="body-cell">{startIndex + index + 1}</td>
                           <td className="body-cell">
-                            <span
-                              className="order-id"
-                              title={order._id}
-                            >
-                              {order._id}
+                            <span className="order-id" title={order.orderId}>
+                              {order.orderId}
                             </span>
                           </td>
-                          <td className="body-cell">
+                          <td className="body-cell order-details-cell">
                             <span
                               className="item-link"
                               onClick={() => setSelectedOrder(order)}
                               title={item?.name}
+                              style={{ display: "block", fontWeight: 500 }}
                             >
-                              {item?.name ? (item.name.length > 20 ? `${item.name.substring(0, 20)}...` : item.name) : "-"}
+                              ₹{item?.price || 0} × {item?.quantity || 0}
                             </span>
-                            <br />
-                            <span style={{ color: "#7b809a", fontSize: "12px" }}>
-                              Qty: {item?.quantity || 0} | ₹{item?.price || 0}
+                            <span style={{ color: "#7b809a", fontSize: "13px" }}>
+                              {item?.name ? (item.name.length > 25 ? `${item.name.substring(0, 25)}...` : item.name) : "-"}
                             </span>
                           </td>
-                          <td className="body-cell">
+                          <td className="body-cell address-cell">
                             <span
                               className="item-link"
                               onClick={() => setSelectedAddress(order.addressId)}
                               title={order.addressId?.fullAddress}
                             >
+                              {order.addressId?.fullName ? (
+                                order.addressId.fullName.length > 20
+                                  ? `${order.addressId.fullName.substring(0, 20)}...`
+                                  : order.addressId.fullName
+                              ) : "-"}
+                            </span>
+                            <span style={{ display: "block", color: "#7b809a", fontSize: "12px", marginTop: "4px" }}>
                               {order.addressId?.fullAddress ? (
-                                order.addressId.fullAddress.length > 20
-                                  ? `${order.addressId.fullAddress.substring(0, 20)}...`
+                                order.addressId.fullAddress.length > 25
+                                  ? `${order.addressId.fullAddress.substring(0, 25)}...`
                                   : order.addressId.fullAddress
                               ) : "-"}
                             </span>
@@ -734,40 +823,42 @@ const Orders = () => {
                           <td className="body-cell">
                             <select
                               className="driver-select"
-                              value={order.driverId || ""}
-                              onChange={(e) => handleDriverAssign(order._id, e.target.value)}
+                              value={order.driver?.driverId || order.driverId || ""}
+                              onChange={(e) => handleOrderUpdate(order._id, undefined, e.target.value)}
                               disabled={driverUpdating || !drivers.length}
                             >
                               <option value="">Unassigned</option>
                               {drivers.map((driver) => (
-                                <option key={driver.id} value={driver.id}>{driver.name}</option>
+                                <option key={driver.id} value={driver.driverId}>{driver.name}</option>
                               ))}
                             </select>
                           </td>
-                          <td className="body-cell">
-                            {order.storeId?.storeName ? `${order.storeId.storeName} (${store?.zone?.map((z) => z.title).join(", ") || "Unknown"})` : "-"}
+                          <td className="body-cell store-cell">
+                            {order.storeId?.storeName ? `${order.storeId.storeName} (${store?.zones.map((z) => z.title).join(", ") || "Unknown"})` : "-"}
                           </td>
                           <td className="body-cell">
                             <button
                               className="download-button"
-                              onClick={() => handleInvoiceDownload(order._id)}
+                              onClick={() => handleInvoiceDownload(order.orderId)}
                             >
                               Download
                             </button>
                           </td>
                           <td className="body-cell">
                             <span className={`payment-${order.cashOnDelivery ? "cash" : "online"}`}>
-                              {order.cashOnDelivery ? "Cash" : "Online"}
+                              {order.cashOnDelivery ? "Cash" : `Online (${order.paymentStatus || "-"})`}
                             </span>
                             {!order.cashOnDelivery && order.transactionId && (
-                              <span className="transaction-id">{order.transactionId}</span>
+                              <span className="transaction-id">
+                                Txn ID: {order.transactionId}
+                              </span>
                             )}
                           </td>
                           <td className="body-cell">
                             <select
                               className="status-select"
                               value={order.orderStatus || "Pending"}
-                              onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                              onChange={(e) => handleOrderUpdate(order._id, e.target.value, undefined)}
                               disabled={statusUpdating}
                             >
                               <option value="Pending">Pending</option>
@@ -781,7 +872,7 @@ const Orders = () => {
                     })
                   ) : (
                     <tr>
-                      <td colSpan="9" className="body-cell" style={{ textAlign: "center", color: "#7b809a" }}>
+                      <td colSpan="9" className="body-cell" style={{ textAlign: "center", color: "#7b809a", fontSize: "14px" }}>
                         No orders found
                       </td>
                     </tr>
@@ -794,7 +885,7 @@ const Orders = () => {
               <span style={{ fontSize: "14px", color: "#7b809a" }}>
                 Showing {startIndex + 1} to {Math.min(startIndex + entriesToShow, filteredOrders.length)} of {filteredOrders.length} orders
               </span>
-              <div style={{ display: "flex", gap: "8px" }}>
+              <div style={{ display: "flex", gap: "12px" }}>
                 <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
                   Previous
                 </button>
@@ -814,50 +905,109 @@ const Orders = () => {
             <span className="modal-close" onClick={() => setSelectedOrder(null)}>×</span>
             {selectedOrder && (
               <>
-                <h3 style={{ fontWeight: 600, marginBottom: "16px" }}>Order Details - {selectedOrder._id}</h3>
-                <table className="modal-table">
-                  <thead>
-                    <tr>
-                      <th>Sr No</th>
-                      <th>Fullname</th>
-                      <th>Quantity</th>
-                      <th>Product</th>
-                      <th>VariantName</th>
-                      <th>Variant Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedOrder.items.map((item, index) => {
-                      const variant = variants[item.productId?.$oid || item.productId]?.find(
-                        (v) => (v._id?.$oid || v._id) === (item.varientId?.$oid || item.varientId)
-                      );
-                      return (
-                        <tr key={item._id?.$oid || item._id}>
-                          <td>{index + 1}</td>
-                          <td>{selectedOrder.addressId?.fullName || "-"}</td>
-                          <td>{item.quantity || 0}</td>
-                          <td>
-                            <img src={item.image || "https://via.placeholder.com/40"} alt={item.name} />
-                            <span
-                              className="item-link"
-                              title={item.name}
-                            >
-                              {item.name || "-"}
-                            </span>
-                          </td>
-                          <td>{variant ? `${variant.variantName}: ${variant.value}` : "-"}</td>
-                          <td>₹{variant?.price || item.price || 0}</td>
+                <h3 style={{ fontWeight: 700, fontSize: "24px", color: "#344767", marginBottom: "24px" }}>
+                  Order Details - {selectedOrder.orderId}
+                </h3>
+                <div className="modal-table-container">
+                  <table className="modal-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: "80px" }}>Sr No</th>
+                        <th style={{ width: "100px" }}>Price</th>
+                        <th style={{ width: "100px" }}>Quantity</th>
+                        <th style={{ width: "250px" }}>Product</th>
+                        <th style={{ width: "150px" }}>Variant</th>
+                        <th style={{ width: "120px" }}>Price (Incl. GST)</th>
+                        <th style={{ width: "120px" }}>Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedOrder.items.map((item, index) => {
+                        const variant = variants[item.productId?.$oid || item.productId]?.find(
+                          (v) => (v._id?.$oid || v._id) === (item.varientId?.$oid || item.varientId)
+                        );
+                        const price = item.variantPrice || item.price || 0;
+                        const subtotal = item.quantity * price;
+                        return (
+                          <tr key={item._id?.$oid || item._id}>
+                            <td style={{ fontSize: "14px", padding: "16px" }}>{index + 1}</td>
+                            <td style={{ fontSize: "14px", padding: "16px" }}>₹{price}</td>
+                            <td style={{ fontSize: "14px", padding: "16px" }}>{item.quantity || 0}</td>
+                            <td style={{ fontSize: "14px", padding: "16px" }}>
+                              <img
+                                src={item.image || "https://via.placeholder.com/48"}
+                                alt={item.name}
+                                style={{ width: 48, height: 48, objectFit: "cover", marginRight: 12 }}
+                              />
+                              <span className="item-link" title={item.name}>
+                                {item.name || "-"}
+                              </span>
+                            </td>
+                            <td style={{ fontSize: "14px", padding: "16px" }}>{item.variantName || "-"}</td>
+                            <td style={{ fontSize: "14px", padding: "16px" }}>₹{price}</td>
+                            <td style={{ fontSize: "14px", padding: "16px" }}>₹{subtotal}</td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan="5" style={{ textAlign: "right" }}>Total Amount:</td>
-                      <td>₹{selectedOrder.totalPrice || 0}</td>
-                    </tr>
-                  </tfoot>
-                </table>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan="6" style={{ textAlign: "right", fontWeight: 600, padding: "16px", fontSize: "14px" }}>
+                          Subtotal (Incl. GST):
+                        </td>
+                        <td style={{ fontSize: "14px", padding: "16px" }}>
+                          ₹{selectedOrder.items.reduce((sum, item) =>
+                            sum + (item.quantity * (item.variantPrice || item.price || 0)), 0)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colSpan="6" style={{ textAlign: "right", fontWeight: 600, padding: "16px", fontSize: "14px" }}>
+                          GST Breakdown ({selectedOrder.items[0]?.gst || "0%"}):
+                        </td>
+                        <td style={{ fontSize: "14px", padding: "16px" }}>
+                          ₹{selectedOrder.items.reduce((sum, item) => {
+                            const price = item.quantity * (item.variantPrice || item.price || 0);
+                            const gstRate = parseFloat(item.gst || "0") / 100;
+                            return sum + price * gstRate;
+                          }, 0).toFixed(2)} <br />
+                          <small style={{ color: "#7b809a", fontSize: "12px" }}>(Already included in prices)</small>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colSpan="6" style={{ textAlign: "right", fontWeight: 600, padding: "16px", fontSize: "14px" }}>
+                          Delivery Charges:
+                        </td>
+                        <td style={{ fontSize: "14px", padding: "16px" }}>₹{selectedOrder.deliveryCharges || 0}</td>
+                      </tr>
+                      <tr>
+                        <td colSpan="6" style={{ textAlign: "right", fontWeight: 600, padding: "16px", fontSize: "14px" }}>
+                          Platform Fee:
+                        </td>
+                        <td style={{ fontSize: "14px", padding: "16px" }}>₹{selectedOrder.platformFee || 0}</td>
+                      </tr>
+                      <tr style={{ borderTop: "2px solid #d2d6da" }}>
+                        <td colSpan="6" style={{ textAlign: "right", fontWeight: 700, padding: "16px", fontSize: "15px" }}>
+                          Total Payable Amount:
+                        </td>
+                        <td style={{ fontSize: "15px", padding: "16px" }}>
+                          ₹{selectedOrder.totalPrice?.toFixed(2) || (
+                            (
+                              selectedOrder.items.reduce((sum, item) => {
+                                const price = item.quantity * (item.variantPrice || item.price || 0);
+                                return sum + price;
+                              }, 0) +
+                              (selectedOrder.deliveryCharges || 0) +
+                              (selectedOrder.platformFee || 0)
+                            ).toFixed(2)
+                          )}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <div style={{ marginTop: "16px", fontSize: "13px", color: "#7b809a" }}>
+                  <em>Note: GST is already included in the product prices.</em>
+                </div>
               </>
             )}
           </div>
@@ -868,7 +1018,7 @@ const Orders = () => {
             <span className="modal-close" onClick={() => setSelectedAddress(null)}>×</span>
             {selectedAddress && (
               <>
-                <h3 style={{ fontWeight: 700, fontSize: "20px", color: "#344767", marginBottom: "16px" }}>
+                <h3 style={{ fontWeight: 700, fontSize: "24px", color: "#344767", marginBottom: "24px" }}>
                   Address Details
                 </h3>
                 <div className="address-card">
@@ -881,6 +1031,11 @@ const Orders = () => {
                     <FaMapMarkerAlt className="address-field-icon" />
                     <span className="address-field-label">Address</span>
                     <span className="address-field-value">{selectedAddress.fullAddress || "-"}</span>
+                  </div>
+                  <div className="address-field">
+                    <FaPhoneAlt className="address-field-icon" />
+                    <span className="address-field-label">Mobile Number</span>
+                    <span className="address-field-value">{selectedAddress.moibleNumber || "-"}</span>
                   </div>
                 </div>
               </>
