@@ -14,6 +14,7 @@ const Orders = () => {
   const [zones, setZones] = useState([]);
   const [variants, setVariants] = useState({});
   const [drivers, setDrivers] = useState([]);
+  const [deliveryStatuses, setDeliveryStatuses] = useState([]);
   const [entriesToShow, setEntriesToShow] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,13 +33,15 @@ const Orders = () => {
     setLoading(true);
     setError("");
     try {
-      const [ordersRes, storesRes, zonesRes, driversRes] = await Promise.all([
+      const [ordersRes, storesRes, zonesRes, driversRes, statusesRes] = await Promise.all([
         fetch("https://fivlia.onrender.com/orders"),
         fetch("https://fivlia.onrender.com/getStore"),
         fetch("https://fivlia.onrender.com/getAllZone"),
         fetch("https://fivlia.onrender.com/getDriver"),
+        fetch("https://fivlia.onrender.com/getdeliveryStatus"),
       ]);
 
+      // Handle Orders
       const ordersData = await ordersRes.json();
       console.log("Orders API response:", ordersData);
       if (ordersData.orders && Array.isArray(ordersData.orders)) {
@@ -47,6 +50,7 @@ const Orders = () => {
         setError("Failed to load orders: Invalid data format");
       }
 
+      // Handle Stores
       const storesData = await storesRes.json();
       console.log("Stores API response:", storesData);
       if (storesData.stores && Array.isArray(storesData.stores)) {
@@ -62,6 +66,7 @@ const Orders = () => {
         setError((prev) => prev + (prev ? ", " : "") + "Failed to load stores: Invalid data format");
       }
 
+      // Handle Zones
       const zonesData = await zonesRes.json();
       console.log("Zones API response:", zonesData);
       if (Array.isArray(zonesData)) {
@@ -83,6 +88,7 @@ const Orders = () => {
         setError((prev) => prev + (prev ? ", " : "") + "Failed to load zones");
       }
 
+      // Handle Drivers
       const driversData = await driversRes.json();
       console.log("Drivers API response:", driversData);
       if (driversData.Driver && Array.isArray(driversData.Driver)) {
@@ -97,6 +103,16 @@ const Orders = () => {
         console.error("Invalid drivers data format:", driversData);
         setError((prev) => prev + (prev ? ", " : "") + "Failed to load drivers: Invalid data format");
       }
+
+      // Handle Delivery Statuses
+  const statusesData = await statusesRes.json();
+console.log("Delivery Statuses API response:", statusesData);
+if (statusesData.Status && Array.isArray(statusesData.Status)) {
+  setDeliveryStatuses(statusesData.Status.map(status => status.name || status.title || "Unknown"));
+} else {
+  console.error("Invalid delivery statuses data format:", statusesData);
+  setError((prev) => prev + (prev ? ", " : "") + "Failed to load delivery statuses: Invalid data format");
+}
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Failed to load data. Please try again.");
@@ -715,10 +731,9 @@ const Orders = () => {
                 <label>Status</label>
                 <select value={selectedStatus} onChange={(e) => { setSelectedStatus(e.target.value); setCurrentPage(1); }}>
                   <option value="">All Statuses</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Accepted">Accepted</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
+                  {deliveryStatuses.map((status) => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
                 </select>
               </div>
               <div className="control-item">
@@ -861,10 +876,9 @@ const Orders = () => {
                               onChange={(e) => handleOrderUpdate(order._id, e.target.value, undefined)}
                               disabled={statusUpdating}
                             >
-                              <option value="Pending">Pending</option>
-                              <option value="Accepted">Accepted</option>
-                              <option value="Delivered">Delivered</option>
-                              <option value="Cancelled">Cancelled</option>
+                              {deliveryStatuses.map((status) => (
+                                <option key={status} value={status}>{status}</option>
+                              ))}
                             </select>
                           </td>
                         </tr>
@@ -946,7 +960,7 @@ const Orders = () => {
                             <td style={{ fontSize: "14px", padding: "16px" }}>{item.variantName || "-"}</td>
                             <td style={{ fontSize: "14px", padding: "16px" }}>₹{price}</td>
                             <td style={{ fontSize: "14px", padding: "16px" }}>₹{subtotal}</td>
-                        </tr>
+                          </tr>
                         );
                       })}
                     </tbody>
