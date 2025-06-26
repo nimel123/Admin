@@ -1,811 +1,444 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import MDBox from "components/MDBox";
 import { useMaterialUIController } from "context";
-import Modal from "@mui/material/Modal";
-import { FaSortUp, FaSortDown } from "react-icons/fa";
-import { CSVLink } from "react-csv";
+import { useNavigate } from "react-router-dom";
+import {
+  Button,
+  Switch,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+} from "@mui/material";
 
-const DeliveryStatus = () => {
+export default function StatusManagement() {
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
+  const navigate = useNavigate();
 
-  const [orders, setOrders] = useState([]);
-  const [stores, setStores] = useState([]);
-  const [zones, setZones] = useState([]);
-  const [drivers, setDrivers] = useState([]);
-  const [entriesToShow, setEntriesToShow] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [statuses, setStatuses] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(null);
+  const [newStatusCode, setNewStatusCode] = useState("");
+  const [newStatusTitle, setNewStatusTitle] = useState("");
+  const [entriesToShow, setEntriesToShow] = useState(5);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStore, setSelectedStore] = useState("");
-  const [selectedZone, setSelectedZone] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
-  const [selectedDriver, setSelectedDriver] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "createdAt", direction: "desc" });
-  const [loading, setLoading] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [selectedAddress, setSelectedAddress] = useState(null);
-  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [ordersRes, storesRes, zonesRes, driversRes] = await Promise.all([
-        fetch("https://fivlia.onrender.com/orders"),
-        fetch("https://fivlia.onrender.com/getStore"),
-        fetch("https://fivlia.onrender.com/getAllZone"),
-        fetch("https://fivlia.onrender.com/getDriver"),
-      ]);
+  const headerCell = {
+    padding: "14px 12px",
+    border: "1px solid #ddd",
+    fontSize: 18,
+    fontWeight: "bold",
+    backgroundColor: "#007bff",
+    color: "white",
+    textAlign: "center",
+  };
 
-      // Orders
-      const ordersData = await ordersRes.json();
-      console.log("Orders API response:", ordersData);
-      if (ordersData.orders && Array.isArray(ordersData.orders)) {
-        setOrders(ordersData.orders);
-      } else {
-        alert("Failed to load orders: Invalid data format");
+  const bodyCell = {
+    padding: "12px",
+    border: "1px solid #eee",
+    fontSize: 17,
+    backgroundColor: "#fff",
+    textAlign: "center",
+  };
+
+  // Fetch statuses on mount
+  useEffect(() => {
+    const fetchStatuses = async () => {
+      try {
+        const response = await fetch("https://fivlia.onrender.com/getdeliveryStatus");
+        const data = await response.json();
+        if (response.ok && Array.isArray(data.Status)) {
+          setStatuses(data.Status.map((s) => ({
+            id: s._id,
+            statusCode: s.statusCode || "",
+            statusTitle: s.statusTitle || "",
+            isActive: s.status || false,
+          })));
+        } else {
+          throw new Error(data.message || "Failed to fetch statuses");
+        }
+      } catch (error) {
+        console.error("Failed to fetch statuses:", error);
+        alert("Failed to fetch statuses. Try again.");
       }
-
-      // Stores
-      const storesData = await storesRes.json();
-      console.log("Stores API response:", storesData);
-      if (storesData.stores && Array.isArray(storesData.stores)) {
-        const mappedStores = storesData.stores.map((s) => ({
-          id: s._id.$oid || s._id,
-          name: s.storeName || "Unknown",
-          address: s.Latitude && s.Longitude ? `${s.Latitude}, ${s.Longitude}` : s.city?.name || "Unknown",
-        }));
-        setStores(mappedStores);
-      } else {
-        alert("Failed to load stores");
-      }
-
-      // Zones
-      const zonesData = await zonesRes.json();
-      console.log("Zones API response:", zonesData);
-      if (Array.isArray(zonesData)) {
-        const zoneList = zonesData.reduce((acc, city) => {
-          if (city?.zones && Array.isArray(city.zones)) {
-            return [
-              ...acc,
-              ...city.zones.map((zone) => ({
-                id: zone._id.$oid || zone._id,
-                name: zone.zoneTitle || "Unknown",
-                city: city.city || "Unknown",
-              })),
-            ];
-          }
-          return acc;
-        }, []);
-        setZones(zoneList);
-      } else {
-        alert("Failed to load zones");
-      }
-
-      // Drivers
-      const driversData = await driversRes.json();
-      console.log("Drivers API response:", driversData);
-      if (driversData.Driver && Array.isArray(driversData.Driver)) {
-        setDrivers(driversData.Driver.map((d) => ({
-          id: d._id,
-          name: d.driverName || "Unknown",
-          status: d.status === "true" ? "Available" : "Inactive",
-        })));
-      } else {
-        alert("Failed to load drivers");
-      }
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      alert("Failed to load data. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    };
+    fetchStatuses();
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const toggleStatus = async (id) => {
+    const statusToUpdate = statuses.find((s) => s.id === id);
+    if (!statusToUpdate) return;
 
-  const handleSort = (key) => {
-    setSortConfig((prev) => ({
-      key,
-      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
-    }));
-    setOrders((prev) =>
-      [...prev].sort((a, b) => {
-        let aValue = a[key];
-        let bValue = b[key];
-        if (key === "items[0].name") {
-          aValue = a.items?.[0]?.name || "";
-          bValue = b.items?.[0]?.name || "";
-        }
-        if (key === "addressId.fullAddress") {
-          aValue = a.addressId?.fullAddress || "";
-          bValue = b.addressId?.fullAddress || "";
-        }
-        if (key === "storeId.storeName") {
-          aValue = a.storeId?.storeName || "";
-          bValue = b.storeId?.storeName || "";
-        }
-        if (key === "driverId.name") {
-          aValue = a.driverId?.name || "";
-          bValue = b.driverId?.name || "";
-        }
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      })
-    );
-  };
+    const newStatus = !statusToUpdate.isActive;
 
-  const handleStatusUpdate = async (orderId, newStatus) => {
-    setStatusUpdating(true);
     try {
-      const res = await fetch(`https://fivlia.onrender.com/orderStatus/${orderId}`, {
+      const response = await fetch(`https://fivlia.onrender.com/fivlia/updatedeliveryStatus/${id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (res.ok) {
-        setOrders((prev) =>
-          prev.map((order) => (order._id === orderId ? { ...order, orderStatus: newStatus } : order))
-        );
-        setSelectedOrder((prev) => (prev?._id === orderId ? { ...prev, orderStatus: newStatus } : prev));
-      } else {
-        alert("Failed to update status");
-      }
-    } catch (err) {
-      alert("Error updating status");
-    } finally {
-      setStatusUpdating(false);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update status");
+
+      setStatuses((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, isActive: newStatus } : s))
+      );
+    } catch (error) {
+      alert("Failed to update status. Try again.");
+      console.error("Toggle status error:", error);
     }
   };
 
-  const handleDriverAssignment = async (orderId, driverId) => {
-    setLoading(true);
+  const handleAddSave = async () => {
+    if (!newStatusCode || !newStatusTitle) {
+      alert("Please fill in all fields");
+      return;
+    }
+    const newStatus = {
+      statusCode: newStatusCode,
+      statusTitle: newStatusTitle,
+      status: true,
+    };
     try {
-      const res = await fetch(`https://fivlia.onrender.com/orders/${orderId}/assign-driver`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ driverId }),
+      const response = await fetch("https://fivlia.onrender.com/deliveryStatus", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newStatus),
       });
-      if (res.ok) {
-        const driver = drivers.find((d) => d.id === driverId) || { id: null, name: "Unassigned" };
-        setOrders((prev) =>
-          prev.map((order) =>
-            order._id === orderId ? { ...order, driverId: driver } : order
-          )
-        );
-        setSelectedOrder((prev) =>
-          prev?._id === orderId ? { ...prev, driverId: driver } : prev
-        );
-      } else {
-        alert("Failed to assign driver");
-      }
-    } catch (err) {
-      alert("Error assigning driver");
-    } finally {
-      setLoading(false);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to create status");
+
+      setStatuses((prev) => [
+        ...prev,
+        {
+          id: data.newStatus._id,
+          statusCode: data.newStatus.statusCode,
+          statusTitle: data.newStatus.statusTitle,
+          isActive: data.newStatus.status,
+        },
+      ]);
+      setModalOpen(false);
+      setNewStatusCode("");
+      setNewStatusTitle("");
+    } catch (error) {
+      alert("Failed to create status. Try again.");
+      console.error("Create status error:", error);
     }
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const search = searchTerm.toLowerCase();
-    const matchesSearch =
-      (order._id && order._id.toLowerCase().includes(search)) ||
-      (order.items?.[0]?.name && order.items[0].name.toLowerCase().includes(search)) ||
-      (order.addressId?.fullAddress || "").toLowerCase().includes(search) ||
-      (order.orderStatus && order.orderStatus.toLowerCase().includes(search)) ||
-      (order.storeId?.storeName || "").toLowerCase().includes(search) ||
-      (order.driverId?.name || "").toLowerCase().includes(search);
+  const handleEdit = (status) => {
+    setSelectedStatus(status);
+    setNewStatusCode(status.statusCode);
+    setNewStatusTitle(status.statusTitle);
+    setEditModalOpen(true);
+  };
 
-    const matchesStore = !selectedStore || String(order.storeId?._id) === String(selectedStore);
-    const matchesZone =
-      !selectedZone ||
-      zones.some((zone) => zone.id === selectedZone && zone.city === order.city);
-    const matchesStatus = !selectedStatus || order.orderStatus === selectedStatus;
-    const matchesDriver = !selectedDriver || String(order.driverId?.id) === String(selectedDriver);
+  const handleEditSave = async () => {
+    if (!newStatusCode || !newStatusTitle) {
+      alert("Please fill in all fields");
+      return;
+    }
+    try {
+      const response = await fetch(`https://fivlia.onrender.com/fivlia/updatedeliveryStatus/${selectedStatus.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          statusCode: newStatusCode,
+          statusTitle: newStatusTitle,
+          status: selectedStatus.isActive,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update status");
 
-    return matchesSearch && matchesStore && matchesZone && matchesStatus && matchesDriver;
-  });
+      setStatuses((prev) =>
+        prev.map((s) =>
+          s.id === selectedStatus.id
+            ? {
+                ...s,
+                statusCode: newStatusCode,
+                statusTitle: newStatusTitle,
+              }
+            : s
+        )
+      );
+      setEditModalOpen(false);
+      setSelectedStatus(null);
+      setNewStatusCode("");
+      setNewStatusTitle("");
+    } catch (error) {
+      alert("Failed to update status. Try again.");
+      console.error("Update status error:", error);
+    }
+  };
 
-  const totalPages = Math.ceil(filteredOrders.length / entriesToShow);
+  const handleEntriesChange = (e) => {
+    setEntriesToShow(parseInt(e.target.value));
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handlePrevious = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const filteredStatuses = statuses.filter((s) =>
+    s.statusCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.statusTitle.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredStatuses.length / entriesToShow);
   const startIndex = (currentPage - 1) * entriesToShow;
-  const currentOrders = filteredOrders.slice(startIndex, startIndex + entriesToShow);
-
-  const csvData = filteredOrders.map((order, index) => ({
-    No: startIndex + index + 1,
-    OrderID: order._id,
-    Item: order.items?.[0]?.name || "-",
-    Quantity: order.items?.[0]?.quantity || 0,
-    Price: order.items?.[0]?.price || 0,
-    Total: order.totalPrice || "-",
-    Address: order.addressId?.fullAddress || "-",
-    Status: order.orderStatus || "-",
-    Store: order.storeId?.storeName || "-",
-    Driver: order.driverId?.name || "-",
-    PaymentStatus: order.paymentStatus || "-",
-    CashOnDelivery: order.cashOnDelivery ? "Yes" : "No",
-  }));
+  const endIndex = startIndex + entriesToShow;
+  const currentStatuses = filteredStatuses.slice(startIndex, endIndex);
 
   return (
-    <>
-      <style>
-        {`
-          @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;700&display=swap');
-          .order-container {
-            font-family: 'Urbanist', sans-serif;
-            padding: 16px;
-            width: 100%;
-          }
-          .order-box {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-          }
-          .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 16px;
-          }
-          .controls-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 20px;
-            align-items: center;
-          }
-          .control-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex: 1;
-            min-width: 140px;
-          }
-          .control-item label {
-            font-size: 14px;
-            font-weight: 600;
-            color: #344767;
-            white-space: nowrap;
-          }
-          .control-item select, .control-item input {
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            font-size: 14px;
-            width: 100%;
-            outline: none;
-            transition: border-color 0.2s;
-          }
-          .control-item select:focus, .control-item input:focus {
-            border-color: #007bff;
-          }
-          .search-input {
-            border-radius: 20px;
-            padding-left: 16px;
-          }
-          .table-container {
-            overflow-x: auto;
-            position: relative;
-          }
-          .orders-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid #007bff;
-          }
-          .header-cell {
-            padding: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            background: #007bff;
-            color: white;
-            text-align: left;
-            cursor: pointer;
-            user-select: none;
-          }
-          .header-cell:hover {
-            background: #0056b3;
-          }
-          .body-cell {
-            padding: 12px;
-            font-size: 12px;
-            border-bottom: 1px solid #f0f0f0;
-            color: #344767;
-            text-align: center;
-          }
-          .item-link {
-            color: #007bff;
-            cursor: pointer;
-            text-decoration: none;
-          }
-          .item-link:hover {
-            color: #0056b3;
-            text-decoration: underline;
-          }
-          .view-button {
-            padding: 6px 12px;
-            border-radius: 6px;
-            border: none;
-            background: #007bff;
-            color: white;
-            cursor: pointer;
-            font-size: 12px;
-            transition: background 0.2s;
-          }
-          .view-button:hover {
-            background: #0056b3;
-          }
-          .status-badge {
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: normal;
-            text-transform: capitalize;
-          }
-          .status-accepted { background: #e6f4ea; color: #2e7d32; }
-          .status-pending { background: #fff3e0; color: #f57c00; }
-          .status-delivered { background: #e8f0fe; color: #1e88e5; }
-          .status-cancelled { background: #ffebee; color: #d32f2f; }
-          .pagination {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
-            flex-wrap: wrap;
-            gap: 12px;
-          }
-          .pagination button {
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: none;
-            background: #007bff;
-            color: white;
-            cursor: pointer;
-            font-size: 14px;
-            min-width: 40px;
-          }
-          .pagination button:disabled {
-            background: #e0e0e0;
-            cursor: not-allowed;
-          }
-          .modal-content {
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
-            max-width: 600px;
-            margin: 40px auto;
-            position: relative;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-          }
-          .modal-close {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            cursor: pointer;
-            color: #344767;
-            font-size: 18px;
-          }
-          .refresh-button, .export-button {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: none;
-            background: #007bff;
-            color: white;
-            cursor: pointer;
-            font-size: 14px;
-            text-decoration: none;
-          }
-          .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255,255,255,0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            border-radius: 8px;
-          }
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          @media (max-width: 768px) {
-            .controls-container {
-              flex-direction: column;
-            }
-            .control-item {
-              width: 100%;
-            }
-            .modal-content {
-              margin: 20px;
-              max-width: 90%;
-            }
-            .orders-table {
-              font-size: 12px;
-            }
-            .header-cell, .body-cell {
-              padding: 8px;
-            }
-          }
-        `}
-      </style>
-      <MDBox
-        p={2}
-        style={{
-          marginLeft: miniSidenav ? "80px" : "250px",
-          transition: "margin-left 0.3s ease",
-          position: "relative",
-          width: `calc(100% - ${miniSidenav ? "80px" : "250px"})`,
-        }}
-      >
-        <div className="order-container">
-          <div className="order-box">
-            <div className="header">
-              <div>
-                <h2 style={{ fontWeight: 700, fontSize: "24px", color: "#344767" }}>Orders Management</h2>
-                <p style={{ fontSize: "14px", color: "#7b809a" }}>View, manage orders, and assign drivers</p>
-              </div>
-              <div style={{ display: "flex", gap: "12px" }}>
-                <button className="refresh-button" onClick={fetchData} disabled={loading}>
-                  Refresh
-                </button>
-                <CSVLink data={csvData} filename={"orders.csv"} className="export-button">
-                  Export CSV
-                </CSVLink>
-              </div>
-            </div>
+    <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "30px" }}>
+      <div style={{ width: "100%", padding: "0 20px" }}>
+        {/* Header */}
+        <div
+          style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}
+        >
+          <div>
+            <h2 style={{ margin: 0, fontSize: "30px", fontWeight: "bold" }}>
+              Status Management
+            </h2>
+            <p style={{ margin: 0, fontSize: "18px", color: "#555" }}>
+              Manage order statuses
+            </p>
+          </div>
+          <Button
+            style={{
+              backgroundColor: "#00c853",
+              height: 45,
+              width: 150,
+              fontSize: 12,
+              color: "white",
+              letterSpacing: "1px",
+            }}
+            onClick={() => setModalOpen(true)}
+          >
+            + Add Status
+          </Button>
+        </div>
 
-            <div className="controls-container">
-              <div className="control-item">
-                <label>Show Entries</label>
-                <select value={entriesToShow} onChange={(e) => { setEntriesToShow(Number(e.target.value)); setCurrentPage(1); }}>
-                  <option value="5">5</option>
-                  <option value="10">10</option>
-                  <option value="20">20</option>
-                </select>
-              </div>
-              <div className="control-item">
-                <label>Zone</label>
-                <select value={selectedZone} onChange={(e) => { setSelectedZone(e.target.value); setCurrentPage(1); }}>
-                  <option value="">All Zones</option>
-                  {zones.map((zone) => (
-                    <option key={zone.id} value={zone.id}>{zone.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="control-item">
-                <label>Store</label>
-                <select value={selectedStore} onChange={(e) => { setSelectedStore(e.target.value); setCurrentPage(1); }}>
-                  <option value="">All Stores</option>
-                  {stores.map((store) => (
-                    <option key={store.id} value={store.id}>{store.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="control-item">
-                <label>Status</label>
-                <select value={selectedStatus} onChange={(e) => { setSelectedStatus(e.target.value); setCurrentPage(1); }}>
-                  <option value="">All Statuses</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Accepted">Accepted</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-              </div>
-              <div className="control-item">
-                <label>Driver</label>
-                <select value={selectedDriver} onChange={(e) => { setSelectedDriver(e.target.value); setCurrentPage(1); }}>
-                  <option value="">All Drivers</option>
-                  {drivers.map((driver) => (
-                    <option key={driver.id} value={driver.id}>{driver.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="control-item">
-                <label>Search</label>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                  placeholder="Search"
-                  className="search-input"
-                />
-              </div>
-            </div>
-
-            <div className="table-container">
-              {loading && (
-                <div className="loading-overlay">
-                  <div style={{ border: "4px solid #f3f3f3", borderTop: "4px solid #007bff", borderRadius: "50%", width: "24px", height: "24px", animation: "spin 1s linear infinite" }}></div>
-                </div>
-              )}
-              <table className="orders-table">
-                <thead>
-                  <tr>
-                    <th className="header-cell" onClick={() => handleSort("index")}>
-                      Sr No {sortConfig.key === "index" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
-                    </th>
-                    <th className="header-cell" onClick={() => handleSort("_id")}>
-                      Order ID {sortConfig.key === "_id" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
-                    </th>
-                    <th className="header-cell" onClick={() => handleSort("items[0].name")}>
-                      Item {sortConfig.key === "items[0].name" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
-                    </th>
-                    <th className="header-cell">
-                      Address
-                    </th>
-                    <th className="header-cell" onClick={() => handleSort("storeId.storeName")}>
-                      Store {sortConfig.key === "storeId.storeName" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
-                    </th>
-                    <th className="header-cell" onClick={() => handleSort("driverId.name")}>
-                      Driver {sortConfig.key === "driverId.name" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
-                    </th>
-                    <th className="header-cell" onClick={() => handleSort("orderStatus")}>
-                      Status {sortConfig.key === "orderStatus" && (sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />)}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentOrders.length > 0 ? (
-                    currentOrders.map((order, index) => {
-                      const item = order.items?.[0];
-                      return (
-                        <tr key={order._id}>
-                          <td className="body-cell">{startIndex + index + 1}</td>
-                          <td className="body-cell">{order._id}</td>
-                          <td className="body-cell">
-                            <span
-                              className="item-link"
-                              onClick={() => setSelectedItem(item)}
-                              title={item?.name}
-                            >
-                              {item?.name ? (item.name.length > 20 ? `${item.name.substring(0, 20)}...` : item.name) : "-"}
-                            </span>
-                            <br />
-                            <span style={{ color: "#7b809a", fontSize: "12px" }}>
-                              Qty: {item?.quantity || 0} | ₹{item?.price || 0}
-                            </span>
-                          </td>
-                          <td className="body-cell">
-                            <button
-                              className="view-button"
-                              onClick={() => setSelectedAddress(order.addressId)}
-                              disabled={!order.addressId}
-                            >
-                              View
-                            </button>
-                          </td>
-                          <td className="body-cell">{order.storeId?.storeName || "-"}</td>
-                          <td className="body-cell">
-                            <select
-                              value={order.driverId?.id || ""}
-                              onChange={(e) => handleDriverAssignment(order._id, e.target.value)}
-                              style={{
-                                padding: "6px",
-                                borderRadius: "6px",
-                                border: "1px solid #e0e0e0",
-                                fontSize: "12px",
-                              }}
-                              disabled={loading}
-                            >
-                              <option value="">Unassigned</option>
-                              {drivers
-                                .filter((d) => d.status === "Available")
-                                .map((driver) => (
-                                  <option key={driver.id} value={driver.id}>
-                                    {driver.name}
-                                  </option>
-                                ))}
-                            </select>
-                          </td>
-                          <td className="body-cell">
-                            <select
-                              value={order.orderStatus || "Pending"}
-                              onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
-                              disabled={statusUpdating}
-                              style={{ padding: "8px", borderRadius: "6px", border: "1px solid #e0e0e0" }}
-                            >
-                              <option value="" disabled>Select Status</option>
-                              <option value="Pending">Pending</option>
-                              <option value="Accepted">Accepted</option>
-                              <option value="Delivered">Delivered</option>
-                              <option value="Cancelled">Cancelled</option>
-                            </select>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan="7" className="body-cell" style={{ textAlign: "center", color: "#7b809a" }}>
-                        No orders found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="pagination">
-              <span style={{ fontSize: "14px", color: "#7b809a" }}>
-                Showing {startIndex + 1} to {Math.min(startIndex + entriesToShow, filteredOrders.length)} of {filteredOrders.length} orders
-              </span>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
-                  Previous
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    style={{
-                      background: page === currentPage ? "#0056b3" : "#007bff",
-                    }}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+        {/* Controls */}
+        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+          <div>
+            <label style={{ fontSize: 17 }}>Show Entries </label>
+            <select
+              value={entriesToShow}
+              onChange={handleEntriesChange}
+              style={{
+                fontSize: 16,
+                padding: "6px 10px",
+                borderRadius: "6px",
+                border: "1px solid #ccc",
+              }}
+            >
+              {[5, 10, 20, 30].map((num) => (
+                <option key={num} value={num}>
+                  {num}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ marginLeft: "420px" }}>
+            <label style={{ fontSize: 17, marginRight: 8 }}>Search:</label>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Search statuses..."
+              style={{
+                padding: "8px 34px",
+                borderRadius: "8px",
+                height: "42px",
+                width: "220px",
+                border: "1px solid #ccc",
+                fontSize: 16,
+                outline: "none",
+              }}
+            />
           </div>
         </div>
 
-        <Modal open={!!selectedOrder} onClose={() => setSelectedOrder(null)}>
-          <div className="modal-content">
-            <span className="modal-close" onClick={() => setSelectedOrder(null)}>×</span>
-            {selectedOrder && (
-              <>
-                <h3 style={{ fontWeight: 600, marginBottom: "16px" }}>Order Details - {selectedOrder._id}</h3>
-                <div style={{ display: "grid", gap: "12px", fontSize: "14px" }}>
-                  <div>
-                    <strong>Item:</strong>{" "}
-                    <span
-                      className="item-link"
-                      onClick={() => setSelectedItem(selectedOrder.items?.[0])}
-                      title={selectedOrder.items?.[0]?.name}
-                    >
-                      {selectedOrder.items?.[0]?.name || "-"}
-                    </span>
-                  </div>
-                  <div>
-                    <strong>Quantity:</strong> {selectedOrder.items?.[0]?.quantity || 0}
-                  </div>
-                  <div>
-                    <strong>Price:</strong> ₹{selectedOrder.items?.[0]?.price || 0}
-                  </div>
-                  <div>
-                    <strong>Total:</strong> ₹{selectedOrder.totalPrice || "-"}
-                  </div>
-                  <div>
-                    <strong>Address:</strong>{" "}
-                    <button
-                      className="view-button"
-                      onClick={() => setSelectedAddress(selectedOrder.addressId)}
-                      disabled={!selectedOrder.addressId}
-                    >
-                      View
-                    </button>
-                  </div>
-                  <div>
-                    <strong>Store:</strong> {selectedOrder.storeId?.storeName || "-"}
-                  </div>
-                  <div>
-                    <strong>Driver:</strong>{" "}
-                    <select
-                      value={selectedOrder.driverId?.id || ""}
-                      onChange={(e) => handleDriverAssignment(selectedOrder._id, e.target.value)}
-                      style={{
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid #e0e0e0",
+        {/* Table */}
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontFamily: '"Urbanist", sans-serif',
+            fontSize: "17px",
+            border: "1px solid #007BFF",
+            marginTop: "20px",
+          }}
+        >
+          <thead>
+            <tr>
+              <th style={headerCell}>Sr No</th>
+              <th style={headerCell}>Status Code</th>
+              <th style={headerCell}>Status Title</th>
+              <th style={headerCell}>Status</th>
+              <th style={headerCell}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentStatuses.length > 0 ? (
+              currentStatuses.map((status, index) => (
+                <tr
+                  key={status.id}
+                  style={{
+                    backgroundColor: selectedStatus?.id === status.id ? "#f1f1f1" : "white",
+                    cursor: "pointer",
+                  }}
+                >
+                  <td style={bodyCell}>{startIndex + index + 1}</td>
+                  <td style={bodyCell}>{status.statusCode}</td>
+                  <td style={bodyCell}>{status.statusTitle}</td>
+                  <td style={bodyCell}>
+                    <Switch
+                      checked={status.isActive}
+                      onChange={() => toggleStatus(status.id)}
+                      sx={{
+                        "& .MuiSwitch-switchBase.Mui-checked": { color: "#00c853" },
+                        "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                          backgroundColor: "#00c853 !important",
+                        },
+                        "& .MuiSwitch-track": {
+                          backgroundColor: "red",
+                          opacity: 1,
+                        },
                       }}
-                      disabled={loading}
+                    />
+                  </td>
+                  <td style={bodyCell}>
+                    <button
+                      onClick={() => handleEdit(status)}
+                      style={{
+                        backgroundColor: "#007BFF",
+                        color: "white",
+                        padding: "8px 16px",
+                        borderRadius: "6px",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
                     >
-                      <option value="">Unassigned</option>
-                      {drivers
-                        .filter((d) => d.status === "Available")
-                        .map((driver) => (
-                          <option key={driver.id} value={driver.id}>
-                            {driver.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                  <div>
-                    <strong>Payment Status:</strong> {selectedOrder.paymentStatus || "-"}
-                  </div>
-                  <div>
-                    <strong>Cash on Delivery:</strong> {selectedOrder.cashOnDelivery ? "Yes" : "No"}
-                  </div>
-                  <div>
-                    <strong>Status:</strong>{" "}
-                    <select
-                      value={selectedOrder.orderStatus || "Pending"}
-                      onChange={(e) => handleStatusUpdate(selectedOrder._id, e.target.value)}
-                      disabled={statusUpdating}
-                      style={{ padding: "8px", borderRadius: "6px", border: "1px solid #e0e0e0" }}
-                    >
-                      <option value="" disabled>Select Status</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Accepted">Accepted</option>
-                      <option value="Delivered">Delivered</option>
-                      <option value="Cancelled">Cancelled</option>
-                    </select>
-                  </div>
-                </div>
-              </>
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5" style={{ textAlign: "center", padding: "20px" }}>
+                  No statuses found.
+                </td>
+              </tr>
             )}
-          </div>
-        </Modal>
+          </tbody>
+        </table>
 
-        <Modal open={!!selectedItem} onClose={() => setSelectedItem(null)}>
-          <div className="modal-content">
-            <span className="modal-close" onClick={() => setSelectedItem(null)}>×</span>
-            {selectedItem && (
-              <>
-                <h3 style={{ fontWeight: 600, marginBottom: "16px" }}>Item Details</h3>
-                <div style={{ display: "grid", gap: "12px", fontSize: "14px" }}>
-                  <div>
-                    <strong>Name:</strong> {selectedItem.name || "-"}
-                  </div>
-                  <div>
-                    <strong>Quantity:</strong> {selectedItem.quantity || "-"}
-                  </div>
-                  <div>
-                    <strong>Price:</strong> ₹{selectedItem.price || "-"}
-                  </div>
-                </div>
-              </>
-            )}
+        {/* Pagination */}
+        <div
+          style={{ marginTop: "20px", display: "flex", justifyContent: "space-between" }}
+        >
+          <div>
+            Showing {startIndex + 1} to{" "}
+            {Math.min(endIndex, filteredStatuses.length)} of{" "}
+            {filteredStatuses.length} entries
           </div>
-        </Modal>
+          <div>
+            <button
+              onClick={handlePrevious}
+              disabled={currentPage === 1}
+              style={{
+                padding: "8px 18px",
+                backgroundColor: currentPage === 1 ? "#ccc" : "#007BFF",
+                color: currentPage === 1 ? "#666" : "#fff",
+                border: "none",
+                borderRadius: "6px",
+                cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                marginRight: "8px",
+              }}
+            >
+              Previous
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={currentPage === totalPages}
+              style={{
+                padding: "8px 18px",
+                backgroundColor: currentPage === totalPages ? "#ccc" : "#007BFF",
+                color: currentPage === totalPages ? "#666" : "#fff",
+                border: "none",
+                borderRadius: "6px",
+                cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+              }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
 
-        <Modal open={!!selectedAddress} onClose={() => setSelectedAddress(null)}>
-          <div className="modal-content">
-            <span className="modal-close" onClick={() => setSelectedAddress(null)}>×</span>
-            {selectedAddress && (
-              <>
-                <h3 style={{ fontWeight: 600, marginBottom: "16px" }}>Address Details</h3>
-                <div style={{ display: "grid", gap: "12px", fontSize: "14px" }}>
-                  <div>
-                    <strong>Full Name:</strong> {selectedAddress.fullName || "-"}
-                  </div>
-                  <div>
-                    <strong>Address:</strong> {selectedAddress.fullAddress || "-"}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </Modal>
-      </MDBox>
-    </>
+      {/* Add Status Modal */}
+      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Add New Status</DialogTitle>
+        <DialogContent dividers>
+          <TextField
+            label="Status Title"
+            fullWidth
+            margin="normal"
+            value={newStatusTitle}
+            onChange={(e) => setNewStatusTitle(e.target.value)}
+            placeholder="e.g., Pending"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setModalOpen(false)} color="error">
+            Cancel
+          </Button>
+          <Button onClick={handleAddSave} color="primary">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Status Modal */}
+      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Status</DialogTitle>
+        <DialogContent dividers>
+          <TextField
+            label="Status Title"
+            fullWidth
+            margin="normal"
+            value={newStatusTitle}
+            onChange={(e) => setNewStatusTitle(e.target.value)}
+            placeholder="e.g., Pending"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditModalOpen(false)} color="error">
+            Cancel
+          </Button>
+          <Button onClick={handleEditSave} color="primary">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </MDBox>
   );
-};
-
-export default DeliveryStatus;
+}

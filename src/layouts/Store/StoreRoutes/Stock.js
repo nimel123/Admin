@@ -157,7 +157,11 @@ const styles = `
     font-size: 0.85rem;
     color: #555;
   }
-
+  .error-message {
+    color: #d32f2f;
+    font-size: 0.8rem;
+    margin-top: 5px;
+  }
   @media (max-width: 900px) {
     .responsive-table th, .responsive-table td {
       font-size: 0.8rem;
@@ -168,7 +172,6 @@ const styles = `
       padding: 6px;
     }
   }
-
   @media (max-width: 600px) {
     .responsive-table-container {
       display: none;
@@ -183,12 +186,9 @@ const styles = `
     .filter-item {
       width: 100%;
     }
-    .filter-item input {
+    .filter-item input, .filter-item select {
       width: 100%;
       box-sizing: border-box;
-    }
-    .filter-item select {
-      width: 100%;
     }
     .stock-box {
       width: 100%;
@@ -217,6 +217,7 @@ function StockManagement() {
   const [popoverType, setPopoverType] = useState("");
   const [popoverProductId, setPopoverProductId] = useState(null);
   const [stockUpdates, setStockUpdates] = useState({});
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const id = localStorage.getItem("storeId");
@@ -229,38 +230,68 @@ function StockManagement() {
       if (!storeId) return;
       setLoading(true);
       try {
-        const response = await fetch(`https://fivlia.onrender.com/getStore?id=${storeId}`);
-        if (response.status === 200) {
-          const result = await response.json();
-          const { products } = result;
-          console.log("API Response:", result);
+        // Fetch products
+        const productResponse = await fetch(`https://fivlia.onrender.com/getStore?id=${storeId}`);
+        if (productResponse.status !== 200) {
+          console.error("Product API Error: Status", productResponse.status);
+          setError(`Failed to load products: Status ${productResponse.status}`);
+          setLoading(false);
+          return;
+        }
+        const productResult = await productResponse.json();
+        const products = Array.isArray(productResult) ? productResult.flatMap((store) => store.products || []) : productResult.products || [];
+        console.log("Product API Response:", productResult);
 
-          const transformedProducts = products.map((product) => {
-            const totalStock = product.inventory?.reduce((sum, inv) => sum + (inv.quantity || 0), 0) || 0;
+        // Fetch stock data
+        const stockResponse = await fetch(`https://fivlia.onrender.com/getStock?storeId=${storeId}`);
+        let stockData = [];
+        if (stockResponse.status === 200) {
+          const stockResult = await stockResponse.json();
+          stockData = stockResult.stock || [];
+          console.log("Stock API Response:", stockResult);
+        } else {
+          console.warn("Stock API Error: Status", stockResponse.status);
+          setError(`Failed to load stock data: Status ${stockResponse.status}`);
+        }
+
+        // Merge stock quantities into products
+        const transformedProducts = products.map((product) => {
+          const productId = product._id.$oid || product._id;
+          const productStock = stockData.filter((s) => (s.productId.$oid || s.productId) === productId);
+          
+          const inventory = (product.inventory || []).map((inv) => {
+            const stockEntry = productStock.find(
+              (s) => (s.variantId.$oid || s.variantId)?.toString() === (inv.variantId.$oid || inv.variantId)?.toString()
+            );
             return {
-              ...product,
-              inventory: product.inventory || [],
-              variants: product.variants || [],
-              productThumbnailUrl: product.productImageUrl?.[0] || "",
-              totalStock,
+              ...inv,
+              quantity: stockEntry ? stockEntry.quantity : inv.quantity || 0,
             };
           });
 
-          setProducts(transformedProducts);
-          setData(transformedProducts);
+          const totalStock = inventory.reduce((sum, inv) => sum + (inv.quantity || 0), 0);
+          return {
+            ...product,
+            _id: productId,
+            inventory,
+            variants: product.variants || [],
+            productThumbnailUrl: product.productImageUrl?.[0] || "",
+            totalStock,
+          };
+        });
 
-          // Calculate out of stock and low stock counts
-          const outCount = transformedProducts.filter((p) => p.totalStock === 0).length;
-          const lowCount = transformedProducts.filter((p) => p.totalStock > 0 && p.totalStock <= 10).length;
-          setOutOfStockCount(outCount);
-          setLowStockCount(lowCount);
+        setProducts(transformedProducts);
+        setData(transformedProducts);
 
-          console.log("Transformed Products:", transformedProducts);
-        } else {
-          console.error("API Error: Status", response.status);
-        }
+        const outCount = transformedProducts.filter((p) => p.totalStock === 0).length;
+        const lowCount = transformedProducts.filter((p) => p.totalStock > 0 && p.totalStock <= 10).length;
+        setOutOfStockCount(outCount);
+        setLowStockCount(lowCount);
+
+        console.log("Transformed Products:", transformedProducts);
       } catch (err) {
         console.error("Fetch Error:", err);
+        setError("Failed to load products or stock. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -314,93 +345,100 @@ function StockManagement() {
     setStockUpdates({});
   };
 
-const handleStockChange = (productId, inventoryId, newValue) => {
-  console.log(`Stock Change → Product: ${productId}, Inventory: ${inventoryId}, New Value: ${newValue}`);
-  setStockUpdates((prev) => ({
-    ...prev,
-    [productId]: {
-      ...(prev[productId] || {}),
-      [inventoryId]: Number(newValue),
-    },
-  }));
-};
-
-
-const handleSaveStock = async () => {
-  let updatedProducts = [...products];
-
- console.log("Saving stock...");
-
-for (const productId of Object.keys(stockUpdates)) {
-  const product = products.find((p) => p._id === productId);
-  if (!product) continue;
-
-const stockPayload = product.inventory.map((inv, idx) => {
-  const invKey = inv._id || `${product._id}_${idx}`;
-  const updatedQty = stockUpdates[productId]?.[invKey];
-
-  if (updatedQty === undefined || !inv.variantId) return null; // <== prevent undefined variantId
-
-  return {
-    variantId: inv.variantId,
-    quantity: updatedQty,
+  const handleStockChange = (productId, inventoryId, newValue) => {
+    console.log(`Stock Change → Product: ${productId}, Inventory: ${inventoryId}, New Value: ${newValue}`);
+    setStockUpdates((prev) => ({
+      ...prev,
+      [productId]: {
+        ...(prev[productId] || {}),
+        [inventoryId]: Number(newValue),
+      },
+    }));
   };
-}).filter(Boolean);
 
-  console.log(`Product ${productId} - Payload to send:`, stockPayload);
-console.log("Final Payload:", JSON.stringify({ storeId, stock: stockPayload }, null, 2));
+  const handleSaveStock = async () => {
+    let updatedProducts = [...products];
+    console.log("Saving stock...");
 
-
-    if (stockPayload.length === 0) continue;
-
-    try {
-    const response = await fetch(`https://fivlia.onrender.com/updateStock/${productId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ storeId, stock: stockPayload }),
-    });
-
-    const result = await response.json();
-    console.log(`Response for ${productId}:`, result);
-
-    if (response.ok) {
-      console.log(`✅ Stock updated for ${productId}`);
-
-        updatedProducts = updatedProducts.map((p) => {
-          if (p._id === productId) {
-            const updatedInventory = p.inventory.map((inv) => {
-              const invKey = inv._id;
-              return {
-                ...inv,
-                quantity: stockUpdates[productId][invKey] ?? inv.quantity,
-              };
-            });
-
-            const totalStock = updatedInventory.reduce((sum, inv) => sum + (inv.quantity || 0), 0);
-            return { ...p, inventory: updatedInventory, totalStock };
-          }
-          return p;
-        });
-      } else {
-        console.error("DB update failed:", result);
+    for (const productId of Object.keys(stockUpdates)) {
+      const product = products.find((p) => p._id === productId);
+      if (!product) {
+        console.error(`Product ${productId} not found`);
+        continue;
       }
-    } catch (err) {
-      console.error("Stock update failed:", err);
+
+      const stockPayload = product.inventory.map((inv, idx) => {
+        const invKey = inv._id || `${product._id}_${idx}`;
+        const updatedQty = stockUpdates[productId]?.[invKey];
+
+        if (updatedQty === undefined || !inv.variantId) {
+          return null;
+        }
+
+        return {
+          variantId: inv.variantId.$oid || inv.variantId,
+          quantity: updatedQty,
+        };
+      }).filter(Boolean);
+
+      console.log(`Product ${productId} - Payload to send:`, stockPayload);
+      console.log("Final Payload:", JSON.stringify({ storeId, stock: stockPayload }, null, 2));
+
+      if (stockPayload.length === 0) {
+        console.log(`No valid stock updates for product ${productId}`);
+        continue;
+      }
+
+      try {
+        const response = await fetch(`https://fivlia.onrender.com/updateStock/${productId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ storeId, stock: stockPayload }),
+        });
+
+        const result = await response.json();
+        console.log(`Response for ${productId}:`, result);
+
+        if (response.ok) {
+          console.log(`✅ Stock updated for ${productId}`);
+          updatedProducts = updatedProducts.map((p) => {
+            if (p._id === productId) {
+              const updatedInventory = p.inventory.map((inv, idx) => {
+                const invKey = inv._id || `${p._id}_${idx}`;
+                const updatedQty = stockUpdates[productId][invKey];
+                return {
+                  ...inv,
+                  quantity: updatedQty !== undefined ? updatedQty : inv.quantity,
+                };
+              });
+
+              const totalStock = updatedInventory.reduce((sum, inv) => sum + (inv.quantity || 0), 0);
+              return { ...p, inventory: updatedInventory, totalStock };
+            }
+            return p;
+          });
+        } else {
+          console.error("DB update failed:", result);
+          setError(result.message || `Failed to update stock for product ${productId}`);
+        }
+      } catch (err) {
+        console.error("Stock update failed:", err);
+        setError("Failed to update stock. Please try again.");
+      }
     }
-  }
 
-  setProducts(updatedProducts);
-  setData(updatedProducts);
+    setProducts(updatedProducts);
+    setData(updatedProducts);
 
-  const outCount = updatedProducts.filter((p) => p.totalStock === 0).length;
-  const lowCount = updatedProducts.filter((p) => p.totalStock > 0 && p.totalStock <= 10).length;
-  console.log("Stock Summary → Out of Stock:", outCount, "Low Stock:", lowCount);
+    const outCount = updatedProducts.filter((p) => p.totalStock === 0).length;
+    const lowCount = updatedProducts.filter((p) => p.totalStock > 0 && p.totalStock <= 10).length;
+    console.log("Stock Summary → Out of Stock:", outCount, "Low Stock:", lowCount);
 
-  setOutOfStockCount(outCount);
-  setLowStockCount(lowCount);
+    setOutOfStockCount(outCount);
+    setLowStockCount(lowCount);
 
-  handlePopoverClose();
-};
+    handlePopoverClose();
+  };
 
   const popoverProducts = popoverType === "outOfStock"
     ? filteredProducts.filter((p) => p.totalStock === 0)
@@ -485,88 +523,89 @@ console.log("Final Payload:", JSON.stringify({ storeId, stock: stockPayload }, n
             </div>
           </div>
 
+          {error && <div className="error-message">{error}</div>}
+
           <Popover
-  open={Boolean(popoverAnchorEl)}
-  anchorEl={popoverAnchorEl}
-  onClose={handlePopoverClose}
-  anchorOrigin={{
-    vertical: "bottom",
-    horizontal: "left",
-  }}
-  transformOrigin={{
-    vertical: "top",
-    horizontal: "left",
-  }}
-  PaperProps={{
-    style: { backgroundColor: "#fff", boxShadow: "0 4px 8px rgba(0,0,0,0.2)" },
-  }}
->
-  <div className="popover-container">
-    <Typography variant="h6" style={{ fontSize: "0.9rem", marginBottom: "10px" }}>
-      {popoverType === "outOfStock" ? "Out of Stock Products" : 
-       popoverType === "lowStock" ? "Low Stock Products" : 
-       "Edit Stock"}
-    </Typography>
-    {popoverProducts.length > 0 ? (
-      <>
-        {popoverProducts.map((product) => (
-          <div key={product._id} className="popover-product">
-            <div className="popover-product-name">{product.productName}</div>
-           {product.inventory.map((inv, idx) => {
-  const invId = inv._id || `${product._id}_${idx}`;
-  const variant = product.variants.find(
-    (v) => v._id?.toString() === inv.variantId?.toString()
-  );
+            open={Boolean(popoverAnchorEl)}
+            anchorEl={popoverAnchorEl}
+            onClose={handlePopoverClose}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "left",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "left",
+            }}
+            PaperProps={{
+              style: { backgroundColor: "#fff", boxShadow: "0 4px 8px rgba(0,0,0,0.2)" },
+            }}
+          >
+            <div className="popover-container">
+              <Typography variant="h6" style={{ fontSize: "0.9rem", marginBottom: "10px" }}>
+                {popoverType === "outOfStock" ? "Out of Stock Products" : 
+                 popoverType === "lowStock" ? "Low Stock Products" : 
+                 "Edit Stock"}
+              </Typography>
+              {popoverProducts.length > 0 ? (
+                <>
+                  {popoverProducts.map((product) => (
+                    <div key={product._id} className="popover-product">
+                      <div className="popover-product-name">{product.productName}</div>
+                      {product.inventory.map((inv, idx) => {
+                        const invId = inv._id || `${product._id}_${idx}`;
+                        const variant = product.variants.find(
+                          (v) => (v._id.$oid || v._id)?.toString() === (inv.variantId.$oid || inv.variantId)?.toString()
+                        );
 
-              return variant ? (
-                <div key={inv._id} className="popover-variant">
-                  <span className="popover-variant-label">
-                    {variant.attributeName}: {variant.variantValue} (Current Stock: {inv?.quantity ?? 0})
-                  </span>
-                  <TextField
-  className="popover-variant-input"
-  placeholder="Add stock..."
-  type="number"
-value={stockUpdates[product._id]?.[invId] ?? inv?.quantity ?? 0}
-  onChange={(e) => handleStockChange(product._id, invId, e.target.value)}
-  inputProps={{
-    min: 0,
-    style: {
-      fontSize: "0.9rem",
-      fontWeight: "bold",
-      color: "#000",
-      backgroundColor: "#f0f4f8",
-      padding: "6px",
-      borderRadius: "4px",
-    },
-  }}
-  sx={{
-    "& .MuiOutlinedInput-root": {
-      "& fieldset": { borderColor: "#007bff" },
-      "&:hover fieldset": { borderColor: "#005cbf" },
-      "&.Mui-focused fieldset": { borderColor: "#003087" },
-    },
-  }}
-/>
-
-                </div>
-              ) : null;
-            })}
-          </div>
-        ))}
-        <Button
-          className="popover-save-button"
-          onClick={handleSaveStock}
-        >
-          Save Stock
-        </Button>
-      </>
-    ) : (
-      <Typography style={{ fontSize: "0.8rem", color: "#555" }}>
-        No products found.
-      </Typography>
-    )}
-  </div>
+                        return variant ? (
+                          <div key={invId} className="popover-variant">
+                            <span className="popover-variant-label">
+                              {variant.attributeName}: {variant.variantValue} (Current Stock: {inv?.quantity ?? 0})
+                            </span>
+                            <TextField
+                              className="popover-variant-input"
+                              placeholder="Add stock..."
+                              type="number"
+                              value={stockUpdates[product._id]?.[invId] ?? (inv?.quantity ?? 0)}
+                              onChange={(e) => handleStockChange(product._id, invId, e.target.value)}
+                              inputProps={{
+                                min: 0,
+                                style: {
+                                  fontSize: "0.9rem",
+                                  fontWeight: "bold",
+                                  color: "#000",
+                                  backgroundColor: "#f0f4f8",
+                                  padding: "6px",
+                                  borderRadius: "4px",
+                                },
+                              }}
+                              sx={{
+                                "& .MuiOutlinedInput-root": {
+                                  "& fieldset": { borderColor: "#007bff" },
+                                  "&:hover fieldset": { borderColor: "#005cbf" },
+                                  "&.Mui-focused fieldset": { borderColor: "#003087" },
+                                },
+                              }}
+                            />
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  ))}
+                  <Button
+                    className="popover-save-button"
+                    onClick={handleSaveStock}
+                  >
+                    Save Stock
+                  </Button>
+                </>
+              ) : (
+                <Typography style={{ fontSize: "0.8rem", color: "#555" }}>
+                  No products found.
+                </Typography>
+              )}
+            </div>
           </Popover>
 
           <div className="responsive-table-container">
@@ -591,7 +630,7 @@ value={stockUpdates[product._id]?.[invId] ?? inv?.quantity ?? 0}
                     paginatedProducts.map((item, index) => {
                       const variantStocks = item.variants.map((variant) => {
                         const inv = item.inventory?.find(
-                          (inv) => inv.variantId?.toString() === variant._id?.toString()
+                          (inv) => (inv.variantId.$oid || inv.variantId)?.toString() === (variant._id.$oid || variant._id)?.toString()
                         );
                         return {
                           label: `${variant.attributeName}: ${variant.variantValue} (${inv?.quantity || 0})`,
@@ -668,7 +707,7 @@ value={stockUpdates[product._id]?.[invId] ?? inv?.quantity ?? 0}
               paginatedProducts.map((item, index) => {
                 const variantStocks = item.variants.map((variant) => {
                   const inv = item.inventory?.find(
-                    (inv) => inv.variantId?.toString() === variant._id?.toString()
+                    (inv) => (inv.variantId.$oid || inv.variantId)?.toString() === (variant._id.$oid || variant._id)?.toString()
                   );
                   return {
                     label: `${variant.attributeName}: ${variant.variantValue} (${inv?.quantity || 0})`,
@@ -797,4 +836,3 @@ value={stockUpdates[product._id]?.[invId] ?? inv?.quantity ?? 0}
 }
 
 export default StockManagement;
-

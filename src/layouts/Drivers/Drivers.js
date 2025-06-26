@@ -172,7 +172,7 @@ export default function Drivers() {
               ))}
             </select>
           </div>
-          <div>
+          <div style={{marginLeft: "420px" }}>
             <label style={{ fontSize: 17, marginRight: 8 }}>Search:</label>
             <input
               type="text"
@@ -180,7 +180,7 @@ export default function Drivers() {
               onChange={handleSearchChange}
               placeholder="Search drivers..."
               style={{
-                padding: "8px 14px",
+                padding: "8px 34px",
                 borderRadius: "8px",
                 height: "42px",
                 width: "220px",
