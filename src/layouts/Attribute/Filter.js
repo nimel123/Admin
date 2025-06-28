@@ -30,7 +30,7 @@ function Filter() {
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-        const res = await fetch("https://fivlia.onrender.com/getFilter");
+        const res = await fetch("https://api.fivlia.in/getFilter");
         const data = await res.json();
         setFilterData(data);
       } catch (err) {
@@ -44,7 +44,7 @@ function Filter() {
     const confirmDelete = window.confirm("Are you sure you want to delete this Variant?");
     if (!confirmDelete) return;
     try {
-      const result = await fetch(`https://fivlia.onrender.com/deleteFilterVal/${id}`, {
+      const result = await fetch(`https://api.fivlia.in/deleteFilterVal/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -52,7 +52,7 @@ function Filter() {
       });
       if (result.status === 200) {
         alert("Value Deleted Successfully");
-        const res = await fetch("https://fivlia.onrender.com/getFilter");
+        const res = await fetch("https://api.fivlia.in/getFilter");
         const data = await res.json();
         setFilterData(data);
       } else {
@@ -68,7 +68,7 @@ function Filter() {
     const confirmDelete = window.confirm("Are you sure you want to delete this Filter?");
     if (!confirmDelete) return;
     try {
-      const res = await fetch(`https://fivlia.onrender.com/deleteFilter/${filterId}`, {
+      const res = await fetch(`https://api.fivlia.in/deleteFilter/${filterId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

@@ -46,7 +46,7 @@ function AddServiceArea() {
   useEffect(() => {
     async function fetchCities() {
       try {
-        const res = await fetch("https://fivlia.onrender.com/getAviableCity");
+        const res = await fetch("https://api.fivlia.in/getAviableCity");
         const data = await res.json();
         if (data && data.length > 0) {
           setCities(data);

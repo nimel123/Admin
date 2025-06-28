@@ -18,7 +18,7 @@ function Attributes() {
                 alert('Invalid Name')
                 return;
             }
-            const result=await fetch('https://fivlia.onrender.com/addAtribute',{
+            const result=await fetch('https://api.fivlia.in/addAtribute',{
                 method:'POST',
                 body:JSON.stringify({
                     Attribute_name:name

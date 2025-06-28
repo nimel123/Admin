@@ -199,7 +199,7 @@ function EditProduct() {
       const responseBody = await result.json();
       if (result.status === 200) {
         alert("Variant Deleted Successfully");
-        const res = await fetch("https://fivlia.onrender.com/getAttributes");
+        const res = await fetch("https://api.fivlia.in/getAttributes");
         const data = await res.json();
         setAttribute(data);
         setAttributeValue((prev) => prev.filter((item) => item.variantName !== variantName));
@@ -291,7 +291,7 @@ function EditProduct() {
       return;
     }
     try {
-      const result = await fetch(`https://fivlia.onrender.com/updateAt/${category[0]}`, {
+      const result = await fetch(`https://api.fivlia.in/updateAt/${category[0]}`, {
         method: "PATCH",
         body: JSON.stringify({ attribute: addAttribute }),
         headers: { "Content-Type": "application/json" },
@@ -301,7 +301,7 @@ function EditProduct() {
         alert("Attribute Added Successfully");
         setShowPopup(false);
         setAddattribute("");
-        const res = await fetch(`https://fivlia.onrender.com/getAttributes`);
+        const res = await fetch(`https://api.fivlia.in/getAttributes`);
         const data = await res.json();
         setAttribute(data);
       } else {
@@ -333,7 +333,7 @@ function EditProduct() {
         alert("Variant Added Successfully");
         setShowVariantPopup(false);
         setAddVarient("");
-        const res = await fetch("https://fivlia.onrender.com/getAttributes");
+        const res = await fetch("https://api.fivlia.in/getAttributes");
         const data = await res.json();
         setAttribute(data);
       } else {
@@ -350,7 +350,7 @@ function EditProduct() {
       return alert("Please Input Unit Name");
     }
     try {
-      const result = await fetch("https://fivlia.onrender.com/unit", {
+      const result = await fetch("https://api.fivlia.in/unit", {
         method: "POST",
         body: JSON.stringify({ unitname: addUnit }),
         headers: { "Content-Type": "application/json" },
@@ -358,7 +358,7 @@ function EditProduct() {
       if (result.status === 200) {
         alert("Unit Added Successfully");
         setShowUnitPopup(false);
-        const res = await fetch("https://fivlia.onrender.com/getUnit");
+        const res = await fetch("https://api.fivlia.in/getUnit");
         const data = await res.json();
         setUnitsData(data.Result);
       } else {
@@ -398,7 +398,7 @@ function EditProduct() {
     formData.append("description", des);
     if (brandImage) formData.append("image", brandImage);
     try {
-      const result = await fetch("https://fivlia.onrender.com/brand", {
+      const result = await fetch("https://api.fivlia.in/brand", {
         method: "POST",
         body: formData,
       });
@@ -409,7 +409,7 @@ function EditProduct() {
         setDes("");
         setBrandImage(null);
         if (brandImageInputRef.current) brandImageInputRef.current.value = "";
-        const res = await fetch("https://fivlia.onrender.com/getBrand");
+        const res = await fetch("https://api.fivlia.in/getBrand");
         const data = await res.json();
         setBrands(data);
       } else {
@@ -533,7 +533,7 @@ function EditProduct() {
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-        const res = await fetch("https://fivlia.onrender.com/getFilter");
+        const res = await fetch("https://api.fivlia.in/getFilter");
         const data = await res.json();
         setFilters(data);
       } catch (err) {
@@ -628,7 +628,7 @@ function EditProduct() {
 
     const getActiveCity = async () => {
       try {
-        const result = await fetch("https://fivlia.onrender.com/getAllZone");
+        const result = await fetch("https://api.fivlia.in/getAllZone");
         if (result.status === 200) {
           const res = await result.json();
           setCityData(res);
@@ -640,7 +640,7 @@ function EditProduct() {
 
     const fetchBrands = async () => {
       try {
-        const res = await fetch("https://fivlia.onrender.com/getBrand");
+        const res = await fetch("https://api.fivlia.in/getBrand");
         const data = await res.json();
         if (Array.isArray(data)) {
           setBrands(data);
@@ -666,7 +666,7 @@ function EditProduct() {
 
     const fetchAttribute = async () => {
       try {
-        const res = await fetch("https://fivlia.onrender.com/getAttributes");
+        const res = await fetch("https://api.fivlia.in/getAttributes");
         const data = await res.json();
         setAttribute(data);
       } catch (err) {
@@ -676,7 +676,7 @@ function EditProduct() {
 
     const getUnits = async () => {
       try {
-        const result = await fetch("https://fivlia.onrender.com/getUnit");
+        const result = await fetch("https://api.fivlia.in/getUnit");
         if (result.status === 200) {
           const res = await result.json();
           setUnitsData(res.Result);
@@ -911,7 +911,7 @@ function EditProduct() {
    const newformdata1=new FormData()
     newformdata1.append('filterIds',selectedFilterIds)
 
-    const res=await fetch(`https://fivlia.onrender.com/addFilterInCategory/${selecetdcategory}`,{
+    const res=await fetch(`https://api.fivlia.in/addFilterInCategory/${selecetdcategory}`,{
       method:"PUT",
       body:newformdata1,
       headers:{
@@ -1087,7 +1087,7 @@ for (let pair of formData.entries()) {
 }
 
     try {
-      const result = await fetch(`https://fivlia.onrender.com/updateProduct/${id}`, {
+      const result = await fetch(`https://api.fivlia.in/updateProduct/${id}`, {
         method: "PATCH",
         body: formData,
       });
@@ -1110,7 +1110,7 @@ for (let pair of formData.entries()) {
 
   const handlefiltervalue = async () => {
     try {
-      const newvalue = await fetch(`https://fivlia.onrender.com/editFilter/${filterTypeName}`, {
+      const newvalue = await fetch(`https://api.fivlia.in/editFilter/${filterTypeName}`, {
         method: "PATCH",
         body: JSON.stringify({
           Filter: [
@@ -1135,7 +1135,7 @@ for (let pair of formData.entries()) {
   };
 
   // const handleFilter = async () => {
-  //   const addfilternew = await fetch(`https://fivlia.onrender.com/addFilter`, {
+  //   const addfilternew = await fetch(`https://api.fivlia.in/addFilter`, {
   //     method: 'POST',
   //     body: JSON.stringify({
   //       Filter_name: addfilter,

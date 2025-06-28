@@ -42,7 +42,7 @@ function AddDriver() {
     );
 
     try {
-      const response = await fetch("https://fivlia.onrender.com/driver", {
+      const response = await fetch("https://api.fivlia.in/driver", {
         method: "POST",
         body: formData,
       });

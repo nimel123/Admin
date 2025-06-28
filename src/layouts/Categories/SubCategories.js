@@ -71,7 +71,7 @@ function GetSubCategories() {
     }));
 
     try {
-      const res = await fetch(`https://fivlia.onrender.com/editSubCat/${id}`, {
+      const res = await fetch(`https://api.fivlia.in/editSubCat/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

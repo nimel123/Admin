@@ -65,7 +65,7 @@ const AddStoreCat = () => {
         const formdata=new FormData();
          const categoryIds = data.map(cat => cat._id);
         try{
-           const result=await fetch(`https://fivlia.onrender.com/addCategoryInStore/${storeId}`,{
+           const result=await fetch(`https://api.fivlia.in/addCategoryInStore/${storeId}`,{
             method:"PUT",
              body: JSON.stringify({ Category: categoryIds }),
              headers:{

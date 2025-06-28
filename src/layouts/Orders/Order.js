@@ -34,11 +34,11 @@ const Orders = () => {
     setError("");
     try {
       const [ordersRes, storesRes, zonesRes, driversRes, statusesRes] = await Promise.all([
-        fetch("https://fivlia.onrender.com/orders"),
-        fetch("https://fivlia.onrender.com/getStore"),
-        fetch("https://fivlia.onrender.com/getAllZone"),
-        fetch("https://fivlia.onrender.com/getDriver"),
-        fetch("https://fivlia.onrender.com/getdeliveryStatus"),
+        fetch("https://api.fivlia.in/orders"),
+        fetch("https://api.fivlia.in/getStore"),
+        fetch("https://api.fivlia.in/getAllZone"),
+        fetch("https://api.fivlia.in/getDriver"),
+        fetch("https://api.fivlia.in/getdeliveryStatus"),
       ]);
 
       // Handle Orders
@@ -160,7 +160,7 @@ if (statusesData.Status && Array.isArray(statusesData.Status)) {
       const body = {};
       if (status) body.status = status;
       if (driverId) body.driverId = driverId;
-      const res = await fetch(`https://fivlia.onrender.com/orderStatus/${id}`, {
+      const res = await fetch(`https://api.fivlia.in/orderStatus/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -802,19 +802,19 @@ if (statusesData.Status && Array.isArray(statusesData.Status)) {
                               {order.orderId}
                             </span>
                           </td>
-                          <td className="body-cell order-details-cell">
-                            <span
-                              className="item-link"
-                              onClick={() => setSelectedOrder(order)}
-                              title={item?.name}
-                              style={{ display: "block", fontWeight: 500 }}
-                            >
-                              ₹{item?.price || 0} × {item?.quantity || 0}
-                            </span>
-                            <span style={{ color: "#7b809a", fontSize: "13px" }}>
-                              {item?.name ? (item.name.length > 25 ? `${item.name.substring(0, 25)}...` : item.name) : "-"}
-                            </span>
-                          </td>
+                       <td className="body-cell order-details-cell">
+                          <span
+                            className="item-link"
+                            onClick={() => setSelectedOrder(order)}
+                            style={{ display: "block", fontWeight: 500 }}
+                          >
+                            ₹{(item?.price || 0) * (item?.quantity || 0)}
+                          </span>
+                          <span style={{ color: "#7b809a", fontSize: "13px" }}>
+                            Quantity: {item?.quantity || 0}
+                          </span>
+                        </td>
+
                           <td className="body-cell address-cell">
                             <span
                               className="item-link"

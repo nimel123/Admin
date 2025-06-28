@@ -130,7 +130,7 @@ function AddBanner() {
     formData.append("zones", JSON.stringify(zones));
 
     try {
-      const response = await fetch(`https://fivlia.onrender.com/banner`, {
+      const response = await fetch(`https://api.fivlia.in/banner`, {
         method: "POST",
         body: formData,
       });

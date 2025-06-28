@@ -34,7 +34,7 @@ function Table() {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const res = await fetch("https://fivlia.onrender.com/getAllZone");
+        const res = await fetch("https://api.fivlia.in/getAllZone");
         const data = await res.json();
 
         console.log(data);
@@ -127,7 +127,7 @@ function Table() {
   // }
   const updateZone = async (id, updatedFields) => {
     try {
-      const res = await fetch(`https://fivlia.onrender.com/updateZoneStatus/${id}`, {
+      const res = await fetch(`https://api.fivlia.in/updateZoneStatus/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

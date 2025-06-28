@@ -29,7 +29,7 @@ function AddBrand() {
             formData.append("description", description);
             formData.append("image", document.querySelector('input[type="file"]').files[0]);
 
-            const result = await fetch('https://fivlia.onrender.com/brand', {
+            const result = await fetch('https://api.fivlia.in/brand', {
                 method: "POST",
                 body: formData,
             });

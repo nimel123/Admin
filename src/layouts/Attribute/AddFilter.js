@@ -23,7 +23,7 @@ function AddFilter() {
             const formattedFilter = filterData.map(item => ({ name: item }));
             console.log("Filter Name:", name);
             console.log("Filter Values:", formattedFilter);
-            const result = await fetch(`https://fivlia.onrender.com/addFilter`, {
+            const result = await fetch(`https://api.fivlia.in/addFilter`, {
                 method: "POST",
                 body: JSON.stringify({
                     Filter_name: name,

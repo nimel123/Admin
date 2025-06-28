@@ -33,7 +33,7 @@ function BrandTable() {
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        const res = await fetch("https://fivlia.onrender.com/getBrand");
+        const res = await fetch("https://api.fivlia.in/getBrand");
         const data = await res.json();
         setBrands(data);
       } catch (err) {

@@ -219,7 +219,7 @@ function EditBanner() {
   }
 
   try {
-    const response = await fetch(`https://fivlia.onrender.com/admin/banner/${id}/status`, {
+    const response = await fetch(`https://api.fivlia.in/admin/banner/${id}/status`, {
       method: "PATCH",
       body: formData,
     });

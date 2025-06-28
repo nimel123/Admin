@@ -48,7 +48,7 @@ function AddStore() {
 
     const fetchCities = async () => {
       try {
-        const res = await fetch("https://fivlia.onrender.com/getAllZone");
+        const res = await fetch("https://api.fivlia.in/getAllZone");
         const data = await res.json();
         if (data) {
           setCities(data);
@@ -224,7 +224,7 @@ function AddStore() {
         formData.append("image", file);
       }
 
-      const response = await fetch("https://fivlia.onrender.com/createStore", {
+      const response = await fetch("https://api.fivlia.in/createStore", {
         method: "POST",
         body: formData,
       });

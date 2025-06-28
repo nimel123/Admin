@@ -18,7 +18,7 @@ function AddUnit() {
                 alert('Invalid Name')
                 return;
             }
-            const result=await fetch('https://fivlia.onrender.com/unit',{
+            const result=await fetch('https://api.fivlia.in/unit',{
                 method:'POST',
                 body:JSON.stringify({
                     unitname:name

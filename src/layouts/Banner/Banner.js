@@ -34,7 +34,7 @@ function BannerManagement() {
   useEffect(() => {
     const getBanner = async () => {
       try {
-        const response = await fetch("https://fivlia.onrender.com/getAllBanner");
+        const response = await fetch("https://api.fivlia.in/getAllBanner");
         const bannersArray = await response.json();
 
         if (Array.isArray(bannersArray)) {
@@ -58,7 +58,7 @@ function BannerManagement() {
     const newStatus = !banner.public;
 
     try {
-      const res = await fetch(`https://fivlia.onrender.com/admin/banner/${banner._id}/status`, {
+      const res = await fetch(`https://api.fivlia.in/admin/banner/${banner._id}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

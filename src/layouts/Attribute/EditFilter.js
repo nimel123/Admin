@@ -41,7 +41,7 @@ function EditFilter() {
             Filter_name: name,
             Filter: formattedFilter
         };
-            const result = await fetch(`https://fivlia.onrender.com/editFilter/${id}`, {
+            const result = await fetch(`https://api.fivlia.in/editFilter/${id}`, {
                 method: "PATCH",
                 body: JSON.stringify(payload),
                 headers: {

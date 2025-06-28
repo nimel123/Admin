@@ -26,6 +26,7 @@ export default function StatusManagement() {
   const [entriesToShow, setEntriesToShow] = useState(5);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [editImage, setEditImage] = useState(null);
 
   const headerCell = {
     padding: "14px 12px",
@@ -45,11 +46,10 @@ export default function StatusManagement() {
     textAlign: "center",
   };
 
-  // Fetch statuses on mount
   useEffect(() => {
     const fetchStatuses = async () => {
       try {
-        const response = await fetch("https://fivlia.onrender.com/getdeliveryStatus");
+        const response = await fetch("https://api.fivlia.in/getdeliveryStatus");
         const data = await response.json();
         if (response.ok && Array.isArray(data.Status)) {
           setStatuses(data.Status.map((s) => ({
@@ -77,7 +77,7 @@ export default function StatusManagement() {
     const newStatus = !statusToUpdate.isActive;
 
     try {
-      const response = await fetch(`https://fivlia.onrender.com/fivlia/updatedeliveryStatus/${id}`, {
+      const response = await fetch(`https://api.fivlia.in/updatedeliveryStatus/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -94,47 +94,11 @@ export default function StatusManagement() {
     }
   };
 
-  const handleAddSave = async () => {
-    if (!newStatusCode || !newStatusTitle) {
-      alert("Please fill in all fields");
-      return;
-    }
-    const newStatus = {
-      statusCode: newStatusCode,
-      statusTitle: newStatusTitle,
-      status: true,
-    };
-    try {
-      const response = await fetch("https://fivlia.onrender.com/deliveryStatus", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newStatus),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to create status");
-
-      setStatuses((prev) => [
-        ...prev,
-        {
-          id: data.newStatus._id,
-          statusCode: data.newStatus.statusCode,
-          statusTitle: data.newStatus.statusTitle,
-          isActive: data.newStatus.status,
-        },
-      ]);
-      setModalOpen(false);
-      setNewStatusCode("");
-      setNewStatusTitle("");
-    } catch (error) {
-      alert("Failed to create status. Try again.");
-      console.error("Create status error:", error);
-    }
-  };
-
   const handleEdit = (status) => {
     setSelectedStatus(status);
     setNewStatusCode(status.statusCode);
     setNewStatusTitle(status.statusTitle);
+    setEditImage(null);
     setEditModalOpen(true);
   };
 
@@ -143,16 +107,22 @@ export default function StatusManagement() {
       alert("Please fill in all fields");
       return;
     }
+
     try {
-      const response = await fetch(`https://fivlia.onrender.com/fivlia/updatedeliveryStatus/${selectedStatus.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          statusCode: newStatusCode,
-          statusTitle: newStatusTitle,
-          status: selectedStatus.isActive,
-        }),
-      });
+      const formData = new FormData();
+      formData.append("statusCode", newStatusCode);
+      formData.append("statusTitle", newStatusTitle);
+      formData.append("status", selectedStatus.isActive);
+      if (editImage) formData.append("image", editImage);
+
+      const response = await fetch(
+        `https://api.fivlia.in/updatedeliveryStatus/${selectedStatus.id}`,
+        {
+          method: "PUT",
+          body: formData,
+        }
+      );
+
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Failed to update status");
 
@@ -163,14 +133,17 @@ export default function StatusManagement() {
                 ...s,
                 statusCode: newStatusCode,
                 statusTitle: newStatusTitle,
+                image: data.newStatus.image || s.image,
               }
             : s
         )
       );
+
       setEditModalOpen(false);
       setSelectedStatus(null);
       setNewStatusCode("");
       setNewStatusTitle("");
+      setEditImage(null);
     } catch (error) {
       alert("Failed to update status. Try again.");
       console.error("Update status error:", error);
@@ -208,10 +181,7 @@ export default function StatusManagement() {
   return (
     <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "30px" }}>
       <div style={{ width: "100%", padding: "0 20px" }}>
-        {/* Header */}
-        <div
-          style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}
-        >
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
           <div>
             <h2 style={{ margin: 0, fontSize: "30px", fontWeight: "bold" }}>
               Status Management
@@ -220,22 +190,8 @@ export default function StatusManagement() {
               Manage order statuses
             </p>
           </div>
-          <Button
-            style={{
-              backgroundColor: "#00c853",
-              height: 45,
-              width: 150,
-              fontSize: 12,
-              color: "white",
-              letterSpacing: "1px",
-            }}
-            onClick={() => setModalOpen(true)}
-          >
-            + Add Status
-          </Button>
         </div>
 
-        {/* Controls */}
         <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
           <div>
             <label style={{ fontSize: 17 }}>Show Entries </label>
@@ -276,17 +232,14 @@ export default function StatusManagement() {
           </div>
         </div>
 
-        {/* Table */}
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            fontFamily: '"Urbanist", sans-serif',
-            fontSize: "17px",
-            border: "1px solid #007BFF",
-            marginTop: "20px",
-          }}
-        >
+        <table style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          fontFamily: '"Urbanist", sans-serif',
+          fontSize: "17px",
+          border: "1px solid #007BFF",
+          marginTop: "20px",
+        }}>
           <thead>
             <tr>
               <th style={headerCell}>Sr No</th>
@@ -300,25 +253,19 @@ export default function StatusManagement() {
           <tbody>
             {currentStatuses.length > 0 ? (
               currentStatuses.map((status, index) => (
-                <tr
-                  key={status.id}
-                  style={{
-                    backgroundColor: selectedStatus?.id === status.id ? "#f1f1f1" : "white",
-                    cursor: "pointer",
-                  }}
-                >
+                <tr key={status.id} style={{ backgroundColor: selectedStatus?.id === status.id ? "#f1f1f1" : "white", cursor: "pointer" }}>
                   <td style={bodyCell}>{startIndex + index + 1}</td>
                   <td style={bodyCell}>
-                  {status.image ? (
-                    <img
-                      src={status.image}
-                      alt={status.statusTitle}
-                      style={{ width: 40, height: 40, borderRadius: "6px", objectFit: "cover" }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: 12, color: "#999" }}>No image</span>
-                  )}
-                </td>
+                    {status.image ? (
+                      <img
+                        src={status.image}
+                        alt={status.statusTitle}
+                        style={{ width: 40, height: 40, borderRadius: "6px", objectFit: "cover" }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: 12, color: "#999" }}>No image</span>
+                    )}
+                  </td>
                   <td style={bodyCell}>{status.statusCode}</td>
                   <td style={bodyCell}>{status.statusTitle}</td>
                   <td style={bodyCell}>
@@ -364,10 +311,7 @@ export default function StatusManagement() {
           </tbody>
         </table>
 
-        {/* Pagination */}
-        <div
-          style={{ marginTop: "20px", display: "flex", justifyContent: "space-between" }}
-        >
+        <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-between" }}>
           <div>
             Showing {startIndex + 1} to{" "}
             {Math.min(endIndex, filteredStatuses.length)} of{" "}
@@ -407,34 +351,19 @@ export default function StatusManagement() {
         </div>
       </div>
 
-      {/* Add Status Modal */}
-      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Add New Status</DialogTitle>
-        <DialogContent dividers>
-          <TextField
-            label="Status Title"
-            fullWidth
-            margin="normal"
-            value={newStatusTitle}
-            onChange={(e) => setNewStatusTitle(e.target.value)}
-            placeholder="e.g., Pending"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setModalOpen(false)} color="error">
-            Cancel
-          </Button>
-          <Button onClick={handleAddSave} color="primary">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Edit Status Modal */}
+      {/* Edit Modal */}
       <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Edit Status</DialogTitle>
         <DialogContent dividers>
           <TextField
+            label="Status Code"
+            fullWidth
+            margin="normal"
+            value={newStatusCode}
+            onChange={(e) => setNewStatusCode(e.target.value)}
+            placeholder="e.g., PEND"
+          />
+          <TextField
             label="Status Title"
             fullWidth
             margin="normal"
@@ -442,6 +371,24 @@ export default function StatusManagement() {
             onChange={(e) => setNewStatusTitle(e.target.value)}
             placeholder="e.g., Pending"
           />
+          <div style={{ marginTop: 16 }}>
+            <label style={{ fontSize: 16, fontWeight: "bold" }}>Upload Image</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setEditImage(e.target.files[0])}
+              style={{ marginTop: 8 }}
+            />
+            {selectedStatus?.image && (
+              <div style={{ marginTop: 10 }}>
+                <img
+                  src={selectedStatus.image}
+                  alt="Preview"
+                  style={{ width: 100, height: 100, objectFit: "cover", borderRadius: 8 }}
+                />
+              </div>
+            )}
+          </div>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditModalOpen(false)} color="error">

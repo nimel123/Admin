@@ -29,7 +29,7 @@ const EditCategory = () => {
   useEffect(() => {
     const getFilters = async () => {
       try {
-        const result = await fetch(`https://fivlia.onrender.com/getFilter`);
+        const result = await fetch(`https://api.fivlia.in/getFilter`);
         if (result.status === 200) {
           const res = await result.json();
           setAllFilters(res);
@@ -44,7 +44,7 @@ const EditCategory = () => {
   useEffect(() => {
     const getAttributes = async () => {
       try {
-        const result = await fetch("https://fivlia.onrender.com/getAttributes");
+        const result = await fetch("https://api.fivlia.in/getAttributes");
         if (result.status === 200) {
           const res = await result.json();
           setAllAttributes(res);

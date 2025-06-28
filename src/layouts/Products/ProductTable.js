@@ -51,7 +51,7 @@ function ProductTable() {
   useEffect(() => {
     const getProduct = async () => {
       try {
-        const result = await fetch("https://fivlia.onrender.com/adminProducts");
+        const result = await fetch("https://api.fivlia.in/adminProducts");
         if (result.status === 200) {
           const res = await result.json();
           const products = res.Product || [];
@@ -100,13 +100,13 @@ function ProductTable() {
     if (!confirmDelete) return;
 
     try {
-      const result = await fetch(`https://fivlia.onrender.com/deleteProduct/${id}`, {
+      const result = await fetch(`https://api.fivlia.in/deleteProduct/${id}`, {
         method: "DELETE",
       });
 
       if (result.status === 200) {
         alert("Product Deleted Successfully");
-         const result = await fetch("https://fivlia.onrender.com/getProducts");
+         const result = await fetch("https://api.fivlia.in/getProducts");
        const res = await result.json();
           const products = res.products || [];
           setData(products);

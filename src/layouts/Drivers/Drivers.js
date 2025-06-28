@@ -11,6 +11,8 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 
 export default function Drivers() {
@@ -24,7 +26,15 @@ export default function Drivers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedDriver, setSelectedDriver] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editDriverData, setEditDriverData] = useState({
+    driverName: "",
+    status: false,
+    image: null,
+    address: { city: "", locality: "", mobileNo: "" },
+  });
   const [searchLocation, setSearchLocation] = useState("");
+  const [error, setError] = useState("");
 
   const headerCell = {
     padding: "14px 12px",
@@ -45,7 +55,7 @@ export default function Drivers() {
   useEffect(() => {
     const fetchDrivers = async () => {
       try {
-        const response = await fetch("https://fivlia.onrender.com/getDriver");
+        const response = await fetch("https://api.fivlia.in/getDriver");
         const data = await response.json();
 
         if (Array.isArray(data.Driver)) {
@@ -58,9 +68,12 @@ export default function Drivers() {
             address: driver.address || {},
           }));
           setDrivers(formattedDrivers);
+        } else {
+          setError("Invalid driver data format");
         }
       } catch (error) {
         console.error("Failed to fetch drivers:", error);
+        setError("Failed to fetch drivers. Please try again.");
       }
     };
 
@@ -102,7 +115,7 @@ export default function Drivers() {
 
     try {
       const response = await fetch(
-        `https://fivlia.onrender.com/updateDriverStatus/${id}`,
+        `https://api.fivlia.in/editDriver/${id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -110,15 +123,86 @@ export default function Drivers() {
         }
       );
 
-      if (!response.ok) throw new Error("Failed to update status");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update status");
+      }
 
       setDrivers((prev) =>
         prev.map((d) => (d.id === id ? { ...d, status: newStatus } : d))
       );
     } catch (error) {
-      alert("Failed to update status. Try again.");
-      console.error(error);
+      console.error("Error updating status:", error);
+      setError(`Failed to update status: ${error.message}`);
     }
+  };
+
+  const handleEditDriver = async () => {
+    if (!selectedDriver) return;
+
+    const formData = new FormData();
+    formData.append("driverName", editDriverData.driverName);
+    formData.append("status", editDriverData.status);
+    formData.append("address", JSON.stringify(editDriverData.address));
+    if (editDriverData.image) {
+      formData.append("image", editDriverData.image);
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.fivlia.in/editDriver/${selectedDriver.id}`,
+        {
+          method: "PUT",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update driver");
+      }
+
+      const updated = await response.json();
+      setDrivers((prev) =>
+        prev.map((d) =>
+          d.id === selectedDriver.id
+            ? {
+                ...d,
+                name: updated.edit?.driverName || d.name,
+                status: updated.edit?.status,
+                image: updated.edit?.image || d.image,
+                address: updated.edit?.address || d.address,
+              }
+            : d
+        )
+      );
+      setEditModalOpen(false);
+      setSelectedDriver(null);
+      setEditDriverData({
+        driverName: "",
+        status: false,
+        image: null,
+        address: { city: "", locality: "", mobileNo: "" },
+      });
+    } catch (error) {
+      console.error("Error updating driver:", error);
+      setError(`Failed to update driver: ${error.message}`);
+    }
+  };
+
+  const handleOpenEditModal = (driver) => {
+    setSelectedDriver(driver);
+    setEditDriverData({
+      driverName: driver.name,
+      status: driver.status,
+      image: null,
+      address: {
+        city: driver.address?.city || "",
+        locality: driver.address?.locality || "",
+        mobileNo: driver.address?.mobileNo || "",
+      },
+    });
+    setEditModalOpen(true);
   };
 
   return (
@@ -154,7 +238,7 @@ export default function Drivers() {
         {/* Controls */}
         <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
           <div>
-            <label style={{ fontSize: 17 }}>Show Entries&nbsp;</label>
+            <label style={{ fontSize: 17 }}>Show Entries </label>
             <select
               value={entriesToShow}
               onChange={handleEntriesChange}
@@ -172,7 +256,7 @@ export default function Drivers() {
               ))}
             </select>
           </div>
-          <div style={{marginLeft: "420px" }}>
+          <div style={{ marginLeft: "420px" }}>
             <label style={{ fontSize: 17, marginRight: 8 }}>Search:</label>
             <input
               type="text"
@@ -191,6 +275,13 @@ export default function Drivers() {
             />
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div style={{ color: "red", textAlign: "center", margin: "10px 0" }}>
+            {error}
+          </div>
+        )}
 
         {/* Table */}
         <table
@@ -272,7 +363,7 @@ export default function Drivers() {
                   </td>
                   <td style={{ ...bodyCell, textAlign: "center" }}>
                     <button
-                      onClick={() => navigate("/edit-driver", { state: driver })}
+                      onClick={() => handleOpenEditModal(driver)}
                       style={{
                         backgroundColor: "#007BFF",
                         color: "white",
@@ -365,6 +456,88 @@ export default function Drivers() {
         <DialogActions>
           <Button onClick={() => setModalOpen(false)} color="error">
             Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Driver Modal */}
+      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Driver</DialogTitle>
+        <DialogContent dividers>
+          <TextField
+            label="Driver Name"
+            fullWidth
+            margin="normal"
+            value={editDriverData.driverName}
+            onChange={(e) =>
+              setEditDriverData((prev) => ({ ...prev, driverName: e.target.value }))
+            }
+          />
+          <TextField
+            label="City"
+            fullWidth
+            margin="normal"
+            value={editDriverData.address.city}
+            onChange={(e) =>
+              setEditDriverData((prev) => ({
+                ...prev,
+                address: { ...prev.address, city: e.target.value },
+              }))
+            }
+          />
+          <TextField
+            label="Locality"
+            fullWidth
+            margin="normal"
+            value={editDriverData.address.locality}
+            onChange={(e) =>
+              setEditDriverData((prev) => ({
+                ...prev,
+                address: { ...prev.address, locality: e.target.value },
+              }))
+            }
+          />
+          <TextField
+            label="Mobile Number"
+            fullWidth
+            margin="normal"
+            value={editDriverData.address.mobileNo}
+            onChange={(e) =>
+              setEditDriverData((prev) => ({
+                ...prev,
+                address: { ...prev.address, mobileNo: e.target.value },
+              }))
+            }
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={editDriverData.status}
+                onChange={(e) =>
+                  setEditDriverData((prev) => ({ ...prev, status: e.target.checked }))
+                }
+              />
+            }
+            label="Active Status"
+          />
+          <TextField
+            label="Upload Image"
+            type="file"
+            fullWidth
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+            inputProps={{ accept: "image/*" }}
+            onChange={(e) =>
+              setEditDriverData((prev) => ({ ...prev, image: e.target.files[0] }))
+            }
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditModalOpen(false)} color="error">
+            Cancel
+          </Button>
+          <Button onClick={handleEditDriver} color="primary">
+            Save
           </Button>
         </DialogActions>
       </Dialog>

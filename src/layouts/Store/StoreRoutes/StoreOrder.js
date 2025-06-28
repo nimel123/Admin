@@ -207,7 +207,7 @@ function StoreOrder() {
           return setError("Store ID missing");
         }
 
-        const res = await fetch(`https://fivlia.onrender.com/orders?storeId=${storeId}`);
+        const res = await fetch(`https://api.fivlia.in/orders?storeId=${storeId}`);
         const data = await res.json();
         if (data.orders && Array.isArray(data.orders)) {
           setOrders(data.orders);
@@ -226,7 +226,7 @@ function StoreOrder() {
 
     const fetchDrivers = async () => {
       try {
-        const res = await fetch("https://fivlia.onrender.com/getDriver");
+        const res = await fetch("https://api.fivlia.in/getDriver");
         const data = await res.json();
         if (data.Driver && Array.isArray(data.Driver)) {
           setDrivers(data.Driver);
@@ -305,7 +305,7 @@ function StoreOrder() {
     if (!selectedOrder || !newStatus) return;
 
     try {
-      const res = await fetch(`https://fivlia.onrender.com/orderStatus/${selectedOrder._id}`, {
+      const res = await fetch(`https://api.fivlia.in/orderStatus/${selectedOrder._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),

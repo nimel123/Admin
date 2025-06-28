@@ -231,7 +231,7 @@ function StockManagement() {
       setLoading(true);
       try {
         // Fetch products
-        const productResponse = await fetch(`https://fivlia.onrender.com/getStore?id=${storeId}`);
+        const productResponse = await fetch(`https://api.fivlia.in/getStore?id=${storeId}`);
         if (productResponse.status !== 200) {
           console.error("Product API Error: Status", productResponse.status);
           setError(`Failed to load products: Status ${productResponse.status}`);
@@ -243,7 +243,7 @@ function StockManagement() {
         console.log("Product API Response:", productResult);
 
         // Fetch stock data
-        const stockResponse = await fetch(`https://fivlia.onrender.com/getStock?storeId=${storeId}`);
+        const stockResponse = await fetch(`https://api.fivlia.in/getStock?storeId=${storeId}`);
         let stockData = [];
         if (stockResponse.status === 200) {
           const stockResult = await stockResponse.json();
@@ -390,7 +390,7 @@ function StockManagement() {
       }
 
       try {
-        const response = await fetch(`https://fivlia.onrender.com/updateStock/${productId}`, {
+        const response = await fetch(`https://api.fivlia.in/updateStock/${productId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ storeId, stock: stockPayload }),

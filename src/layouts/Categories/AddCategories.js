@@ -48,7 +48,7 @@ const AddCategories = () => {
 
     const fetchAttribute = async () => {
       try {
-        const res = await fetch("https://fivlia.onrender.com/getAttributes");
+        const res = await fetch("https://api.fivlia.in/getAttributes");
         const data = await res.json();
         setAttribute(data);
       } catch (err) {
@@ -81,7 +81,7 @@ useEffect(() => {
   useEffect(() => {
     const getFilter = async () => {
       try {
-        const result = await fetch('https://fivlia.onrender.com/getFilter');
+        const result = await fetch('https://api.fivlia.in/getFilter');
         const data = await result.json();
         if (data) {
           setFilterData(data)

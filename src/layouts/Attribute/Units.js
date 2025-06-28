@@ -30,7 +30,7 @@ function UnitsTable() {
   useEffect(() => {
     const fetchUnits = async () => {
       try {
-        const res = await fetch("https://fivlia.onrender.com/getUnit");
+        const res = await fetch("https://api.fivlia.in/getUnit");
         const data = await res.json();
         setUnits(data.Result);
       } catch (err) {

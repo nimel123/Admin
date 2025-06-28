@@ -105,7 +105,7 @@ function Product() {
     useEffect(() => {
         const fetchFilters = async () => {
             try {
-                const res = await fetch("https://fivlia.onrender.com/getFilter");
+                const res = await fetch("https://api.fivlia.in/getFilter");
                 const data = await res.json();
                 setFilterTypes(data);
             } catch (err) {
@@ -140,7 +140,7 @@ function Product() {
             return;
         }
         try {
-            const result = await fetch(`https://fivlia.onrender.com/addFilter`, {
+            const result = await fetch(`https://api.fivlia.in/addFilter`, {
                 method: "POST",
                 body: JSON.stringify({
                     _id: selectedFilter,
@@ -276,7 +276,7 @@ function Product() {
 
             if (result.status === 200) {
                 alert("Variant Deleted Successfully");
-                const res = await fetch("https://fivlia.onrender.com/getAttributes");
+                const res = await fetch("https://api.fivlia.in/getAttributes");
                 const data = await res.json();
                 setAttribute(data);
                 setAttributeValue((prev) =>
@@ -421,7 +421,7 @@ function Product() {
 
     const handleFilter = async () => {
         try {
-            const result = await fetch(`https://fivlia.onrender.com/addFilter`, {
+            const result = await fetch(`https://api.fivlia.in/addFilter`, {
                 method: "POST",
                 body: JSON.stringify({
                     Filter_name: filterName,
@@ -455,7 +455,7 @@ function Product() {
 
         const selectedCategoryId = category[0];
         try {
-            const result = await fetch(`https://fivlia.onrender.com/updateAt/${selectedCategoryId}`, {
+            const result = await fetch(`https://api.fivlia.in/updateAt/${selectedCategoryId}`, {
                 method: "PATCH",
                 body: JSON.stringify({
                     attribute: addAttribute,
@@ -471,7 +471,7 @@ function Product() {
                 alert("Attribute Added Successfully");
                 setShowPopup(false);
                 setAddattribute("");
-                const res = await fetch(`https://fivlia.onrender.com/getAttributes`);
+                const res = await fetch(`https://api.fivlia.in/getAttributes`);
                 const data = await res.json();
                 setAttribute(data);
             } else {
@@ -513,7 +513,7 @@ function Product() {
                 alert("Variant Added Successfully");
                 setShowVariantPopup(false);
                 setAddVarient("");
-                const res = await fetch("https://fivlia.onrender.com/getAttributes");
+                const res = await fetch("https://api.fivlia.in/getAttributes");
                 const data = await res.json();
                 setAttribute(data);
             } else {
@@ -532,7 +532,7 @@ function Product() {
             if (!addUnit) {
                 return alert("Please Input Unit Name");
             }
-            const result = await fetch("https://fivlia.onrender.com/unit", {
+            const result = await fetch("https://api.fivlia.in/unit", {
                 method: "POST",
                 body: JSON.stringify({
                     unitname: addUnit,
@@ -546,7 +546,7 @@ function Product() {
                 setShowUnitPopup(false);
                 setAddUnit("");
 
-                const res = await fetch("https://fivlia.onrender.com/getUnit");
+                const res = await fetch("https://api.fivlia.in/getUnit");
                 const data = await res.json();
                 setUnitsData(data.Result);
             } else {
@@ -593,7 +593,7 @@ function Product() {
         }
 
         try {
-            const result = await fetch("https://fivlia.onrender.com/brand", {
+            const result = await fetch("https://api.fivlia.in/brand", {
                 method: "POST",
                 body: formData,
             });
@@ -607,7 +607,7 @@ function Product() {
                 if (brandImageInputRef.current) {
                     brandImageInputRef.current.value = "";
                 }
-                const res = await fetch("https://fivlia.onrender.com/getBrand");
+                const res = await fetch("https://api.fivlia.in/getBrand");
                 const data = await res.json();
                 setBrands(data);
             } else {
@@ -636,7 +636,7 @@ function Product() {
 
         const getActiveCity = async () => {
             try {
-                const result = await fetch("https://fivlia.onrender.com/getAllZone");
+                const result = await fetch("https://api.fivlia.in/getAllZone");
                 if (result.status === 200) {
                     const res = await result.json();
                     setCityData(res);
@@ -651,7 +651,7 @@ function Product() {
 
         const fetchBrands = async () => {
             try {
-                const res = await fetch("https://fivlia.onrender.com/getBrand");
+                const res = await fetch("https://api.fivlia.in/getBrand");
                 if (res.status === 200) {
                     const data = await res.json();
                     setBrands(data);
@@ -676,7 +676,7 @@ function Product() {
 
         const fetchAttribute = async () => {
             try {
-                const res = await fetch("https://fivlia.onrender.com/getAttributes");
+                const res = await fetch("https://api.fivlia.in/getAttributes");
                 const data = await res.json();
                 setAttribute(data);
             } catch (err) {
@@ -687,7 +687,7 @@ function Product() {
 
         const getUnits = async () => {
             try {
-                const result = await fetch("https://fivlia.onrender.com/getUnit");
+                const result = await fetch("https://api.fivlia.in/getUnit");
                 if (result.status === 200) {
                     const res = await result.json();
                     setUnitsData(res.Result);
@@ -976,7 +976,7 @@ function Product() {
         });
 
         try {
-            const result = await fetch(`https://fivlia.onrender.com/products`, {
+            const result = await fetch(`https://api.fivlia.in/products`, {
                 method: "POST",
                 body: formData,
 

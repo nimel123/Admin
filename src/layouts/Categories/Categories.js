@@ -106,7 +106,7 @@ function Categories() {
     setMainCategories(updated);
 
     try {
-      const res = await fetch(`https://fivlia.onrender.com/editCat/${id}`, {
+      const res = await fetch(`https://api.fivlia.in/editCat/${id}`, {
         method: "PUT", 
         headers: {
           "Content-Type": "application/json",

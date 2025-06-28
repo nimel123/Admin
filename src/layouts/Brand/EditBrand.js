@@ -39,7 +39,7 @@ function EditBrand() {
             formData.append("description", description);
             formData.append("image", document.querySelector('input[type="file"]').files[0]);
 
-            const result = await fetch(`https://fivlia.onrender.com/editBrand/${id}`, {
+            const result = await fetch(`https://api.fivlia.in/editBrand/${id}`, {
                 method: "PUT",
                 body: formData,
             });
